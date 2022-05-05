@@ -28,7 +28,7 @@ export type Stmt<A> =
   | {  a?: A, tag: "while", cond: Expr<A>, body: Array<Stmt<A>> }
 
 export type Expr<A> =
-    {  a?: A, tag: "literal", value: Literal }
+  | {  a?: A, tag: "literal", value: Literal }
   | {  a?: A, tag: "id", name: string }
   | {  a?: A, tag: "binop", op: BinOp, left: Expr<A>, right: Expr<A>}
   | {  a?: A, tag: "uniop", op: UniOp, expr: Expr<A> }

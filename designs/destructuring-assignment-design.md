@@ -172,7 +172,7 @@ expr = { a?: A, tag: "assign", destr: Destructure<A> } ...
 
 export type Destructure<A> =
    { a?: A, tag: "basic", name: string, value: Expr<A> }
-|  { a?: A, tag: "destructure", name: Expr<A>[], value: Expr<A>[] , type?: Type<A>[]}
+|  { a?: A, tag: "destructure", name: string[], value: Expr<A>[] , type?: Type<A>[]}
 
 ```
 

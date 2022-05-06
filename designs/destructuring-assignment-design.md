@@ -1,6 +1,6 @@
 # Destructuring Assignment - Design
 
-For Milestone 1, we aim to support the following test cases. 
+For Milestone 1, we aim to support the following test cases. We look to support the *TupleExpression* and the basic destructuring assignment operations along with Parse and Type Errors in this milestone.
 
 ## Test Cases
 
@@ -160,12 +160,42 @@ PARSE ERROR : Invalid syntax
 ```
 
 
-
 ## Changes Required
 
 ### AST
 
+**Current AST**:  ``` expr = { a?: A, tag: "assign", name: string, value: Expr<A> } ... ```
+
+**New AST**:
+```
+expr = { a?: A, tag: "assign", destr: Destructure<A> } ...
+
+export type Destructure<A> =
+   { a?: A, tag: "basic", name: string, value: Expr<A> }
+|  { a?: A, tag: "destructure", name: Expr<A>[], value: Expr<A>[] , type?: Type<A>[]}
+
+```
+
 ### IR
+Same changes as AST.
+
 
 ### Built-in Libraries
+We currently forsee no changes to built-in libraries for this functionality.
+
+### Type Checker
+As part of the TypeChecker for Milestone 1, we will support : 
+
+- LHS variables are declared (following ChocoPy recommendation of declaration before definition)
+- LHS and RHS have same number of arguments
+- LHS and RHS have the same respective types (including call expressions)
+
+### Parser
+For the parser in Milestone 1, we will support : 
+
+- Parsing of multiple variables and values on LHS and RHS
+- Parsing of **TupleExpression** for destructuring
+- Parsing *BinaryExpression*, *CallExpression*, *Builtins* 
+- Check for parse errors for ID and syntax.
+
 

@@ -1,20 +1,22 @@
-# first week front end design
+# First Week of Front End Design
 
-## 1. Make adjustment of layout  
+## 1. Change the Code input box of compiler side
 
-## 2. Show all kinds of error properly in compiler mode
+## 2. The input box of interaction mode remains center
 
-## 3. Display all kinds of error properly in interaction mode
+## 3. Make adjustment of proportion of two mode on Web page
 
-## 4. Display the result of compiler mode
+## 4. The size of input box of interation mode remains the same
 
-## 5. Display the result of interaction mode
+## 5. Show the number of code line on the compiler side
 
-## 4. print all the fields in an object properly 
+## 6. Show all kinds of error properly
 
-## 5. Display the space that heap have used
+## 7. print all the fields in an object properly 
 
-## 6. Show the global variable of wasm
+## 8. Display the space that heap have used
+
+## 9. Show the global variable of wasm
 
 The global variable seems can be get from 
 ```javascript
@@ -26,11 +28,4 @@ Object.keys(instance.instance.exports).forEach(k => {
       }
     });
 ```
-
-## 7. Display the running time for user
-
-## 8. 
-
-## 9. 
-
-## 10.
+## 10. highlight the

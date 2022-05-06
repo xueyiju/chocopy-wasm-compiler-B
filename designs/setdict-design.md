@@ -91,6 +91,14 @@ dict_1.has_key(5)  # should return False
 ```
 
 ## Changes To AST/IR
+```python
+export type Type =
+  | { tag: "dict"; key: Type; value: Type }
+export type Expr<A> =
+  | { a?: Type; tag: "dict"; entries: Array<[Expr<A>, Expr<A>]>}
+export type Value =
+  | { tag: "dict"; key: Type; value: Type};
+```
 // TODO
 
 ## New Functions/Datatypes

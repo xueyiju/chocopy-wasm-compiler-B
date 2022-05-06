@@ -16,6 +16,8 @@
 
 ## 8. Display the space that heap have used
 
+It may need information from the memorry management team.
+
 ## 9. Show the global variable of wasm
 
 The global variable seems can be get from 
@@ -29,3 +31,12 @@ Object.keys(instance.instance.exports).forEach(k => {
     });
 ```
 ## 10. highlight the code
+
+This can be done step by step:
+
+- Modify Application Code `webstart.ts`
+
+- Add packages in `package.json`
+
+- Modify `webpack.congfig.js`
+

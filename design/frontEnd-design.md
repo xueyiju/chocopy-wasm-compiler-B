@@ -28,4 +28,4 @@ Object.keys(instance.instance.exports).forEach(k => {
       }
     });
 ```
-## 10. highlight the
+## 10. highlight the code

@@ -34,7 +34,7 @@ In interaction mode, whenever we instantiate a class, we want to be able to let 
 
 It may need information from the memorry management team.
 
-We can access the memory in the module through WebAssembly.Memory, where Memory.prototype.buffer is an ArrayBuffer with the contents of linear memory. Also, the WebAssembly call stack is not stored in memory, and is not accessible, so the stack of called functions and their locals can not be displayed.
+We can access the memory in the module through `WebAssembly.Memory`, where `Memory.prototype.buffer` is an `ArrayBuffer` with the contents of linear memory. Also, the WebAssembly call stack is not stored in memory, and is not accessible, so the stack of called functions and their locals can not be displayed.
 
 ## 9. Show the global variable of wasm
 

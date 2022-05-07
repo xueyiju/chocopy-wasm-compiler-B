@@ -60,4 +60,4 @@ This can be done step by step:
 
 - Modify `webpack.congfig.js`
 
-We probably will use [Prism]<https://prismjs.com/index.html> as our highlighting JS library.
+We probably will use [Prism](https://prismjs.com/index.html) as our highlighting JS library.

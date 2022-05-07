@@ -161,12 +161,12 @@ x = x
 x:int = 1
 ```
 
-### 2. Modification on AST and IR
+## B. Modification on AST and IR
 We aim to leave `ast` and `IR` as intact as possible. We are expecting to compute useful informations out of current framework instead of attaching the information to their implementations.
 
-### 3. New Changes
+## C. New Changes
 Two new files `ast-opt` and `ir-opt` may be added to implement optimizations on `ast` and `ir` respectively.
 Among these two options, a majority of optimizations will be implemented in the first one since we can take advantage of the existing informations and control-flow awareness. Once we move to the second stage where structured information is obfuscated, we can apply relatively simple and general schemes that optimize the CFG topologically. We may not change the process of *ast -> ir* or *ir -> wasm text* as this may complicate the implementation of optimizations.
 
-### 4. Value Rep and Memory Layout
+## D. Value Rep and Memory Layout
 Dynamic optimizations that happen at runtime or may rely on runtime informations are beyond our scope, so we may not introduce new modifications to the runtime environment. Overall, we aim to optimize the program without imposing restrictions or new assumptions on other groups.

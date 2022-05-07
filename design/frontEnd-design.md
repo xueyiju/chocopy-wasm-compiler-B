@@ -59,3 +59,5 @@ This can be done step by step:
 - Add packages in `package.json`
 
 - Modify `webpack.congfig.js`
+
+We probably will use [Prism]<https://prismjs.com/index.html> as our highlighting JS library.

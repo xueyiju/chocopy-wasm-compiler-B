@@ -34,9 +34,12 @@ In interaction mode, whenever we instantiate a class, we want to be able to let 
 
 It may need information from the memorry management team.
 
+We can access the memory in the module through WebAssembly.Memory, where Memory.prototype.buffer is an ArrayBuffer with the contents of linear memory. Also, the WebAssembly call stack is not stored in memory, and is not accessible, so the stack of called functions and their locals can not be displayed.
+
 ## 9. Show the global variable of wasm
 
-The global variable seems can be get from 
+The global variable seems can be get from
+
 ```javascript
 Object.keys(instance.instance.exports).forEach(k => {
       console.log("Consider key ", k);
@@ -46,6 +49,7 @@ Object.keys(instance.instance.exports).forEach(k => {
       }
     });
 ```
+
 ## 10. highlight the code
 
 This can be done step by step:

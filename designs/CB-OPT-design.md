@@ -31,7 +31,7 @@ def f(x: int):
 while True:
   A() # L-A
   if-goto L-C
-  B()
+  B() # L-B
   C() # L-C
 ```
 **Dot-plot**

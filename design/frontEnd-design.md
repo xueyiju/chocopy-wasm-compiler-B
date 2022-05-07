@@ -11,7 +11,7 @@ Right now, the box of interaction will add to the bottom of all the input boxes 
 
 ## 3. Make adjustment of proportion of two mode on Web page
 
-The compiler sides will need more space. 
+The compiler sides will need more space. We will also try to adjust the layout and elements to make it more beautiful. Refer to the design method of VS Code and Jupyter Notebook.
 
 ## 4. The size of input box of interation mode remains the same
 
@@ -19,9 +19,16 @@ The input boxes of interaction mode can change to different size. We want to kee
 
 ## 5. Show the number of code line on the compiler side
 
-## 6. Show all kinds of error properly
+It is important to display line numbers on the right side of the code editing area. This helps us understand the code and locate errors. We will add line numbers to the edit area on the comiler side. This could be an element that changes dynamically with the input text.
 
-## 7. print all the fields in an object properly 
+## 6. Show all kinds of error and correct results properly
+
+Try to run different source code on the page to make sure the website displays the correct results.  
+In the same way, use the features' testcases written by each group, try to input different error source codes, trigger the parse error, type error and runtime error, to make sure that our front-end page displays the results correctly and beautifully.
+
+## 7. print all the fields in an object properly
+
+In interaction mode, whenever we instantiate a class, we want to be able to let the user to monitor the current objects and the fields in that objects like the IDE's debugger. This can be achieved by analyzing the current AST and searching the heap.
 
 ## 8. Display the space that heap have used
 
@@ -48,4 +55,3 @@ This can be done step by step:
 - Add packages in `package.json`
 
 - Modify `webpack.congfig.js`
-

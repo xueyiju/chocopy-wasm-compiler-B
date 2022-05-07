@@ -7,12 +7,27 @@ export type Type =
   | {tag: "none"}
   | {tag: "class", name: string}
   | {tag: "either", left: Type, right: Type }
+  // generator type
+  | { 
+    tag: "generator", 
+    type: Type // type of item generated each time calling next()
+  }
 
 export type Parameter<A> = { name: string, type: Type }
 
 export type Program<A> = { a?: A, funs: Array<FunDef<A>>, inits: Array<VarInit<A>>, classes: Array<Class<A>>, stmts: Array<Stmt<A>> }
 
 export type Class<A> = { a?: A, name: string, fields: Array<VarInit<A>>, methods: Array<FunDef<A>>}
+  | Iterable<A> // iterable interface
+
+// we hope that list/set/tuple/dict/string will implement (i.e. inherit) 
+// this Iterable interface, and provide implementations of next() and has_next(), 
+// so that we may parse comprehension expressions to IR by calling them
+export type Iterable<A> = 
+  {
+    a?: A,
+    type: Type // type of iterable object
+  }
 
 export type VarInit<A> = { a?: A, name: string, type: Type, value: Literal }
 
@@ -38,6 +53,24 @@ export type Expr<A> =
   | {  a?: A, tag: "lookup", obj: Expr<A>, field: string }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
   | {  a?: A, tag: "construct", name: string }
+  // comprehension expression
+  | { 
+    a?: A, 
+    tag: "comprehension", 
+    type: Type, // type of comprehension - list/set/dict/generator
+    lhs: Expr<A>, 
+    item: string, 
+    iterable: Expr<A>, 
+    ifcond?: Expr<A> 
+  }
+  // ternary expression - in case people want to write this on lhs above
+  | {
+      a?: A, 
+      tag: "ternary", 
+      exprIfTrue: Expr<A>, 
+      ifcond: Expr<A>, 
+      exprIfFalse: Expr<A>
+  }
 
 export type Literal = 
     { tag: "num", value: number }

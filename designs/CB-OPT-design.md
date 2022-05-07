@@ -71,19 +71,19 @@ def f(i:int):
 
 **Before Optimization**
 ```python
-a: int = 1;
-b: int = 2;
-a = a + 1;
-b = b ^ a;
-return a;
+a: int = 1
+b: int = 2
+a = a + 1
+b = b + a
+return a
 ```
 
 **After Optimization**
 ```python
-a: int = 1;
-b: int = 2;
-a = a + 1;
-return a;
+a: int = 1
+b: int = 2
+a = a + 1
+return a
 ```
 
 ### 6. Constant Propagation
@@ -121,7 +121,7 @@ x = 0
 **Before Optimization**
 ```python
 x: bool = True
-x = False || (False && True)
+x = False or (False and True)
 ```
 **After Optimization**
 ```python
@@ -144,7 +144,8 @@ a = 2 * (x+y) + 3 * (y + x) + 5 * (x+y)
 x:int = 1
 y:int = 2
 a:int = 0
-e:int = x + y
+e:int = 0
+e = x + y
 a = 2 * e + 3 * e + 5 * e
 ```
 

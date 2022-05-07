@@ -1,9 +1,45 @@
-## Design of Optimization on Compiler B
+# Design of Optimization on Compiler B
 
-### 1. Test cases / Scenarios
+## A. Test cases / Scenarios
+> Analyses that extract useful guidance for potential transformations without altering the IR
 
-#### 1. Eliminate unreachable codes after return
+### 1. Liveness Analysis
+**Original**
+```python
+def f(x: int):
+  if True:
+    return x + 1
+  else:
+    x = x * 2
+    return x + 1
+```
+**Tagged**
+```python
+def f(x: int):
+  if True:
+    return x + 1
+  # Dead
+  else:
+    x = x * 2
+    return x + 1
+  # Dead
+```
 
+### 2. IR-CFG Visualization
+**Pseudo IR-CFG**
+```python
+while True:
+  A() # L-A
+  if-goto L-C
+  B()
+  C() # L-C
+```
+**Dot-plot**
+
+![plot](./graphviz.svg)
+
+> Modifications on the ast / IR to improve efficiency 
+### 3. Eliminate Unreachable Instructions After Return
 **Before Optimization**
 ```python
 def f(i:int):
@@ -16,117 +52,84 @@ def f(i:int):
     return i
 ```
 
-#### 2. Optimize inline functions
-
+### 4. Eliminate Dead Branch
 **Before Optimization**
 ```python
 def f(i:int):
-    print(i)
-a:int = 100
-f(a)
+    if True:
+      return i + 1
+    else:
+      return i * 2
 ```
 **After Optimization**
 ```python
-a:int = 100
-print(a)
+def f(i:int):
+    return i + 1
 ```
 
-#### 3. Replace constant variables
+### 5. Eliminate instructions that only affects dead variables
+
+**Before Optimization**
+```python
+a: int = 1;
+b: int = 2;
+a = a + 1;
+b = b ^ a;
+return a;
+```
+
+**After Optimization**
+```python
+a: int = 1;
+b: int = 2;
+a = a + 1;
+return a;
+```
+
+### 6. Constant Propagation
 
 **Before Optimization**
 ```python
 x:int = 100
 y:int = 10
 y = x + 1
-y = y + x
+x = x + x
 ```
 **After Optimization**
 
 ```python
 y:int = 10
 y = 100 + 1
-y = y + 100
+x = 100 + 100
 ```
 
-#### 4. Replace constant add BinOp with its result
+### 7. Constant Folding For Int
 
 **Before Optimization**
 ```python
-x:int = 0
-x = 1 + 2
-x = x + 3 + 4
+x:int = 5
+x = x * 0
 ```
 **After Optimization**
 ```python
-x:int = 0
-x = 3
-x = x + 7
+x:int = 5
+x = 0
 ```
 
-#### 5. Replace Multiply BinOp if the multiplicand or multiplier is 1
+### 8. Constant Folding For Bool
 
 **Before Optimization**
 ```python
-x:int = 0
-y:int = 0
-x = 1 * 2 * 3
-y = 100 * 1000 * 1
+x: bool = True
+x = False || (False && True)
 ```
 **After Optimization**
 ```python
-x:int = 0
-y:int = 0
-x = 2 * 3
-y = 100 * 1000
+x: bool = True
+x = False
 ```
 
-#### 6. Eliminate redundant assignment
-
-**Before Optimization**
-```python
-x:int = 0
-y:int = 1
-y = x
-print(x)
-print(y)
-```
-
-**After Optimization**
-```python
-x:int = 0
-print(x)
-print(x)
-```
-
-#### 7. Replace variable assignment with itself 
-
-**Before Optimization**
-```python
-x:int = 0
-x = x
-print(x)
-```
-**After Optimization**
-```python
-x:int = 0
-print(x)
-```
-
-#### 8. Optimize for loop
-
-**Before Optimization**
-```python
-x:int = 0
-for i in range(1000):
-    x = x + 1
-```
-**After Optimization**
-```python
-x:int = 0
-x = x + 1000
-```
-
-#### 9. Replace common substrings with its result
+### 9. Combine Redundant Code
 
 **Before Optimization**
 ```python
@@ -137,7 +140,6 @@ a = 2 * (x+y) + 3 * (y + x) + 5 * (x+y)
 ```
 
 **After Optimization**
-
 ```python
 x:int = 1
 y:int = 2
@@ -146,24 +148,24 @@ e:int = x + y
 a = 2 * e + 3 * e + 5 * e
 ```
 
-#### 10. Replace `not` operator used explictly on boolean literals
-
+### 10. Eliminate Redundant Code
 **Before Optimization**
 ```python
-x:bool = True
-x = not x
+x:int = 1
+x = x
 ```
+
 **After Optimization**
 ```python
-x:bool = True
-x = not True
+x:int = 1
 ```
 
-Then it will become
+### 2. Modification on AST and IR
+We aim to leave `ast` and `IR` as intact as possible. We are expecting to compute useful informations out of current framework instead of attaching the information to their implementations.
 
-```python
-x:bool = True
-x = False
-```
+### 3. New Changes
+Two new files `ast-opt` and `ir-opt` may be added to implement optimizations on `ast` and `ir` respectively.
+Among these two options, a majority of optimizations will be implemented in the first one since we can take advantage of the existing informations and control-flow awareness. Once we move to the second stage where structured information is obfuscated, we can apply relatively simple and general schemes that optimize the CFG topologically. We may not change the process of *ast -> ir* or *ir -> wasm text* as this may complicate the implementation of optimizations.
 
-### 2. Code Modification
+### 4. Value Rep and Memory Layout
+Dynamic optimizations that happen at runtime or may rely on runtime informations are beyond our scope, so we may not introduce new modifications to the runtime environment. Overall, we aim to optimize the program without imposing restrictions or new assumptions on other groups.

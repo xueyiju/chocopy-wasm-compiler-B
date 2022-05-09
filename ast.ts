@@ -26,9 +26,11 @@ export type Stmt<A> =
   | {  a?: A, tag: "field-assign", obj: Expr<A>, field: string, value: Expr<A> }
   | {  a?: A, tag: "if", cond: Expr<A>, thn: Array<Stmt<A>>, els: Array<Stmt<A>> }
   | {  a?: A, tag: "while", cond: Expr<A>, body: Array<Stmt<A>> }
-  | {  a?: A, tag: "for", cond: Expr<A>, body: Array<Stmt<A>>, elseBody?: Array<Stmt<A>> }
+  | {  a?: A, tag: "for", vars: Array<Expr<A>>, iterable: Expr<A>, body: Array<Stmt<A>>, elseBody?: Array<Stmt<A>> }
   | {  a?: A, tag: "break" }
   | {  a?: A, tag: "continue" }
+
+
 
 export type Expr<A> =
     {  a?: A, tag: "literal", value: Literal }
@@ -48,7 +50,7 @@ export type Literal =
   | { tag: "none" }
 
 // TODO: should we split up arithmetic ops from bool ops?
-export enum BinOp { Plus, Minus, Mul, IDiv, Mod, Eq, Neq, Lte, Gte, Lt, Gt, Is, And, Or, In};
+export enum BinOp { Plus, Minus, Mul, IDiv, Mod, Eq, Neq, Lte, Gte, Lt, Gt, Is, And, Or};
 
 export enum UniOp { Neg, Not };
 

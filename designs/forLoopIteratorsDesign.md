@@ -59,6 +59,17 @@ Input:
 i : int = 0
 for i in range(10):
     print(i)
+    break
+```
+Output:
+```
+0
+```
+* **Test Case 5**:  for loop with break inside a if body
+ 
+Input:
+```
+i : int = 0
 for i in range(10):
     If i\>5:
         break

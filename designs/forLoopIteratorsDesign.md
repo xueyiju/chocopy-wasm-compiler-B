@@ -245,7 +245,7 @@ We will add a "built-in" class in the global typechecking environment called ran
 
 class name: range
 fields: start: int, stop: int, step: int, has_next: bool, current_value: int
-methods: __init1__(param1) -> range object,  __init2__(param1, param2) -> range object,  __init3__(param1, param2, param3) -> range object, index(param) -> int
+methods: __init__(param1, param2, param3) -> range object, index(param) -> int
  
 For new files: We will need to add all the built-in methods described below, we shall do that in a new file called range.wat in the stdlib folder, similar to memory.wat
  

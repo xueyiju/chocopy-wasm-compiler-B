@@ -36,10 +36,22 @@ defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 
+const defaultGlobalClasses = new Map();
+const rangeFields = new Map<string, Type>();
+rangeFields.set("start", {tag: "number"});
+rangeFields.set("stop", {tag: "number"});
+rangeFields.set("step", {tag: "number"});
+rangeFields.set("has_next", {tag: "bool"});
+rangeFields.set("current_value", {tag: "number"});
+const rangeMethods = new Map();
+rangeMethods.set("__init__", [{tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class"}]) // we shall convert range(10) to range(0, 10, 1)
+rangeMethods.set("index", [{tag: "number"}, {tag: "number"}])
+defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
+
 export const defaultTypeEnv = {
   globals: new Map(),
   functions: defaultGlobalFunctions,
-  classes: new Map(),
+  classes: defaultGlobalClasses
 };
 
 export function emptyGlobalTypeEnv() : GlobalTypeEnv {

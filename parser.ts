@@ -245,6 +245,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
       const expr = traverseExpr(c, s);
       c.parent(); // pop going into stmt
       return { tag: "expr", expr: expr }
+
     // case "FunctionDefinition":
     //   c.firstChild();  // Focus on def
     //   c.nextSibling(); // Focus on name of function
@@ -318,8 +319,46 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
         cond,
         body
       }
+    case "ForStatement":
+      c.firstChild() // for
+      c.nextSibling() // vars
+      const for_var = traverseExpr(c, s)
+      c.nextSibling()
+      // for when we implement destructuring 
+
+      // while(s.substring(c.from, c.to) == ',') {
+      //   c.nextSibling()
+      //   for_var.push(traverseExpr(c, s))
+      //   c.nextSibling()
+      // }
+      c.nextSibling()
+      const iterable = traverseExpr(c, s)
+      c.nextSibling()
+      var body = []
+      c.firstChild()
+      while(c.nextSibling()) {
+        body.push(traverseStmt(c, s))
+      }
+      c.parent()
+      var elseBody = []
+      if(c.nextSibling()) {
+        c.nextSibling()
+        c.firstChild()
+        c.nextSibling()
+        while(c.nextSibling()) {
+          elseBody.push(traverseStmt(c, s))
+        }
+        c.parent()
+      }
+      c.parent()
+      return {tag: "for", vars: for_var, iterable: iterable, body: body, elseBody: elseBody}
+
     case "PassStatement":
       return { tag: "pass" }
+    case "ContinueStatement":
+      return {tag: "continue"}
+    case "BreakStatement":
+      return {tag: "break"}
     default:
       throw new Error("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to));
   }

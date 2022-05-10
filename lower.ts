@@ -185,7 +185,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       blocks.push({  a: s.a, label: whileStartLbl, stmts: [] })
       var [cinits, cstmts, cexpr] = flattenExprToVal(s.cond, env);
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: whilebodyLbl, els: whileEndLbl });
-
+      
       blocks.push({  a: s.a, label: whilebodyLbl, stmts: [] })
       var bodyinits = flattenStmts(s.body, blocks, env);
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
@@ -193,6 +193,37 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       blocks.push({  a: s.a, label: whileEndLbl, stmts: [] })
 
       return [...cinits, ...bodyinits]
+    
+    case "for":
+      var forStartLbl = generateName("$forstart");
+      var forbodyLbl = generateName("$forbody");
+      var forEndLbl = generateName("$forend");
+      var forElseLbl = generateName("$forelse")
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
+      blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
+
+      var [cinits, cstmts, cexpr] = flattenExprToVal(s.iterable, env);
+      
+      pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forEndLbl });
+
+      
+      var bodyinits = flattenStmts(s.body, blocks, env);
+
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl });
+
+      var elseBodyinits = flattenStmts(s.elseBody, blocks, env);
+
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forElseLbl });
+
+      blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
+
+      return [...cinits, ...bodyinits]
+
+      //create a new construct for range()
+      // generate the condition for hasnext in range() - we have to implement it
+      // assign values by calling  function getnext() in class range 
+      // think about how to handle tuple expressions
+      // looks easy enough 
   }
 }
 

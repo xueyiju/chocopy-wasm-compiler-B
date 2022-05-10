@@ -145,19 +145,7 @@ Output:
 5
 i was greater than 5
 ```
-* **Test Case 9**: operations on range
- 
-Input:
-```
-r : range = None
-r = range(0, 20, 2)
-print(11 in r)
-```
-Output:
-```
-False
-```
-* **Test Case 10**: inbuilt functions on range, index() returning Value Error
+* **Test Case 9**: inbuilt functions on range, index() returning Value Error
  
 Input:
 ```
@@ -169,7 +157,7 @@ Output:
 ```
 ValueError: 11 is not in range
 ```
-* **Test Case 11**:  inbuilt functions on range, index() returning index of reachable number
+* **Test Case 10**:  inbuilt functions on range, index() returning index of reachable number
  
 Input:
 ```
@@ -180,6 +168,18 @@ print(r.index(10))
 Output:
 ```
 5
+```
+* **Test Case 11**: type checking for loop variable
+ 
+Input:
+```
+i : bool = False
+for i in range(10):
+    print(i)
+```
+Output:
+```
+TypeError: bool object cannot be interpreted as integer
 ```
 * **Test Case 12**: type checking for range parameters
  
@@ -226,45 +226,32 @@ TypeError: range expected 1 argument, got 0
 * The following changes will be required in ast.ts:
  
     * In type Stmt\<A\>:
-        * { a?: Type, tag: "for", cond: Expr\<A\>, body: Array\<Stmt\<A\>\>, elseBody?: Stmt<A>}
+        * { a?: Type, tag: "for", vars: Expr\<A\>, iterable: Expr\<A\>, body: Array\<Stmt\<A\>\>, elseBody?: Stmt\<A\>}
         * { a?: Type, tag: "break" }
         * { a?: Type, tag: "continue" }
-    * In enum BinOp:
-        * Add a BinOP called: In
-            * Note: Thinking ahead, for the left operand of the in operator we are assuming here that an Expr can be a tuple (for loop_variable). We shall have this functionality after the group on sets/tuples/dictionaries will include it in Expr\<A\>. For now, since we are only implementing the range iterator, we shall concern ourselves with using **in** with the right operand as range only and hence, the left operand as being an id/literal which is an Expr\<A\>.
  
 * We shall not need any changes in ir.ts, since for, break and continue are control flow statements, and ifjmp and jmp in ir.ts cover the behavior that we need to implement these.
  
-* We do not need any changes in the builtin libraries. However, at a later stage of the project we might need some changes here depending on how we choose to implement general iterators
- 
+* We shall need changes in the builtin libraries. We will need to add all the built-in methods described below, we shall do that in a new file called range.wat in the stdlib folder, similar to memory.wat
+
+* Type checking for statement: the iterable must have their class name as one of the six sequence types in python (https://techvidvan.com/tutorials/python-sequences/#:~:text=In%20Python%20programming%2C%20sequences%20are,byte%20arrays%2C%20and%20range%20objects)
+
+
+* Since, we are implementing the for statement for the range object this week, we shall typecheck that the iterable must be a range object. Given this arrangement we shall check that vars must be a single variable of type int.
+
 ## Adding new functions, datatypes, or files to the codebase ##
+
+We will add a "built-in" class in the global typechecking environment called range with the following specifications:
+
+class name: range
+fields: start: int, stop: int, step: int, has_next: bool, current_value: int
+methods: __init__(param1, param2, param3) -> range object, index(param) -> int
  
-We will not need to add any additional files or datatypes to the code base.
- 
-For functions: we will need to add ```function rangeBuiltInFuns():``` to compilers.ts, and have functions like index() in here.
+For new files: We will need to add all the built-in methods described below, we shall do that in a new file called range.wat in the stdlib folder, similar to memory.wat
  
 ## Description of the value representation and memory layout for any new runtime values added ##
  
 The following represents the memory layout for adding a "range value" whenever a call to range is made. Each block is 4 bytes.
  
-|    Buffer   |   Buffer    |    start    |     end     |     step    |   has_next  |   current_value   |
-| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------------- |
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-
-
+|    start    |     stop    |     step    |   has_next  |   current_value   |
+| ----------- | ----------- | ----------- | ----------- | ----------------- |

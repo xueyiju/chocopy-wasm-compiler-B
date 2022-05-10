@@ -201,6 +201,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       var forElseLbl = generateName("$forelse")
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
+      
       //create a new construct for range()
       // generate the condition for hasnext in range() - we have to implement it
       // assign values by calling  function getnext() in class range 

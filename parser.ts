@@ -322,14 +322,15 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
     case "ForStatement":
       c.firstChild() // for
       c.nextSibling() // vars
-      var for_var = []
-      for_var.push(traverseExpr(c, s))
+      const for_var = traverseExpr(c, s)
       c.nextSibling()
-      while(s.substring(c.from, c.to) == ',') {
-        c.nextSibling()
-        for_var.push(traverseExpr(c, s))
-        c.nextSibling()
-      }
+      // for when we implement destructuring 
+
+      // while(s.substring(c.from, c.to) == ',') {
+      //   c.nextSibling()
+      //   for_var.push(traverseExpr(c, s))
+      //   c.nextSibling()
+      // }
       c.nextSibling()
       const iterable = traverseExpr(c, s)
       c.nextSibling()

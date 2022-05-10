@@ -36,10 +36,22 @@ defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 
+const defaultGlobalClasses = new Map();
+const rangeFields = new Map<string, Type>();
+rangeFields.set("start", {tag: "number"});
+rangeFields.set("stop", {tag: "number"});
+rangeFields.set("step", {tag: "number"});
+rangeFields.set("has_next", {tag: "bool"});
+rangeFields.set("current_value", {tag: "number"});
+const rangeMethods = new Map();
+rangeMethods.set("__init__", [{tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class"}]) // we shall convert range(10) to range(0, 10, 1)
+rangeMethods.set("index", [{tag: "number"}, {tag: "number"}])
+defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
+
 export const defaultTypeEnv = {
   globals: new Map(),
   functions: defaultGlobalFunctions,
-  classes: new Map(),
+  classes: defaultGlobalClasses
 };
 
 export function emptyGlobalTypeEnv() : GlobalTypeEnv {
@@ -211,6 +223,21 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       if (!equalType(tCond.a, BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool");
       return {a: NONE, tag:stmt.tag, cond: tCond, body: tBody};
+    case "for":
+      var tVars = tcExpr(env, locals, stmt.vars);
+      var tIterable = tcExpr(env, locals, stmt.iterable);
+      var tForBody = tcBlock(env, locals, stmt.body);
+      if(tVars.a.tag !== "number")
+        throw new TypeCheckError("Expected type `int`, got type `" + tVars.a.tag + "`");
+      if(tIterable.a.tag !== "class" || tIterable.a.name !== "range")
+        throw new TypeCheckError("Not an iterable");
+      if(stmt.elseBody !== undefined) {
+        const tElseBody = tcBlock(env, locals, stmt.elseBody);
+        return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
+      }
+      return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
+    case "break":
+    case "continue":
     case "pass":
       return {a: NONE, tag: stmt.tag};
     case "field-assign":
@@ -316,17 +343,44 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor
-        const tConstruct : Expr<Type> = { a: CLASS(expr.name), tag: "construct", name: expr.name };
-        const [_, methods] = env.classes.get(expr.name);
-        if (methods.has("__init__")) {
-          const [initArgs, initRet] = methods.get("__init__");
-          if (expr.arguments.length !== initArgs.length - 1)
-            throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");
-          if (initRet !== NONE) 
-            throw new TypeCheckError("__init__  must have a void return type");
-          return tConstruct;
-        } else {
-          return tConstruct;
+        if(defaultGlobalClasses.has(expr.name)) {
+          // this is a builtin class, for now this is a range
+          // builtin classes may have inits as parameterized constructors
+          const [_, methods] = env.classes.get(expr.name);
+          if(expr.name === "range") {
+            const [initArgs, initRet] = methods.get("__init__");
+            switch(expr.arguments.length) {
+              case 0: throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");
+              case 1: 
+                expr.arguments = [ {tag: "literal", value: {tag: "num", value: 0}}, expr.arguments[0], {tag: "literal", value: { tag: "num", value: 1 }}];
+                break;
+              case 2:
+                expr.arguments = [expr.arguments[0], expr.arguments[1], {tag: "literal", value: { tag: "num", value: 1}}];
+                break;
+              case 3: break;
+              default:
+                throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");  
+            }
+            const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
+            if(tArgs.every((tArg, i) => tArg.a === initArgs[i])) 
+                return  {a: CLASS(expr.name), tag: "parameterized-construct", name: expr.name, arguments: tArgs };
+            else 
+              throw new TypeError("Function call type mismatch: " + expr.name);
+          } 
+        }
+        else {
+          const tConstruct : Expr<Type> = { a: CLASS(expr.name), tag: "construct", name: expr.name };
+          const [_, methods] = env.classes.get(expr.name);
+          if (methods.has("__init__")) {
+            const [initArgs, initRet] = methods.get("__init__");
+            if (expr.arguments.length !== initArgs.length - 1)
+              throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");
+            if (initRet !== NONE)
+              throw new TypeCheckError("__init__  must have a void return type");
+            return tConstruct;
+          } else {
+            return tConstruct;
+          }
         }
       } else if(env.functions.has(expr.name)) {
         const [argTypes, retType] = env.functions.get(expr.name);

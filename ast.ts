@@ -26,9 +26,9 @@ export type Stmt<A> =
   | {  a?: A, tag: "field-assign", obj: Expr<A>, field: string, value: Expr<A> }
   | {  a?: A, tag: "if", cond: Expr<A>, thn: Array<Stmt<A>>, els: Array<Stmt<A>> }
   | {  a?: A, tag: "while", cond: Expr<A>, body: Array<Stmt<A>> }
-  | {  a?: A, tag: "for", cond: Expr<A>, body: Array<Stmt<A>>, elseBody?: Array<Stmt<A>> }
-  | {  a?: A, tag: "break" }
-  | {  a?: A, tag: "continue" }
+  | {  a?: A, tag: "for", vars: Expr<A>, iterable: Expr<A>, body: Array<Stmt<A>>, elseBody?:Array<Stmt<A>>}
+  | {  a?:A,  tag: "break"}
+  | {  a?:A,  tag: "continue"}
 
 export type Expr<A> =
     {  a?: A, tag: "literal", value: Literal }
@@ -41,6 +41,7 @@ export type Expr<A> =
   | {  a?: A, tag: "lookup", obj: Expr<A>, field: string }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
   | {  a?: A, tag: "construct", name: string }
+  | {  a?: A, tag: "parameterized-construct", name: string, arguments: Array<Expr<A>> }
 
 export type Literal = 
     { tag: "num", value: number }

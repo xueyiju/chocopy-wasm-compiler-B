@@ -1,222 +1,194 @@
+# Introduction
+We plan to implement generics (kind of) how python does them, like so:
+```python
+T: TypeVar = TypeVar('T')
+
+class Box(Generic[T]):
+   x : T = None
+
+b1 : Box[int] = Box()
+b2 : Box[boolean] = Box()
+```
+
+Where the generic type is created with `TypeVar()` and the parameter `'T'` is some description for the type. The generic type can then be used by a class like above by inheriting `Generic[T]`. `T` is typed mainly so we don't need to mess with how variable declarations are already handled.
+
+This week (week 7) we'll focus on just getting methods and maybe functions to work if it's not too much harder.
+
 # Test cases we plan to pass:
 
-1. Test compiling a simple inheritance hierarchy
-The following should compile without errors:
-```
-class List(object):
-    def sum(self: List) -> int:
-        return 1 / 0
+1. Simple generic class of primitive type with function call in method call.
+The following should print 10:
+```python
+T: TypeVar = TypeVar('T')
 
-class Empty(List):
-    def sum(self: Empty) -> int:
-        return 0
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
 
-class Link(List):
-    val: int
-    next: List
-
-    def sum(self: Link) -> int:
-        return self.val + self.next.sum()
-
-    def new(self, val: int, next: List):
-        self.val = val
-        self.next = next
+p: Printer[int] = None
+p = Printer[int]()
+p.print(10)
 ```
 
-2. Test improper override with wrong return type
-The following should compile with errors:
-```
-class List(object):
-    def sum(self: List) -> int:
-        return 1 / 0
+2. Simple generic class of two primitive types with function call in method call.
+The following should print 10, then True:
+```python
+T: TypeVar = TypeVar('T')
 
-class Empty(List):
-    def sum(self: Empty) -> int:
-        return 0
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
 
-class Link(List):
-    val: int
-    next: List
+p_int: Printer[int] = None
+p_int = Printer[int]()
+p_int.print(10)
 
-    def sum(self: Link) -> bool: # TYPE ERROR here: Return type differs from parent's when overriding this method
-        return self.val + self.next.sum()
-
-    def new(self, val: int, next: List): 
-        self.val = val
-        self.next = next
+p_bool: Printer[bool] = None
+p_bool = Printer[bool]()
+p_bool.print(True)
 ```
 
-3. Test improper override with wrong type for self
-The following should compile with errors
-```
-class List(object):
-    def sum(self: List) -> int:
-        return 1 / 0
+3. Simple generic class of one object type with invalid print call.
+The following should error, saying something like "trying to call print with invalid arg type (Box)"
+```python
+T: TypeVar = TypeVar('T')
 
-class Empty(List):
-    def sum(self: List) -> int: # TYPE ERROR here: type of self should be Empty when overriding this method
-        return 0
+class Box(object):
+    val: int = 10
+
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
+
+p: Printer[Box] = None
+p = Printer[Box]()
+p.print(Box())
 ```
 
-4. Test calling method that was not overriden. 
-The following should print 0:
-```
-class Animal(object):
-    def id(self: Animal) -> int:
-        return 0
+4. Simple generic class of one object type with invalid binop and generic return.
+The following should error, saying something like "trying to do binop with invalid arg type (bool)"
+```python
+T: TypeVar = TypeVar('T')
 
-class Dog(Animal):
+class Adder(Generic[T]):
+   def add(self: Printer, x: T, y: T) -> T:
+       return x + y
+
+a: Adder[bool] = None
+a = Adder[bool]()
+print(a.add(True, False))
+```
+
+5. Simple generic class of one object type with valid binop and generic return.
+The following should print 10.
+```python
+T: TypeVar = TypeVar('T')
+
+class Adder(Generic[T]):
+   def add(self: Printer, x: T, y: T) -> T:
+       return x + y
+
+a: Adder[int] = None
+a = Adder[int]()
+print(a.add(4, 6))
+```
+
+6. Simple generic class of one object type with invalid method call.
+The following should error, saying something like "trying to call Printer.print with invalid arg type (Box)"
+```python
+T: TypeVar = TypeVar('T')
+
+class Box(object):
+    val: int = 10
+
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
+
+p: Printer[int] = None
+p = Printer[int]()
+p.print(Box())
+```
+
+7. Overlapping generic and identifier names. The following should give an error like "identifier T defined earlier"
+```python
+T: int = 0
+T: TypeVar = TypeVar('T')
+
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
+
+p: Printer[int] = None
+p = Printer[int]()
+p.print(10)
+```
+
+8. Overlapping generic and class names. The following should give an error like "unable to resolve between class T and TypeVar T".
+```python
+class T(object):
     pass
 
-dog: Dog = None
-dog = Dog()
-print(dog.id())
+T: TypeVar = TypeVar('T')
+
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
+
+p: Printer[int] = None
+p = Printer[int]()
+p.print(10)
 ```
 
-5. Test calling nonexistent method on parent type
-The following should give a compiler error:
-```
-class Animal(object):
-    pass
+9. Generic objects as parameters. The following should print 10.
+```python
+T: TypeVar = TypeVar('T')
 
-class Dog(Animal):
-    def id(self: Animal) -> int:
-        return 0
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
 
-dog: Animal = None
-dog = Dog()
-print(dog.id()) # compiler error here: dog is of type animal which does not have the method id()
-```
+def print_ten(p: Printer[int]):
+    p.print(10)
 
-6. Test assigning parent object to child type
-The following should give a compiler error:
-```
-class Animal(object):
-    pass
-
-class Dog(Animal):
-    pass
-
-dog: Dog = Animal() # TYPE ERROR here: Animal cannot be assigned to object of type Dog
+p: Printer[int] = None
+p = Printer[int]()
+print_ten(p)
 ```
 
-7. Test calling polymorphic methods
-The following should print 1, then 2
-```
-class Base(object):
-    def id(self: Base) -> int:
-        return 0
+10. Generic objects as fields. The following should print 10.
+```python
+T: TypeVar = TypeVar('T')
 
-class A(Base):
-    def id(self: A) -> int:
-        return 1
+class Printer(Generic[T]):
+   def print(self: Printer, x: T):
+       print(x)
 
-class B(Base):
-    def id(self: B) -> int:
-        return 2
+class IntPrinterWrapper(object):
+    int_printer: Printer[int] = None
+    def print_int(self: PrintIntWrapper, x: int):
+        self.int_printer.print(x)
 
-obj_1: Base = None
-obj_2: Base = None
-
-obj_1 = A()
-obj_2 = B()
-
-print(obj_1.id())
-print(obj_2.id())
-```
-
-8. Test passing generic objects to functions
-The following should print 1
-```
-class Base(object):
-    def id(self: Base) -> int:
-        return 0
-
-class A(Base):
-    def id(self: A) -> int:
-        return 1
-
-def print_id(obj: Base):
-    print(obj.id())
-
-tmp: A = None
-tmp = A()
-print_id(tmp)
-```
-
-9. Test generic object members
-The following should print 1, then 2
-```
-class Base(object):
-    def id(self: Base) -> int:
-        return 0
-
-class A(Base):
-    def id(self: A) -> int:
-        return 1
-
-class B(Base):
-    def id(self: B) -> int:
-        return 2
-
-class Pair(object):
-    first: Base
-    second: Base
-    def new(self: Pair, first: Base, second: Base) -> Pair:
-        self.first = first
-        self.second = second
-        return self
-
-    def print(self: Pair):
-        print(self.first)
-        print(self.second)   
-
-tmp: Pair = None
-tmp = Pair().new(A(), B())
-tmp.print()
-```
-
-10. Test recursive polymorphic method call.
-The following should print 18:
-```
-class List(object):
-    def sum(self: List) -> int:
-        return 1 / 0
-
-class Empty(List):
-    def sum(self: Empty) -> int:
-        return 0
-
-class Link(List):
-    val: int
-    next: List
-
-    def sum(self: Link) -> int:
-        return self.val + self.next.sum()
-
-    def new(self, val: int, next: List):
-        self.val = val
-        self.next = next
-
-l: List = None
-l = Link().new(5, Link().new(13, Empty()))
-print(l.sum())
+ip: IntPrinterWrapper = None
+ip = IntPrinterWrapper()
+ip.print_int(10)
 ```
 
 # Planned additions to the AST
-We plan to change the Class type to optionally include the parent name
+We plan to add a new TypeVar type like so: 
+```typescript
+| {tag: "type-var", name: string }
 ```
-export type Class<A> = { a?: A, name: string, parent: string, fields: Array<VarInit<A>>, methods: Array<FunDef<A>>}
-```
+We may potentially add other fields for features like constraints in future weeks.
 
-We plan to differentiate between a call and call_indirect in the codegen pass, so we don't plan on making any other changes to the AST or IR representation.
+We also plan to add two new fields to Class:
+```typescript
+supers: Array<string>, type_vars: Array<string>
+```
+So we know whether a class is inheriting `object` or `Generic` and what TypeVars `Generic[...]` has.
+This also tracks with how the inheritance team is implementing multiple inheritance in the AST.
 
 # Other additions to the codebase
-Most of our work will be in compiler.ts, where we plan to write code to generate the vtable and perform the indirect method calls.
-We will also do some work in type-check.ts to do basic type checking for polymorphic method calls.
+We plan to add a new pass before the type checker to create new classes for each specific type a generic class is created with. By the end of this pass, there should not be anything in the AST of type 'TypeVar', but instead specific types like 'int', 'class', etc. In the future for function calls, we might manually call tcExpr on arguments to figure out what types a generic function is using.
 
-# Changes to the runtime memory layout
-We plan to make two changes to the runtime memory layout:
-1. Add a function table of all overriden methods at the top of the program, organized by class.
-2. Add an extra hidden field to the end of all objects that override their parent's methods. This field will be a simple integer that stores this object's offset into the indirect dispatch function table.
 

@@ -3,6 +3,7 @@ import * as IR from './ir';
 import { Type } from './ast';
 import { GlobalEnv } from './compiler';
 import { BOOL, NONE } from './utils';
+import { deflate } from 'zlib';
 
 const nameCounters : Map<string, number> = new Map();
 function generateName(base : string) : string {
@@ -210,25 +211,36 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
     case "for":
       var forStartLbl = generateName("$forstart");
       var forbodyLbl = generateName("$forbody");
-      var forEndLbl = generateName("$forend");
       var forElseLbl = generateName("$forelse")
+      var forEndLbl = generateName("$forend");
+     
 
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
-     
+    
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
-      
-      // check the condition
-      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: s.iterable, method: "__hasnext__", arguments: []}
+
+      // initialize
+      switch(s.vars.tag) {
+        case "id":
+          //@ts-ignore - assuming that it's a range class for now 
+          let rangeConstruct: AST.Expr<AST.Type> = { a:s.iterable.a, tag: "construct", name: s.iterable.name, arguments: s.iterable.arguments}
+          var [in_inits, in_stmts,in_expr] = flattenExprToExpr(rangeConstruct, env);
+          pushStmtsToLastBlock(blocks, ...in_stmts, {a:NONE,  tag: "assign", name: s.vars.name, value: in_expr} );
+          break
+        
+        default:
+          throw new Error("Tuple assignment not supported yet")
+      }
+  
+      // generate the condition
+      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: s.vars , method: "__hasnext__", arguments: []}
 
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
       
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forElseLbl });
-
-      blocks.push({  a: s.a, label: forElseLbl, stmts: [] })
-
-      var elsebodyinits = flattenStmts(s.elseBody, blocks, env);
-
       
+      blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
+
       switch(s.vars.tag) {
         case "id":
           const iterVal: AST.Expr<AST.Type> = {a: s.a, tag: "method-call", obj: s.iterable, method: "__next__", arguments: []}
@@ -238,16 +250,26 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
         default:
           throw new Error("Tuple assignment not supported")
       }
-
-      blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
-
       var bodyinits = flattenStmts(s.body, blocks, env);
     
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl });
 
+      blocks.push({  a: s.a, label: forElseLbl, stmts: [] })
+
+      var elsebodyinits = flattenStmts(s.elseBody, blocks, env);
+
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forEndLbl });
+
       blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
 
-      return [...cinits, ...s_inits, ...bodyinits]
+      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits]
+    
+    case "break":
+      var currentloop = nameCounters.get("$forbody")
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forend"  + currentloop});
+    case "continue":
+      var currentloop = nameCounters.get("$forbody")
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forbody"  + currentloop})
   }
 }
 

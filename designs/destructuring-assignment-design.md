@@ -176,10 +176,11 @@ export type Destructure<A> =
 export type DestructureLHS<A> = 
 {a?: A, lhs: Expr<A>, isIgnore: boolean, isStarred: boolean}
 
+```
 Here, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. For rhs, we can have lists, tuples or literals directly, each case will be handled spearately. 
 For lhs expressions, we make a new type called DestructureLHS, wherein we store lhs expressions and handle "_", "*_" as variable names the boolean checks "isIgnore" and "isStarred" respectively.
 
-```
+
 **New AST - Idea 2**:
 ```
 expr = (add these in Expr<A>) 

@@ -177,13 +177,10 @@ export type Destructure<A> =
 { a?: A, lhs: DestructureLHS<A>[], isDestructure: boolean}
 
 export type DestructureLHS<A> = 
-{a?: A, lhs: AssignDestr}
-
-export type AssignDestr = 
-| { tag : "id", name : string}
-| { tag : "lookup", obj: Expr<A>, field: string }
-| { tag: "starred", expr: Expr<A>}
-| { tag: "ignore", expr: Expr<A>}
+| { a?: A, tag : "id", name : string}
+| { a?: A, tag : "lookup", obj: Expr<A>, field: string }
+| { a?: A, tag: "starred", expr: Expr<A>}
+| { a?: A, tag: "ignore", expr: Expr<A>}
 
 ```
 Here, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. For rhs, we can have lists, tuples or literals directly, each case will be handled spearately. 

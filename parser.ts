@@ -1,6 +1,6 @@
 import {parser} from "lezer-python";
 import { TreeCursor} from "lezer-tree";
-import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal } from "./ast";
+import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal, Destructure } from "./ast";
 import { NUM, BOOL, NONE, CLASS } from "./utils";
 import { stringifyTree } from "./treeprinter";
 
@@ -218,28 +218,27 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
       return { tag: "return", value };
     case "AssignStatement":
       c.firstChild(); // go to name
-      const target = traverseExpr(c, s);
-      c.nextSibling(); // go to equals
-      c.nextSibling(); // go to value
-      var value = traverseExpr(c, s);
-      c.parent();
-
-      if (target.tag === "lookup") {
-        return {
-          tag: "field-assign",
-          obj: target.obj,
-          field: target.field,
-          value: value
-        }
-      } else if (target.tag === "id") {
-        return {
-          tag: "assign",
-          name: target.name,
-          value: value
-        }  
-      } else {
-        throw new Error("Unknown target while parsing assignment");
+      const destr = traverseDestructure(c, s)
+      return {
+        tag : "assign_destr", 
+        destr : destr
       }
+      // if (target.tag === "lookup") {
+      //   return {
+      //     tag: "field-assign",
+      //     obj: target.obj,
+      //     field: target.field,
+      //     value: value
+      //   }
+      // // } else if (target.tag === "id") {
+      // //   return {
+      // //     tag: "assign",
+      // //     name: target.name,
+      // //     destr : target
+      // //   }  
+      // } else {
+      //   throw new Error("Unknown target while parsing assignment");
+      // }
     case "ExpressionStatement":
       c.firstChild();
       const expr = traverseExpr(c, s);
@@ -524,8 +523,49 @@ export function traverse(c : TreeCursor, s : string) : Program<null> {
   }
 }
 
+export function traverseDestructure(c : TreeCursor, s : string) : Destructure<null>{
+  c.firstChild();
+  // Parse LHS
+  const lhsargs = [];
+  const rhsargs = [];
+  let isDestructured = true;
+  do{
+    if(c.name === "AssignOp") 
+      break;
+    else if (c.type.name === ",") 
+      continue;
+    else 
+      var lhs = traverseExpr(c,s);
+      lhsargs.push(lhs)
+  }while(c.nextSibling())
+
+  // Parse AssignOp
+  c.nextSibling();
+
+ // Parse RHS
+ do{
+  if(c.name === "AssignOp") 
+    break;
+  else if (c.type.name === ",") 
+    continue;
+  else 
+    var rhs = traverseExpr(c,s);
+    rhsargs.push(rhs)
+    
+}while(c.nextSibling())
+c.parent();
+if(lhsargs.length == 1)
+  isDestructured = false
+return {
+  lhs : lhsargs,
+  rhs : rhsargs,
+  isDestructure : isDestructured
+}
+}
+
 export function parse(source : string) : Program<null> {
   const t = parser.parse(source);
   const str = stringifyTree(t.cursor(), source, 0);
+  console.log(str)
   return traverse(t.cursor(), source);
 }

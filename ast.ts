@@ -20,6 +20,7 @@ export type FunDef<A> = { a?: A, name: string, parameters: Array<Parameter<A>>, 
 
 export type Stmt<A> =
   | {  a?: A, tag: "assign", name: string, value: Expr<A> }
+  | {  a?: A, tag: "assign_destr", destr: Destructure<A>}
   | {  a?: A, tag: "return", value: Expr<A> }
   | {  a?: A, tag: "expr", expr: Expr<A> }
   | {  a?: A, tag: "pass" }
@@ -40,6 +41,9 @@ export type Expr<A> =
   | {  a?: A, tag: "index", obj: Expr<A>, index: Expr<A> }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
   | {  a?: A, tag: "construct", name: string }
+  | {  a?: A, tag: "starred", expr: Expr<A> }
+  | {  a?: A, tag: "ignore", expr: Expr<A> }
+  | {  a?: A, tag: "tuple", expr: Expr<A>[] }
 
 export type Literal = 
     { tag: "num", value: number }
@@ -54,3 +58,7 @@ export enum UniOp { Neg, Not };
 export type Value =
     Literal
   | { tag: "object", name: string, address: number}
+
+export type Destructure<A> =
+{ a?: A, lhs: Expr<A>[], rhs: Expr<A>[] , isDestructure: boolean }
+

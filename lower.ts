@@ -22,7 +22,19 @@ function generateName(base : string) : string {
 //   return [name, {tag: "label", a: a, name: name}];
 // }
 
+export function addBuiltinClasses(env : GlobalEnv) : GlobalEnv {
+  const rangeFields = new Map<string, [number, IR.Value<Type>]>();
+  rangeFields.set("start", [0, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  rangeFields.set("stop", [1, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  rangeFields.set("step", [2, { a: {tag: "number"}, tag: "wasmint", value: 1 }]);
+  rangeFields.set("hasnext", [3, { a: {tag: "bool"}, tag: "bool", value: false }]);
+  rangeFields.set("currvalue", [2, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  env.classes.set("range", rangeFields);
+  return env;
+}
+
 export function lowerProgram(p : AST.Program<Type>, env : GlobalEnv) : IR.Program<Type> {
+    env = addBuiltinClasses(env); //add the built-in classes
     var blocks : Array<IR.BasicBlock<Type>> = [];
     var firstBlock : IR.BasicBlock<Type> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
     blocks.push(firstBlock);
@@ -320,6 +332,19 @@ function flattenExprToExpr(e : AST.Expr<Type>, env : GlobalEnv) : [Array<IR.VarI
           value: value
         }
       });
+      if(e.arguments !== undefined) {
+        const argpairs = e.arguments.map(a => flattenExprToVal(a, env));
+        const arginits = argpairs.map(cp => cp[0]).flat();
+        const argstmts = argpairs.map(cp => cp[1]).flat();
+        const argvals = argpairs.map(cp => cp[2]).flat();
+        return [
+          [ { name: newName, type: e.a, value: { tag: "none" } }, ...arginits],
+          [ { tag: "assign", name: newName, value: alloc }, ...assigns, ...argstmts,
+            { tag: "expr", expr: { tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }, ...argvals] } }
+          ],
+          { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newName } }
+        ];
+      }
 
       return [
         [ { name: newName, type: e.a, value: { tag: "none" } }],

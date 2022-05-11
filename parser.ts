@@ -1,6 +1,6 @@
 import {parser} from "lezer-python";
 import { TreeCursor} from "lezer-tree";
-import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal, SourceLocation } from "./ast";
+import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal, SourceLocation, DestructureLHS, AssignTarget } from "./ast";
 import { NUM, BOOL, NONE, CLASS } from "./utils";
 import { stringifyTree } from "./treeprinter";
 import { ParseError} from "./error_reporting";
@@ -237,30 +237,37 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       return { a: location, tag: "return", value };
     case "AssignStatement":
       c.firstChild(); // go to name
-      const target = traverseExpr(c, s);
-      c.nextSibling(); // go to equals
+      const target = traverseDestructure(c, s);
+      //c.nextSibling(); // go to equals
       c.nextSibling(); // go to value
       var value = traverseExpr(c, s);
+      // TODO: add the do while loop for rhs
       c.parent();
-
-      if (target.tag === "lookup") {
-        return {
-          a: location,
-          tag: "field-assign",
-          obj: target.obj,
-          field: target.field,
-          value: value
+      //Normal assign statements
+      if(target.length==1){
+        if (target[0].lhs.tag === "lookup") {
+          return {
+            a: location,
+            tag: "field-assign",
+            obj: target[0].lhs.obj,
+            field: target[0].lhs.field,
+            value: value
+          }
+        } else if (target[0].lhs.tag === "id") {
+          return {
+            a: location,
+            tag: "assign",
+            name: target[0].lhs.name,
+            value: value
+          }  
+        } else {
+          throw new ParseError("Unknown target while parsing assignment", location.line);
         }
-      } else if (target.tag === "id") {
-        return {
-          a: location,
-          tag: "assign",
-          name: target.name,
-          value: value
-        }  
-      } else {
-        throw new ParseError("Unknown target while parsing assignment", location.line);
-      }
+      } 
+      //Destructure
+      return {a:location, lhs : target, rhs :value};
+      
+      
     case "ExpressionStatement":
       c.firstChild();
       const expr = traverseExpr(c, s);
@@ -346,6 +353,57 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
     default:
       throw new ParseError("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to), location.line);
   }
+}
+
+function traverseDestructure(c: TreeCursor, s: string):DestructureLHS<SourceLocation>[] {
+  var location = getSourceLocation(c, s);
+  const lhs = [traverseDestructureLHS(c,s)];
+  let hasStarred = lhs[0].isStarred;
+  c.nextSibling();
+  let isDestructure = false; //if only one lhs, then simple assignment
+  // check multiple starred expressions ??
+  while (c.name !== "AssignOp") { // go to AssignOp
+    isDestructure = true; //Since we haven't hit = after one lhs
+    c.nextSibling();
+    if (c.name === "AssignOp") //as soon as we encounter AssignOp
+      break;
+    let tempLhs = traverseDestructureLHS(c,s);
+    if(tempLhs.isStarred){
+      if (hasStarred)
+        throw new Error("PARSE ERROR: Multiple starred expressions.")
+      hasStarred = true;
+    }
+    lhs.push(tempLhs);
+    c.nextSibling(); //go to =
+  }
+  // check if we want normal assignment expressions to have * or not
+
+  return lhs;
+}
+
+function traverseDestructureLHS(c: TreeCursor, s: string):DestructureLHS<SourceLocation> {
+  let isIgnore = false;
+  let isStarred = false;
+  // 1. check if star in from of variable name
+  if (c.name === "*") {
+    isStarred = true;
+    c.nextSibling();
+  }
+  const lhs = traverseAssignTarget(c,s);
+  // 3. check if ignore is encountered 
+  if (lhs.tag === "id" && lhs.name === "_"){
+    isIgnore = true;
+  }
+  return {lhs, isIgnore, isStarred};
+}
+
+function traverseAssignTarget(c: TreeCursor, s: string):AssignTarget<SourceLocation>{
+  const lhs = traverseExpr(c,s);
+  // 2. LHS is valid expression type : "id" | "lookup" 
+  if (lhs.tag!=="id" && lhs.tag!=="lookup") {
+    throw new Error("PARSE ERROR: Cannot have "+ lhs.tag + " expression at LHS while parsing assignment statements.")
+  }
+  return lhs;
 }
 
 export function traverseType(c : TreeCursor, s : string) : Type {

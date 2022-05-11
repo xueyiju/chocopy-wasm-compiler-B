@@ -168,32 +168,26 @@ PARSE ERROR : Invalid syntax
 
 **New AST - Idea 1**:
 ```
-expr = { a?: A, tag: "assign", destr: Destructure<A> } ...
+expr = 
+| { a?: A, tag: "assign-destr", destr: Destructure<A>, rhs:Expr<A>[] }
+| { a?: A, tag: "starred", expr: Expr<A>}
+| { a?: A, tag: "ignore", expr: Expr<A>}
 
 export type Destructure<A> =
-{ a?: A, lhs: DestructureLHS<A>[], rhs: Expr<A>[] , type?: Type<A>[], isDestructure: boolean}
+{ a?: A, lhs: DestructureLHS<A>[], isDestructure: boolean}
 
 export type DestructureLHS<A> = 
-{a?: A, lhs: Expr<A>, isIgnore: boolean, isStarred: boolean}
+{a?: A, lhs: AssignDestr}
+
+export type AssignDestr = 
+| { tag : "id", name : string}
+| { tag : "lookup", obj: Expr<A>, field: string }
+| { tag: "starred", expr: Expr<A>}
+| { tag: "ignore", expr: Expr<A>}
 
 ```
 Here, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. For rhs, we can have lists, tuples or literals directly, each case will be handled spearately. 
 For lhs expressions, we make a new type called DestructureLHS, wherein we store lhs expressions and handle "\_", "\*\_" as variable names the boolean checks "isIgnore" and "isStarred" respectively.
-
-
-**New AST - Idea 2**:
-```
-expr = (add these in Expr<A>) 
-    { a?: A, tag: "assign", destr: Destructure<A> }
-|   { a?: A, tag: "starred", expr: Expr<A>}
-|   { a?: A, tag: "ignore", expr: Expr<A>}
-
-
-export type Destructure<A> =
-{ a?: A, lhs: Expr<A>[], rhs: Expr<A>[] , type?: Type<A>[], isDestructure: boolean}
-
-```
-In this idea, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. But instead of keeping boolean checks for ignore and starred scenarios, we create two new expressiion types, "starred" and "ignore" and handle it while traversing expressions.
 
 ### IR
 Same changes as AST. There will be some changes to handle starred cases while conversion of typed ast to IR.

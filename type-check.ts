@@ -41,8 +41,8 @@ const rangeFields = new Map<string, Type>();
 rangeFields.set("start", {tag: "number"});
 rangeFields.set("stop", {tag: "number"});
 rangeFields.set("step", {tag: "number"});
-rangeFields.set("has_next", {tag: "bool"});
-rangeFields.set("current_value", {tag: "number"});
+rangeFields.set("hasnext", {tag: "bool"});
+rangeFields.set("currvalue", {tag: "number"});
 const rangeMethods = new Map();
 rangeMethods.set("__init__", [{tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class"}]) // we shall convert range(10) to range(0, 10, 1)
 rangeMethods.set("index", [{tag: "number"}, {tag: "number"}])
@@ -363,7 +363,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
             }
             const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
             if(tArgs.every((tArg, i) => tArg.a === initArgs[i])) 
-                return  {a: CLASS(expr.name), tag: "parameterized-construct", name: expr.name, arguments: tArgs };
+                return  {a: CLASS(expr.name), tag: "construct", name: expr.name, arguments: tArgs };
             else 
               throw new TypeError("Function call type mismatch: " + expr.name);
           } 

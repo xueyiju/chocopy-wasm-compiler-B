@@ -178,7 +178,7 @@ export type DestructureLHS<A> =
 
 ```
 Here, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. For rhs, we can have lists, tuples or literals directly, each case will be handled spearately. 
-For lhs expressions, we make a new type called DestructureLHS, wherein we store lhs expressions and handle "_", "*_" as variable names the boolean checks "isIgnore" and "isStarred" respectively.
+For lhs expressions, we make a new type called DestructureLHS, wherein we store lhs expressions and handle "\_", "\*\_" as variable names the boolean checks "isIgnore" and "isStarred" respectively.
 
 
 **New AST - Idea 2**:
@@ -216,8 +216,9 @@ For the parser in Milestone 1, we will support :
 
 - Parsing of multiple variables and values on LHS and RHS
 - Parsing of **TupleExpression** for destructuring
-- Parsing of "_" and "*_" for ignore and starred id cases 
+- Parsing of "\_" and "\*\_" for ignore and starred id cases 
 - Parsing *BinaryExpression*, *CallExpression*, *Builtins* 
 - Check for parse errors for id and syntax.
+- Handle range class functionality.
 
 

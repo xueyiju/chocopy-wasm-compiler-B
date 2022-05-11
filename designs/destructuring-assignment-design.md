@@ -166,18 +166,37 @@ PARSE ERROR : Invalid syntax
 
 **Current AST**:  ``` expr = { a?: A, tag: "assign", name: string, value: Expr<A> } ... ```
 
-**New AST**:
+**New AST - Idea 1**:
 ```
 expr = { a?: A, tag: "assign", destr: Destructure<A> } ...
 
 export type Destructure<A> =
-   { a?: A, tag: "basic", name: string, value: Expr<A> }
-|  { a?: A, tag: "destructure", name: string[], value: Expr<A>[] , type?: Type<A>[]}
+{ a?: A, lhs: DestructureLHS<A>[], rhs: Expr<A>[] , type?: Type<A>[], isDestructure: boolean}
+
+export type DestructureLHS<A> = 
+{a?: A, lhs: Expr<A>, isIgnore: boolean, isStarred: boolean}
 
 ```
+Here, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. For rhs, we can have lists, tuples or literals directly, each case will be handled spearately. 
+For lhs expressions, we make a new type called DestructureLHS, wherein we store lhs expressions and handle "\_", "\*\_" as variable names the boolean checks "isIgnore" and "isStarred" respectively.
+
+
+**New AST - Idea 2**:
+```
+expr = (add these in Expr<A>) 
+    { a?: A, tag: "assign", destr: Destructure<A> }
+|   { a?: A, tag: "starred", expr: Expr<A>}
+|   { a?: A, tag: "ignore", expr: Expr<A>}
+
+
+export type Destructure<A> =
+{ a?: A, lhs: Expr<A>[], rhs: Expr<A>[] , type?: Type<A>[], isDestructure: boolean}
+
+```
+In this idea, we propose to add a new type Destructure, which which contain lhs and rhs expressions, where we will check in parser that the lhs expressions are limited to type "id" or "lookup" expressions. But instead of keeping boolean checks for ignore and starred scenarios, we create two new expressiion types, "starred" and "ignore" and handle it while traversing expressions.
 
 ### IR
-Same changes as AST.
+Same changes as AST. There will be some changes to handle starred cases while conversion of typed ast to IR.
 
 
 ### Built-in Libraries
@@ -187,15 +206,19 @@ We currently forsee no changes to built-in libraries for this functionality.
 As part of the TypeChecker for Milestone 1, we will support : 
 
 - LHS variables are declared (following ChocoPy recommendation of declaration before definition)
-- LHS and RHS have same number of arguments
-- LHS and RHS have the same respective types (including call expressions)
+- LHS is valid expression type : "id" | "lookup" | "starred" | "ignore" (Predefined types handled recursively)
+- RHS is valid assignment type : "lists" | "tuples" | "set" | "dict" | "range" | "literal" 
+- If we encounter above assignment types, we check the length of subsequent targets with lhs.
+- Type of individual assignmnets.
 
 ### Parser
 For the parser in Milestone 1, we will support : 
 
 - Parsing of multiple variables and values on LHS and RHS
 - Parsing of **TupleExpression** for destructuring
+- Parsing of "\_" and "\*\_" for ignore and starred id cases 
 - Parsing *BinaryExpression*, *CallExpression*, *Builtins* 
-- Check for parse errors for ID and syntax.
+- Check for parse errors for id and syntax.
+- Handle range class functionality.
 
 

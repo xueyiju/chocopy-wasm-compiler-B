@@ -202,14 +202,20 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       var forElseLbl = generateName("$forelse")
 
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
-
+     
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
+      
       // check the condition
       let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: s.iterable, method: "__hasnext__", arguments: []}
 
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
       
-      pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forEndLbl });
+      pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forElseLbl });
+
+      blocks.push({  a: s.a, label: forElseLbl, stmts: [] })
+
+      var elsebodyinits = flattenStmts(s.elseBody, blocks, env);
+
       
       switch(s.vars.tag) {
         case "id":

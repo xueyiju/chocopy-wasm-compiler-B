@@ -1,104 +1,87 @@
 # Set/Tuple/Dictionary: Project Milestone For Week 7
-For now, we'd like to start with dictionary. The following design document will be based on dictionary, but may be subject to change later.
 
 ## Test Cases
-1. Initialize the empty dictionary in Chocopy.   
+1. Initialize a set.   
 ```python
-dict_1 : [int, int] = None 
-dict_1 = {}
+set_1 : set[int] = {1, 2} 
+print(set_1)   # should output {1, 2}
 ```
 
-2. Store a value in the dictionary given a key.  
+2. Add a single value to the set.
 ```python 
-dict_1 : [int, int] = None
-dict_1 = {}   
-dict_1[1] = 2
+set_1 : set[int] = {}
+set_1.add(5)  
+print(set_1)   # should output {5}
 ```
 
-3. Extract the value from the dictionary given a key that exists in the dictionary.  
+3. Remove a certain value that exists in the set.  
 ```python 
-dict_1 : [int, int] = None 
-dict_1 = {} 
-dict_1[1] = 2   
-print(dict_1[1])  # should output 2
+set_1 : set[int] = {1, 2} 
+set_1.remove(1)
+print(set_1)   # should output {2}
 ```
 
-4. Obtain the type of the dictionary object. 
+4. Remove all elements in the set
 ```python
-dict_1 : [int, int] = None 
-dict_1 = {} 
-print(type(dict_1))  # should output "dict"
+set_1 : set[int] = {1, 2} 
+set_1.clear()
+print(set_1)   # should output {}
 ```
 
-5. Get the value from the dictionary using the method get(). Return None if doesn't exist.
+5. Add elements to the set. The parameter should be iterable 
 ```python
-dict_1 : [int, int] = None 
-dict_1 = dict({1:2, 3:4})
-dict_1.get(1)   # should return 2
-dict_1.get(2)   # should return None
+set_1 : set[int] = {1, 2} 
+set_1.update({3,4})
+print(set_1)   # should output {1, 2, 3, 4}
 ```
 
-6. Update the value of an existing key, or create a new key-value pair if key doesn't exist.
+6. Add the same element to the set
 ```python
-dict_1 : [int, int] = None 
-dict_1 = dict({1:2})
-dict_1.update({1:5})
-print(dict_1[1])  # should output 5
+set_1 : set[int] = {}
+set_1.add(5)  
+print(set_1)   # should output {5}
+set_1.add(5)
+print(set_1)   # should output {5}
 ```
 
-7. Check the type of the dictionary. Return type error if inserting wrong type.
+7. Try to remove non existing element from the set, raise KeyError
 ```python
-dict_1 : [int, int] = None 
-dict_1 = {} 
-dict_1[1] = True   # Type Error, should store int value
+set_1 : set[int] = {5, 6}
+set_1.remove(2)    # KeyError: key doesn't exist
 ```
 
-8. Clear the dictionary. Removing all the key-value pairs and return an empty dictionary.
+8. Try to add unhashable elements to the set using add(). Raise TypeError.
 ```python
-dict_1 : [int, int] = None 
-dict_1 = dict({1:2})
-dict_1.clear()
-print(dict_1)  # should output empty dictionary
+set_1 : set[int] = {}
+set_1.add({5, 6})   # TypeError: unhashable type "set"
 ```
 
-9. Extract all values of the dictionary as a list (requires cooperation with the list team)
+9. Try to update the set with non iterable elements. Raise TypeError
 ```python
-dict_1 : [int, int] = None 
-dict_1 = dict({1:2, 3:4})
-dict_1.values()  # should return [2, 4]
+set_1 : set[int] = {1, 2} 
+set_1.update(3)   # TypeError: 3 is not iterable
 ```
 
-10. Extract all keys of the dictionary as a list (requires cooperation with the list team)
+10. Create a shallow copy of the set
 ```python
-dict_1 : [int, int] = None 
-dict_1 = dict({1:2, 3:4})
-dict_1.keys()  # should return [1, 3]
-```
-
-11. Check if a key exists in the dictionary. Return True if yes, False otherwise.
-```python
-dict_1 : [int, int] = None 
-dict_1 = dict({1:2, 3:4})
-dict_1.has_key(1)  # should return True
-dict_1.has_key(5)  # should return False
+set_1 : set[int] = {1, 2} 
+set_2 = set_1.copy()
+print(set_2)    # should output {1, 2}
 ```
 
 ## Changes To AST/IR
+AST:
 ```python
 export type Type =
-  | { tag: "dict", key: Type, value: Type }
+  | { tag: "set", key: Type }
 export type Expr<A> =
-  | { a?: A, tag: "dict", entries: Array<[Expr<A>, Expr<A>]>}
-  | { a?: A, tag: "dict-lookup", name: string, key: Expr<A>}
-export type Value =
-  | { tag: "dict", key: Type, value: Type}
-export type Stmt<A> = 
-  | { a?: A, tag: "dict-assign", name: string, key: Expr<A>, value: Expr<A>}
+  | { a?: A, tag: "set", contents: Array<Expr<A>>}
 ```
-It is possible to combine dict-lookup and dict-assign with the work done by the list group, need further discussion and collaboration.
+
+No need to update IR for now.
 
 ## New Functions/Datatypes
-We will likely need to add a new function in `compiler.ts` to handle different method calls of dictionary (i.e., `update()`, `get()`, `keys()`, `values()`, and `has_key()`). We also need to add code to handle the dict-lookup and dict-assign in `traverseExpr` and `traverseStmt` in `parser.ts`, in `tcStmt` and `tcExpr` in `type-check.ts`, and in `codeGenStmt` and `codeGenExpr` in `compiler.ts` mainly. 
+The new datatype Set will be added to the codebase. We will likely need to add a new function in `compiler.ts` to handle different method calls of sets (i.e., `update()`, `add()`, `remove()`, `clear()`, and `copy()`). 
 
 ## Value Representation & Memory Layout
-We represent the dictionary data structure as a built-in "dict" class. There will be several class methods such as `update()`, `get()`, `keys()`, `values()`, and `has_key()`. We will likely implement the dictionary using a hash table to store the key-value pairs of the dictionary. Everytime we initialize a dictionary, we allocate some memory for the hash table. Each time a new key-value pair is inserted, we allocate memory in the hash table for it.
+One variable stores the memory address of the set object, and each element in the set will be represented as i32. We will implement the set using a hash table that is represented as a fixed-size array of buckets of hashables. Each bucket will be pointed to a linked list that stores hashables. All hashables in the same bucket share the same hash value that is used to index into the array of buckets. We create a hash function that turns a key into an index and determines which bucket the hashable will go into. The hash function will also be used to determine how many buckets we need to create. 

@@ -197,6 +197,21 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         obj: objExpr,
         field: propName
       }
+    case "TupleExpression":
+      let tuple :Expr<SourceLocation>[] = [];
+      c.firstChild(); // Open parenthesis "("
+      c.nextSibling();
+      while (c.name !== ")") {
+        tuple.push(traverseExpr(c, s));
+        c.nextSibling(); // comma ","
+        c.nextSibling(); // next expression or closing parenthesis ")"
+      }
+      c.parent();
+      return {
+        a: location,
+        tag: "tuple",
+        expr: tuple,
+      };
     case "self":
       return {
         a: location,

@@ -237,11 +237,22 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       return { a: location, tag: "return", value };
     case "AssignStatement":
       c.firstChild(); // go to name
+      const rhsargs = [];
+      // Parse LHS
       const target = traverseDestructure(c, s);
-      //c.nextSibling(); // go to equals
-      c.nextSibling(); // go to value
-      var value = traverseExpr(c, s);
-      // TODO: add the do while loop for rhs
+      // Parse AssignOp
+      c.nextSibling();
+      // Parse RHS
+      do{
+        if(c.name === "AssignOp") 
+          break;
+        else if (c.type.name === ",") 
+          continue;
+        else 
+          var rhs = traverseExpr(c,s);
+          rhsargs.push(rhs)
+      
+      }while(c.nextSibling())
       c.parent();
       //Normal assign statements
       if(target.length==1){
@@ -264,8 +275,15 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
           throw new ParseError("Unknown target while parsing assignment", location.line);
         }
       } 
-      //Destructure
-      return {a:location, lhs : target, rhs :value};
+      //Destructure return
+      else {
+        return {
+          a : location,
+          tag : "assign-destr", 
+          destr : target, 
+          rhs : rhsargs};
+      }
+      
       
       
     case "ExpressionStatement":

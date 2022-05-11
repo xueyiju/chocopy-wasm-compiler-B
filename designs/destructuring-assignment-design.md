@@ -207,7 +207,7 @@ As part of the TypeChecker for Milestone 1, we will support :
 
 - LHS variables are declared (following ChocoPy recommendation of declaration before definition)
 - LHS is valid expression type : "id" | "lookup" | "starred" | "ignore" (Predefined types handled recursively)
-- RHS is valid assignment type : "lists" | "tuples" | "set" | "dict" | "range" | "literal" 
+- RHS is valid assignment type : "lists" | "tuples" | "set" | "dict" | "range" | "literal" | "id"
 - If we encounter above assignment types, we check the length of subsequent targets with lhs.
 - Type of individual assignmnets.
 

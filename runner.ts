@@ -8,6 +8,8 @@ import { compile, GlobalEnv } from './compiler';
 import {parse} from './parser';
 import {emptyLocalTypeEnv, GlobalTypeEnv, tc, tcStmt} from  './type-check';
 import { Program, Type, Value, SourceLocation } from './ast';
+import { optimizeAst } from './optimize_ast';
+import { optimizeIr } from './optimize_ir';
 import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
 
@@ -69,9 +71,11 @@ export function augmentEnv(env: GlobalEnv, prog: Program<[Type, SourceLocation]>
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
 export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
   const parsed = parse(source);
-  const [tprogram, tenv] = tc(config.typeEnv, parsed);
+  var [tprogram, tenv] = tc(config.typeEnv, parsed);
+  tprogram = optimizeAst(tprogram);
   const globalEnv = augmentEnv(config.env, tprogram);
-  const irprogram = lowerProgram(tprogram, globalEnv);
+  var irprogram = lowerProgram(tprogram, globalEnv);
+  irprogram = optimizeIr(irprogram);
   const progTyp = tprogram.a[0];
   var returnType = "";
   var returnExpr = "";

@@ -79,6 +79,35 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
         throw new Error("Unknown target while parsing assignment");
       }
 
+    case "ArrayExpression":
+      c.firstChild(); //go into ArrayExpression, should be at [
+
+      var elements : Array<Expr<null>> = [];
+      var firstIteration = true;
+      //parse elements in list
+      while(c.nextSibling()) { //next element in list, if there is one
+        if(s.substring(c.from, c.to) === "]") {
+          if(firstIteration) { break; } //empty list
+          else {
+            c.parent();
+            throw new Error("Parse error at " + s.substring(c.from, c.to));
+          }
+        }
+        elements.push(traverseExpr(c, s));
+        c.nextSibling(); // Focus on either , or ]
+        firstIteration = false;
+      }
+
+      if(s.substring(c.from, c.to) !== "]") { //list doesn't have a closing bracket
+        c.parent();
+        throw new Error("Parse error after " + s.substring(c.from, c.to));
+      }
+
+      console.log(elements)
+
+      c.parent(); //up from ArrayExpression
+      return { tag: "listliteral", elements }
+
     case "BinaryExpression":
       c.firstChild(); // go to lhs 
       const lhsExpr = traverseExpr(c, s);
@@ -331,7 +360,25 @@ export function traverseType(c : TreeCursor, s : string) : Type {
   switch(name) {
     case "int": return NUM;
     case "bool": return BOOL;
-    default: return CLASS(name);
+    default:
+      //list type
+      if(c.type.name === "ArrayExpression") {
+        c.firstChild(); // focus on [
+        c.nextSibling();
+        const type = traverseType(c, s);
+        c.nextSibling(); 
+        if(s.substring(c.from, c.to) !== "]") { //missing closing square bracket
+          c.parent();
+          throw new Error("Parse error at " + s.substring(c.from, c.to));
+        }
+        c.parent(); //up from ArrayExpression
+
+        return {tag: "list", type};
+      }
+      //object
+      else{ 
+        return CLASS(name);
+      }
   }
 }
 

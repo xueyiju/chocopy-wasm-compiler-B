@@ -3,6 +3,7 @@ import { table } from 'console';
 import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Class } from './ast';
 import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
+import { ElementFlags } from 'typescript';
 
 // I ❤️ TypeScript: https://github.com/microsoft/TypeScript/issues/13965
 export class TypeCheckError extends Error {
@@ -63,10 +64,11 @@ export type TypeError = {
   message: string
 }
 
-export function equalType(t1: Type, t2: Type) {
+export function equalType(t1: Type, t2: Type): boolean {
   return (
     t1 === t2 ||
-    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name)
+    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
+    (t1.tag === "list" && t2.tag === "list" && equalType(t1.type, t2.type))
   );
 }
 
@@ -75,7 +77,7 @@ export function isNoneOrClass(t: Type) {
 }
 
 export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type): boolean {
-  return equalType(t1, t2) || t1.tag === "none" && t2.tag === "class" 
+  return equalType(t1, t2) || t1.tag === "none" && (t2.tag === "class" || t2.tag === "list");
 }
 
 export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolean {
@@ -313,6 +315,32 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }
+
+    case "listliteral":
+      if(expr.elements.length == 0) {
+        //TODO: figure out how to represent the type for empty listliteral
+      }
+
+      const elementsWithTypes: Array<Expr<Type>> = [];
+
+      const checked0 = tcExpr(env, locals, expr.elements[0]);
+      const proposedType = checked0.a; //type of the 1st element in list
+
+      //check that all other elements have the same type as the first element
+      for(let i = 1; i < expr.elements.length; i++) {
+        const checkedI = tcExpr(env, locals, expr.elements[i]);
+        const elementType = checkedI.a;
+
+        //TODO: update condition later to check for object type equality
+        if(elementType !== proposedType) {
+          throw new TypeError("List has incompatible types: " + elementType + " and " + proposedType);
+        }
+
+        elementsWithTypes.push(checkedI); //add expression w/ type annotation to new elements list
+      }
+
+      return {...expr, elements: elementsWithTypes, a: {tag: "list", type: proposedType}};
+
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor

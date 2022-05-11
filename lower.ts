@@ -2,6 +2,7 @@ import * as AST from './ast';
 import * as IR from './ir';
 import { Type } from './ast';
 import { GlobalEnv } from './compiler';
+import { BOOL, NONE } from './utils';
 
 const nameCounters : Map<string, number> = new Map();
 function generateName(base : string) : string {
@@ -199,31 +200,36 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       var forbodyLbl = generateName("$forbody");
       var forEndLbl = generateName("$forend");
       var forElseLbl = generateName("$forelse")
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
-      blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
 
-      var [cinits, cstmts, cexpr] = flattenExprToVal(s.iterable, env);
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
+
+      blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
+      // check the condition
+      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: s.iterable, method: "__hasnext__", arguments: []}
+
+      var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
       
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forEndLbl });
-
       
+      switch(s.vars.tag) {
+        case "id":
+          const iterVal: AST.Expr<AST.Type> = {a: s.a, tag: "method-call", obj: s.iterable, method: "__next__", arguments: []}
+          var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
+          pushStmtsToLastBlock(blocks, ...s_stmts, {a:NONE,  tag: "assign", name: s.vars.name, value: s_expr } );
+          break
+        default:
+          throw new Error("Tuple assignment not supported")
+      }
+
+      blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
+
       var bodyinits = flattenStmts(s.body, blocks, env);
-
+    
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl });
-
-      var elseBodyinits = flattenStmts(s.elseBody, blocks, env);
-
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forElseLbl });
 
       blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
 
-      return [...cinits, ...bodyinits]
-
-      //create a new construct for range()
-      // generate the condition for hasnext in range() - we have to implement it
-      // assign values by calling  function getnext() in class range 
-      // think about how to handle tuple expressions
-      // looks easy enough 
+      return [...cinits, ...s_inits, ...bodyinits]
   }
 }
 

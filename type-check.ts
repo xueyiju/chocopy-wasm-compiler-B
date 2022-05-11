@@ -43,11 +43,10 @@ rangeFields.set("step", {tag: "number"});
 rangeFields.set("hasnext", {tag: "bool"});
 rangeFields.set("currvalue", {tag: "number"});
 const rangeMethods = new Map();
-rangeMethods.set("__init__", [{tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class"}]) // we shall convert range(10) to range(0, 10, 1)
-rangeMethods.set("__hasnext__", [{tag: "class"}])
-rangeMethods.set("__next__", [{tag: "class"}])
-
-rangeMethods.set("index", [{tag: "number"}, {tag: "number"}])
+rangeMethods.set("__init__", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class", name: "range"}]) // we shall convert range(10) to range(0, 10, 1)
+rangeMethods.set("__hasnext__", [{tag: "class", name: "range"}, {tag: "bool"}])
+rangeMethods.set("__next__", [{tag: "class", name: "range"}, {tag: "number"}])
+rangeMethods.set("index", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}])
 defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 
 export const defaultTypeEnv = {

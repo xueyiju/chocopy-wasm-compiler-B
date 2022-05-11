@@ -5,8 +5,9 @@ export type Type =
   | {tag: "number"}
   | {tag: "bool"}
   | {tag: "none"}
-  | {tag: "class", name: string}
+  | {tag: "class", name: string, genericArgs?: Array<string>}
   | {tag: "either", left: Type, right: Type }
+  | {tag: "type-var"}
 
 export type Parameter<A> = { name: string, type: Type }
 
@@ -43,6 +44,7 @@ export type Literal =
     { tag: "num", value: number }
   | { tag: "bool", value: boolean }
   | { tag: "none" }
+  | { tag: "TypeVar" }
 
 // TODO: should we split up arithmetic ops from bool ops?
 export enum BinOp { Plus, Minus, Mul, IDiv, Mod, Eq, Neq, Lte, Gte, Lt, Gt, Is, And, Or};

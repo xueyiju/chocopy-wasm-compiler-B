@@ -1,7 +1,7 @@
 import {parser} from "lezer-python";
 import { TreeCursor} from "lezer-tree";
 import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal } from "./ast";
-import { NUM, BOOL, NONE, CLASS } from "./utils";
+import { NUM, BOOL, NONE, CLASS, TYPE_VAR, GENERIC_CLASS } from "./utils";
 import { stringifyTree } from "./treeprinter";
 
 export function traverseLiteral(c : TreeCursor, s : string) : Literal {
@@ -19,6 +19,14 @@ export function traverseLiteral(c : TreeCursor, s : string) : Literal {
     case "None":
       return {
         tag: "none"
+      }
+    case "CallExpression":
+      const call_str = s.substring(c.from, c.to);
+      const call_name = call_str.split('(')[0];
+      if(call_name == "TypeVar") {
+        return {
+          tag: "TypeVar"
+        }
       }
     default:
       throw new Error("Not literal")
@@ -40,12 +48,22 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
         name: s.substring(c.from, c.to)
       }
     case "CallExpression":
+      const callStr = s.substring(c.from, c.to);
+      const genericRegex = /\[[A-Za-z]*\]/g;
+      const genericArgs = callStr.match(genericRegex);
+
       c.firstChild();
-      const callExpr = traverseExpr(c, s);
+      let callExpr = traverseExpr(c, s);
       c.nextSibling(); // go to arglist
-      let args = traverseArguments(c, s);
+      const args = traverseArguments(c, s);
       c.parent(); // pop CallExpression
 
+      if(genericArgs) {
+        callExpr = {
+          tag: "id",
+          name: callStr.split('[')[0]
+        };
+      } 
 
       if (callExpr.tag === "lookup") {
         return {
@@ -331,7 +349,19 @@ export function traverseType(c : TreeCursor, s : string) : Type {
   switch(name) {
     case "int": return NUM;
     case "bool": return BOOL;
-    default: return CLASS(name);
+    case "TypeVar": return TYPE_VAR;
+    default: {
+      const genericRegex = /\[[A-Za-z]*\]/g;
+      const genericArgs = name.match(genericRegex);
+      if(genericArgs) {
+        const className = name.split('[')[0];
+        const genericNamesStr = genericArgs.toString();
+        const genericNames = genericNamesStr.substring(1, genericNamesStr.length - 1).split(',');
+        return GENERIC_CLASS(className, genericNames);
+      } else {
+        return CLASS(name);
+      }
+    }
   }
 }
 

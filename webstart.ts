@@ -2,7 +2,7 @@ import {BasicREPL} from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
-
+import {comb, factorial, gcd, lcm, perm, randint, randrange, sleep, time} from "./builtinlib"
 function stringify(typ: Type, arg: any) : string {
   switch(typ.tag) {
     case "number":
@@ -48,6 +48,15 @@ function webStart() {
         print_num: (arg: number) => print(NUM, arg),
         print_bool: (arg: number) => print(BOOL, arg),
         print_none: (arg: number) => print(NONE, arg),
+        factorial,
+        randint,
+        randrange,
+        time,
+        sleep,
+        gcd,
+        lcm,
+        comb,
+        perm,
         int: (x:any)=>x,
         bool:(x:any)=>x!=0,
         abs: Math.abs,

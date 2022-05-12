@@ -106,8 +106,20 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (func $print_bool (import "imports" "print_bool") (param i32) (result i32))
     (func $print_none (import "imports" "print_none") (param i32) (result i32))
     (func $abs (import "imports" "abs") (param i32) (result i32))
+
+    (func $factorial (import "imports" "factorial") (param i32) (result i32))
+    (func $randint (import "imports" "randint") (param i32) (param i32) (result i32))
+    (func $randrange (import "imports" "randrange") (param i32) (param i32) (param i32) (result i32))
+    (func $time (import "imports" "time") (result i32))
+    (func $sleep (import "imports" "sleep") (param i32) (result i32))
+    (func $lcm (import "imports" "lcm") (param i32) (param i32) (result i32))
+    (func $gcd (import "imports" "gcd") (param i32) (param i32) (result i32))
+    (func $comb (import "imports" "comb") (param i32) (param i32) (result i32))
+    (func $perm (import "imports" "perm") (param i32) (param i32) (result i32))
+
     (func $int (import "imports" "int") (param i32) (result i32))
     (func $bool (import "imports" "bool") (param i32) (result i32))
+
     (func $min (import "imports" "min") (param i32) (param i32) (result i32))
     (func $max (import "imports" "max") (param i32) (param i32) (result i32))
     (func $pow (import "imports" "pow") (param i32) (param i32) (result i32))

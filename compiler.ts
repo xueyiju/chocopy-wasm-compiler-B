@@ -149,20 +149,8 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
           return [`(i32.const 0)`, ...exprStmts, `(i32.eq)`];
       }
 
-    case "builtin1":
-      const argTyp = expr.a[0];
-      const argStmts = codeGenValue(expr.arg, env);
-      var callName = expr.name;
-      return argStmts.concat([`(call $${callName})`]);
-
-    case "builtin2":
-      const leftStmts = codeGenValue(expr.left, env);
-      const rightStmts = codeGenValue(expr.right, env);
-      return [...leftStmts, ...rightStmts, `(call $${expr.name})`]
-
     case "call":
       if (expr.name=="print"){
-        console.log(expr);
         var valStmts = expr.arguments.map(arg=>{
           let argCode = codeGenValue(arg, env);
           switch (arg.tag){

@@ -212,17 +212,6 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
           left: lval,
           right: rval
         }];
-    case "builtin1":
-      var [inits, stmts, val] = flattenExprToVal(e.arg, env);
-      return [inits, stmts, {tag: "builtin1", a: e.a, name: e.name, arg: val}];
-    case "builtin2":
-      var [linits, lstmts, lval] = flattenExprToVal(e.left, env);
-      var [rinits, rstmts, rval] = flattenExprToVal(e.right, env);
-      return [[...linits, ...rinits], [...lstmts, ...rstmts], {
-          ...e,
-          left: lval,
-          right: rval
-        }];
     case "call":
       const callpairs = e.arguments.map(a => flattenExprToVal(a, env));
       const callinits = callpairs.map(cp => cp[0]).flat();

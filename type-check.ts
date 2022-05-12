@@ -20,6 +20,17 @@ export type LocalTypeEnv = {
 
 const defaultGlobalFunctions = new Map();
 defaultGlobalFunctions.set("abs", [[NUM], NUM]);
+
+defaultGlobalFunctions.set("factorial", [[NUM], NUM]);
+defaultGlobalFunctions.set("randint", [[NUM, NUM], NUM]);
+defaultGlobalFunctions.set("randrange", [[NUM, NUM, NUM], NUM]);
+defaultGlobalFunctions.set("time", [[], NUM]);
+defaultGlobalFunctions.set("sleep", [[NUM], NONE]);
+defaultGlobalFunctions.set("lcm", [[NUM, NUM], NUM]);
+defaultGlobalFunctions.set("gcd", [[NUM, NUM], NUM]);
+defaultGlobalFunctions.set("comb", [[NUM, NUM], NUM]);
+defaultGlobalFunctions.set("perm", [[NUM, NUM], NUM]);
+
 defaultGlobalFunctions.set("int", [[BOOL], NUM]);
 defaultGlobalFunctions.set("bool", [[NUM], BOOL]);
 defaultGlobalFunctions.set("max", [[NUM, NUM], NUM]);
@@ -279,32 +290,6 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         return {...expr, a: [env.globals.get(expr.name), expr.a]};
       } else {
         throw new TypeCheckError("Unbound id: " + expr.name);
-      }
-    case "builtin1":
-      if(env.functions.has(expr.name)) {
-        const [[expectedArgTyp], retTyp] = env.functions.get(expr.name);
-        const tArg = tcExpr(env, locals, expr.arg);
-        
-        if(isAssignable(env, tArg.a[0], expectedArgTyp)) {
-          return {...expr, a: [retTyp, expr.a], arg: tArg};
-        } else {
-          throw new TypeError("Function call type mismatch: " + expr.name);
-        }
-      } else {
-        throw new TypeError("Undefined function: " + expr.name);
-      }
-    case "builtin2":
-      if(env.functions.has(expr.name)) {
-        const [[leftTyp, rightTyp], retTyp] = env.functions.get(expr.name);
-        const tLeftArg = tcExpr(env, locals, expr.left);
-        const tRightArg = tcExpr(env, locals, expr.right);
-        if(isAssignable(env, leftTyp, tLeftArg.a[0]) && isAssignable(env, rightTyp, tRightArg.a[0])) {
-          return {...expr, a: [retTyp, expr.a], left: tLeftArg, right: tRightArg};
-        } else {
-          throw new TypeError("Function call type mismatch: " + expr.name);
-        }
-      } else {
-        throw new TypeError("Undefined function: " + expr.name);
       }
     case "call":
       if (expr.name === "print") {

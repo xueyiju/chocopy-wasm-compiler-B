@@ -69,25 +69,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       } else if (callExpr.tag === "id") {
         const callName = callExpr.name;
         var expr : Expr<SourceLocation>;
-        if (callName === "abs" || callName === "int" || callName ==="bool") {
-          expr = {
-            a: location,
-            tag: "builtin1",
-            name: callName,
-            arg: args[0]
-          };
-        } else if (callName === "max" || callName === "min" || callName === "pow") {
-          expr = {
-            a: location,
-            tag: "builtin2",
-            name: callName,
-            left: args[0],
-            right: args[1]
-          }
-        }
-        else {
-          expr = { a: location, tag: "call", name: callName, arguments: args};
-        }
+        expr = { a: location, tag: "call", name: callName, arguments: args};
         return expr;  
       } else {
         throw new ParseError("Unknown target while parsing assignment", location.line);

@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import { comb, factorial, gcd, lcm, perm, randint, randrange, sleep, time } from "../builtinlib";
 
 enum Type { Num, Bool, None }
 
@@ -46,6 +47,15 @@ export const importObject : any = {
     print_num: (arg: number) => print(Type.Num, arg),
     print_bool: (arg: number) => print(Type.Bool, arg),
     print_none: (arg: number) => print(Type.None, arg),
+    factorial,
+    randint,
+    randrange,
+    time,
+    sleep,
+    gcd,
+    lcm,
+    comb,
+    perm,
     int: (x:any)=>x,
     bool:(x:any)=>x!=0,
     abs: Math.abs,

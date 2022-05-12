@@ -7,6 +7,23 @@ import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
 import { importObject, addLibs  } from "./tests/import-object.test";
 import { BasicREPL } from "./repl";
+import * as ir from './ir';
+
+export function printProgIR(p: ir.Program<[Type, SourceLocation]>) {
+}
+
+function printStmt(stmt: ir.Stmt<[Type, SourceLocation]>) {
+
+}
+
+function printExpr(expr: ir.Expr<[Type, SourceLocation]>) {
+
+}
+
+function printVal(val: ir.Value<[Type, SourceLocation]>) {
+
+}
+
 
 // entry point for debugging
 async function debug() {
@@ -24,8 +41,7 @@ x: int = 0
   console.log(JSON.stringify(tprogram, null, 2));
   const globalEnv = augmentEnv(config.env, tprogram);
   const irprogram = lowerProgram(tprogram, globalEnv);
-  // console.log(JSON.stringify(irprogram, null, 2));
-  console.log(irprogram, null, 2);
+  console.log(JSON.stringify(irprogram, (k, v) => typeof v === "bigint" ? v.toString() + "n" : v, 2));
 }
 
 debug();

@@ -153,13 +153,6 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
       const argTyp = expr.a[0];
       const argStmts = codeGenValue(expr.arg, env);
       var callName = expr.name;
-      if (expr.name === "print" && argTyp === NUM) {
-        callName = "print_num";
-      } else if (expr.name === "print" && argTyp === BOOL) {
-        callName = "print_bool";
-      } else if (expr.name === "print" && argTyp === NONE) {
-        callName = "print_none";
-      }
       return argStmts.concat([`(call $${callName})`]);
 
     case "builtin2":
@@ -168,6 +161,27 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
       return [...leftStmts, ...rightStmts, `(call $${expr.name})`]
 
     case "call":
+      if (expr.name=="print"){
+        console.log(expr);
+        var valStmts = expr.arguments.map(arg=>{
+          let argCode = codeGenValue(arg, env);
+          switch (arg.tag){
+            case "none":
+              argCode.push("(call $print_none)", "drop");
+              break;
+            case "num":
+              argCode.push("(call $print_num)", "drop");
+              break;
+            case "bool":
+              argCode.push("(call $print_bool)", "drop");
+              break;
+            default:
+              argCode.push("(call $print_num)", "drop");
+          }
+          return argCode;
+        }).flat();
+        return valStmts.slice(0,-1);
+      }
       var valStmts = expr.arguments.map((arg) => codeGenValue(arg, env)).flat();
       valStmts.push(`(call $${expr.name})`);
       return valStmts;

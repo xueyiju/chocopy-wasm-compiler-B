@@ -281,10 +281,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         throw new TypeCheckError("Unbound id: " + expr.name);
       }
     case "builtin1":
-      if (expr.name === "print") {
-        const tArg = tcExpr(env, locals, expr.arg);
-        return {...expr, a: tArg.a, arg: tArg};
-      } else if(env.functions.has(expr.name)) {
+      if(env.functions.has(expr.name)) {
         const [[expectedArgTyp], retTyp] = env.functions.get(expr.name);
         const tArg = tcExpr(env, locals, expr.arg);
         
@@ -310,6 +307,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         throw new TypeError("Undefined function: " + expr.name);
       }
     case "call":
+      if (expr.name === "print") {
+        const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
+        return {...expr, a: [NONE, expr.a], arguments: tArgs};
+      } 
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor
         const tConstruct : Expr<[Type, SourceLocation]> = { a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name };

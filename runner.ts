@@ -69,6 +69,7 @@ export function augmentEnv(env: GlobalEnv, prog: Program<Type>) : GlobalEnv {
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
 export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
   const parsed = parse(source);
+  console.log(JSON.stringify(parsed, null, 2));
   const [tprogram, tenv] = tc(config.typeEnv, parsed);
   const globalEnv = augmentEnv(config.env, tprogram);
   const irprogram = lowerProgram(tprogram, globalEnv);
@@ -112,10 +113,16 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (func $alloc (import "libmemory" "alloc") (param i32) (result i32))
     (func $load (import "libmemory" "load") (param i32) (param i32) (result i32))
     (func $store (import "libmemory" "store") (param i32) (param i32) (param i32))
+
+    (func $range$__init__ (import "rangelib" "__init__") (param i32) (param i32) (param i32) (param i32) (result i32))
+    (func $range$__hasnext__ (import "rangelib" "__hasnext__") (param i32) (result i32))
+    (func $range$__next__ (import "rangelib" "__next__") (param i32) (param i32) (param i32))
+
     ${globalImports}
     ${globalDecls}
     ${config.functions}
     ${compiled.functions}
+    
     (func (export "exported_func") ${returnType}
       ${compiled.mainSource}
       ${returnExpr}

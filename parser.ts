@@ -344,7 +344,6 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
       if(c.nextSibling()) {
         c.nextSibling()
         c.firstChild()
-        c.nextSibling()
         while(c.nextSibling()) {
           elseBody.push(traverseStmt(c, s))
         }
@@ -566,5 +565,8 @@ export function traverse(c : TreeCursor, s : string) : Program<null> {
 export function parse(source : string) : Program<null> {
   const t = parser.parse(source);
   const str = stringifyTree(t.cursor(), source, 0);
+  //console.log(str)
   return traverse(t.cursor(), source);
 }
+
+

@@ -2,7 +2,7 @@ import * as AST from './ast';
 import * as IR from './ir';
 import { Type } from './ast';
 import { GlobalEnv } from './compiler';
-import { BOOL, NONE } from './utils';
+import { BOOL, CLASS, NONE } from './utils';
 import { deflate } from 'zlib';
 
 const nameCounters : Map<string, number> = new Map();
@@ -213,7 +213,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       var forbodyLbl = generateName("$forbody");
       var forElseLbl = generateName("$forelse")
       var forEndLbl = generateName("$forend");
-     
+      var rangeObject = generateName("$rangeobject")
 
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
     
@@ -225,7 +225,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
           //@ts-ignore - assuming that it's a range class for now 
           let rangeConstruct: AST.Expr<AST.Type> = { a:s.iterable.a, tag: "construct", name: s.iterable.name, arguments: s.iterable.arguments}
           var [in_inits, in_stmts,in_expr] = flattenExprToExpr(rangeConstruct, env);
-          pushStmtsToLastBlock(blocks, ...in_stmts, {a:NONE,  tag: "assign", name: s.vars.name, value: in_expr} );
+          pushStmtsToLastBlock(blocks, ...in_stmts, {a:NONE,  tag: "assign", name: rangeObject, value: in_expr} );
           break
         
         default:
@@ -233,7 +233,8 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       }
   
       // generate the condition
-      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: s.vars , method: "__hasnext__", arguments: []}
+      s.vars
+      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__hasnext__", arguments: []}
 
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
       
@@ -262,7 +263,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
 
       blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
 
-      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits]
+      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a:  s.iterable.a, name: rangeObject, type:  s.iterable.a, value: { tag: "none" } }]
     
     case "break":
       var currentloop = nameCounters.get("$forbody")
@@ -318,6 +319,7 @@ function flattenExprToExpr(e : AST.Expr<Type>, env : GlobalEnv) : [Array<IR.VarI
       const argstmts = argpairs.map(cp => cp[1]).flat();
       const argvals = argpairs.map(cp => cp[2]).flat();
       var objTyp = e.obj.a;
+     
       if(objTyp.tag !== "class") { // I don't think this error can happen
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }

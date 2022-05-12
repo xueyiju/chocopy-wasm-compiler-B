@@ -41,6 +41,13 @@ function webStart() {
     ).then(bytes => 
       WebAssembly.instantiate(bytes, { js: { mem: memory } })
     );
+    
+    const rangeModule = await fetch('range.wasm').then(response => 
+      response.arrayBuffer()
+    ).then(bytes => 
+      WebAssembly.instantiate(bytes, { js: { mem: memory } })
+    );
+
 
     var importObject = {
       imports: {
@@ -54,6 +61,7 @@ function webStart() {
         pow: Math.pow
       },
       libmemory: memoryModule.instance.exports,
+      rangelib: rangeModule.instance.exports,
       memory_values: memory,
       js: {memory: memory}
     };

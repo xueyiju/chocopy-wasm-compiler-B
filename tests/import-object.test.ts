@@ -46,6 +46,8 @@ export const importObject : any = {
     print_num: (arg: number) => print(Type.Num, arg),
     print_bool: (arg: number) => print(Type.Bool, arg),
     print_none: (arg: number) => print(Type.None, arg),
+    int: (x:any)=>x,
+    bool:(x:any)=>x!=0,
     abs: Math.abs,
     min: Math.min,
     max: Math.max,

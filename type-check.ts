@@ -20,6 +20,8 @@ export type LocalTypeEnv = {
 
 const defaultGlobalFunctions = new Map();
 defaultGlobalFunctions.set("abs", [[NUM], NUM]);
+defaultGlobalFunctions.set("int", [[BOOL], NUM]);
+defaultGlobalFunctions.set("bool", [[NUM], BOOL]);
 defaultGlobalFunctions.set("max", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);

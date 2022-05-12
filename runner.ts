@@ -106,6 +106,8 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (func $print_bool (import "imports" "print_bool") (param i32) (result i32))
     (func $print_none (import "imports" "print_none") (param i32) (result i32))
     (func $abs (import "imports" "abs") (param i32) (result i32))
+    (func $int (import "imports" "int") (param i32) (result i32))
+    (func $bool (import "imports" "bool") (param i32) (result i32))
     (func $min (import "imports" "min") (param i32) (param i32) (result i32))
     (func $max (import "imports" "max") (param i32) (param i32) (result i32))
     (func $pow (import "imports" "pow") (param i32) (param i32) (result i32))

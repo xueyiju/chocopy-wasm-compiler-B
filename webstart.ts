@@ -48,6 +48,8 @@ function webStart() {
         print_num: (arg: number) => print(NUM, arg),
         print_bool: (arg: number) => print(BOOL, arg),
         print_none: (arg: number) => print(NONE, arg),
+        int: (x:any)=>x,
+        bool:(x:any)=>x!=0,
         abs: Math.abs,
         min: Math.min,
         max: Math.max,

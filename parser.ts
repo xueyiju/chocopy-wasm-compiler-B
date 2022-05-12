@@ -200,15 +200,27 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
     case "MemberExpression":
       c.firstChild(); // Focus on object
       var objExpr = traverseExpr(c, s);
-      c.nextSibling(); // Focus on .
-      c.nextSibling(); // Focus on property
-      var propName = s.substring(c.from, c.to);
-      c.parent();
-      return {
-        tag: "lookup",
-        obj: objExpr,
-        field: propName
+      c.nextSibling(); // Focus on . or [
+      if (s.substring(c.from, c.to) == "[") {
+        c.nextSibling(); // Focus on index expr
+        var idxExpr = traverseExpr(c, s);
+        c.parent();
+        return {
+          tag: "index",
+          obj: objExpr,
+          index: idxExpr
+        };
+      } else {
+        c.nextSibling(); // Focus on property
+        var propName = s.substring(c.from, c.to);
+        c.parent();
+        return {
+            tag: "lookup",
+            obj: objExpr,
+            field: propName
+        }
       }
+      
     case "self":
       return {
         tag: "id",
@@ -266,6 +278,13 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
           name: target.name,
           value: value
         }  
+      } else if (target.tag === "index"){
+        return {
+          tag: "index-assign",
+          obj: target.obj,
+          index: target.index,
+          value: value
+        }
       } else {
         throw new Error("Unknown target while parsing assignment");
       }

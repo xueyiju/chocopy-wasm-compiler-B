@@ -4,6 +4,7 @@ import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Clas
 import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { ElementFlags } from 'typescript';
+import { typeCheck } from './tests/helpers.test';
 
 // I ❤️ TypeScript: https://github.com/microsoft/TypeScript/issues/13965
 export class TypeCheckError extends Error {
@@ -79,7 +80,7 @@ export function isNoneOrClass(t: Type) {
 export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type): boolean {
   return equalType(t1, t2) || t1.tag === "none" && (t2.tag === "class" || t2.tag === "list");
 }
-
+// t1: assignment value type, t2: expected type
 export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolean {
   return isSubtype(env, t1, t2);
 }
@@ -228,6 +229,17 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       if (!isAssignable(env, tVal.a, fields.get(stmt.field)))
         throw new TypeCheckError(`could not assign value of type: ${tVal.a}; field ${stmt.field} expected type: ${fields.get(stmt.field)}`);
       return {...stmt, a: NONE, obj: tObj, value: tVal};
+    case "index-assign":
+      var typedObj = tcExpr(env, locals, stmt.obj);
+      const typedIndex = tcExpr(env, locals, stmt.index);
+      const typedVal = tcExpr(env, locals, stmt.value);
+      if (typedObj.a.tag !== "list")
+        throw new TypeCheckError("Index assignments require a list");
+      if (typedIndex.a.tag !== "number")
+        throw new TypeCheckError("Index needs to an number");
+      if (!isAssignable(env, typedVal.a, typedObj.a.type))
+        throw new TypeCheckError(`could not assign value of type: ${typedVal.a}; List expected type: ${typedObj.a.type}`);
+      return { ...stmt, a: NONE, obj: typedObj, value: typedVal };
   }
 }
 
@@ -340,7 +352,16 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
       }
 
       return {...expr, elements: elementsWithTypes, a: {tag: "list", type: proposedType}};
-
+    case "index":
+      const typedObj = tcExpr(env, locals, expr.obj);
+      const typedIndex = tcExpr(env, locals, expr.index);
+      if (typedObj.a.tag !== "list") {
+        throw new TypeCheckError("Index must be applied on List or Map");
+      }
+      if (typedIndex.a.tag !== "number") {
+        throw new TypeCheckError("Index must have number type");
+      }
+      return { ...expr, obj: typedObj, index: typedIndex };
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor

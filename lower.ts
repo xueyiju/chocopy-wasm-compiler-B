@@ -244,7 +244,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
 
       switch(s.vars.tag) {
         case "id":
-          const iterVal: AST.Expr<AST.Type> = {a: s.a, tag: "method-call", obj: s.iterable, method: "__next__", arguments: []}
+          const iterVal: AST.Expr<AST.Type> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__next__", arguments: []}
           var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
           pushStmtsToLastBlock(blocks, ...s_stmts, {a:NONE,  tag: "assign", name: s.vars.name, value: s_expr } );
           break

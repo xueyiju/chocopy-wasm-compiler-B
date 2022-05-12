@@ -114,9 +114,9 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (func $load (import "libmemory" "load") (param i32) (param i32) (result i32))
     (func $store (import "libmemory" "store") (param i32) (param i32) (param i32))
 
-    (func $range$__init__ (import "rangelib" "__init__") (param i32) (param i32) (param i32) (param i32) (result i32))
-    (func $range$__hasnext__ (import "rangelib" "__hasnext__") (param i32) (result i32))
-    (func $range$__next__ (import "rangelib" "__next__") (param i32) (param i32) (param i32))
+    (func $range$__init__ (import "rangelib" "$range$__init__") (param i32) (param i32) (param i32) (param i32) (result i32))
+    (func $range$__hasnext__ (import "rangelib" "$range$__hasnext__") (param i32) (result i32))
+    (func $range$__next__ (import "rangelib" "$range$__next__") (param i32) (result i32))
 
     ${globalImports}
     ${globalDecls}

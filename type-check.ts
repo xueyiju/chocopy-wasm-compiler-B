@@ -354,7 +354,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       if (typedIndex.a[0].tag !== "number") {
         throw new TypeCheckError("Index must have number type");
       }
-      return { ...expr, a: [NONE, expr.a], obj: typedObj, index: typedIndex }; // TODO: Index's a[0] should be the type of the elements in the list
+      return { ...expr, a: [typedObj.a[0].type, expr.a], obj: typedObj, index: typedIndex }; 
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor

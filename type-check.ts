@@ -1,6 +1,6 @@
 
 import { table } from 'console';
-import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Class, SourceLocation } from './ast';
+import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Class, SourceLocation, DestructureLHS } from './ast';
 import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
@@ -176,6 +176,22 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       if(!isAssignable(env, tValExpr.a[0], nameTyp)) 
         throw new TypeCheckError("Non-assignable types");
       return {a: [NONE, stmt.a], tag: stmt.tag, name: stmt.name, value: tValExpr};
+    case "assign-destr":
+      var tRhs = stmt.rhs.map(r => tcExpr(env, locals, r));
+      var tDestr = stmt.destr.map(r => tcDestructure(env, locals, r));
+
+      var hasStarred = false;
+      tDestr.forEach(r => {
+        hasStarred = hasStarred || r.isStarred
+      })
+      //Code only when RHS is of type literals
+      if(tDestr.length === tRhs.length || 
+        (hasStarred && tDestr.length < tRhs.length)||
+        (hasStarred && tDestr.length-1 === tRhs.length)){
+          tcAssignTargets(env, locals, tDestr, tRhs)
+          return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
+        }
+      else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
     case "expr":
       const tExpr = tcExpr(env, locals, stmt.expr);
       return {a: tExpr.a, tag: stmt.tag, expr: tExpr};
@@ -221,6 +237,19 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
         throw new TypeCheckError(`could not assign value of type: ${tVal.a}; field ${stmt.field} expected type: ${fields.get(stmt.field)}`);
       return {...stmt, a: [NONE, stmt.a], obj: tObj, value: tVal};
   }
+}
+
+export function tcDestructure(env : GlobalTypeEnv, locals : LocalTypeEnv, destr : DestructureLHS<SourceLocation>) : DestructureLHS<[Type, SourceLocation]> {
+  
+  var tcAt = tcExpr(env, locals, destr.lhs)
+  // Will never come here, handled in parser
+  //@ts-ignore
+  return {...destr, a:[tcAt.a[0], destr.a], lhs:tcAt}
+}
+
+/** Function to check types of destructure assignmnets */
+function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: DestructureLHS<[Type, SourceLocation]>[], tRhs: Expr<[Type, SourceLocation]>[]) {
+  
 }
 
 export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<SourceLocation>) : Expr<[Type, SourceLocation]> {
@@ -386,3 +415,4 @@ export function tcLiteral(literal : Literal) {
         case "none": return NONE;
     }
 }
+

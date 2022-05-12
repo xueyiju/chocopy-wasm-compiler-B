@@ -1,10 +1,11 @@
+
 (module
   (memory (import "js" "mem") 1)
   (global $heap (mut i32) (i32.const 4))
 
   ;; Take an amount of blocks (4-byte words) to allocate, return an address
   ;; handle suitable for giving to other access methods
-  (func (export "range$__init__") (param $addr i32) (param $start i32) (param $stop i32) (param $step i32) (result i32)
+  (func (export "$range$__init__") (param $addr i32) (param $start i32) (param $stop i32) (param $step i32) (result i32)
     ;; store the start
     (local.get $addr)
     (i32.const 0)
@@ -57,14 +58,14 @@
 
     (local.get $addr))
 
-  (func (export "range$__hasnext__") (param $addr i32) (result i32)
+  (func (export "$range$__hasnext__") (param $addr i32) (result i32)
     ;; get the hasnext field
     (local.get $addr)
     (i32.const 12)
     (i32.add)
     (i32.load))
   
-  (func (export "range$__next__") (param $addr i32) (result i32)
+  (func (export "$range$__next__") (param $addr i32) (result i32)
     ;; assuming that next is called only if __hasnext__ returns true
     (local $scratch i32)
     ;; get the next value

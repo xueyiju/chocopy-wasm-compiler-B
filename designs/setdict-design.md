@@ -68,6 +68,8 @@ set_1.update(3)   # TypeError: 3 is not iterable
 set_1 : set[int] = {1, 2} 
 set_1.clear()
 print(set_1)   # should output set()
+```
+
 
 ## Changes To AST/IR
 AST:

@@ -285,6 +285,27 @@ function flattenExprToExpr(e : AST.Expr<Type>, env : GlobalEnv) : [Array<IR.VarI
         ],
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newName } }
       ];
+    case "listliteral":
+      const newListName = generateName("newList");
+      const allocList : IR.Expr<Type> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length } };
+      var inits : Array<IR.VarInit<Type>> = [];
+      var stmts : Array<IR.Stmt<Type>> = [];
+      const assignsList : IR.Stmt<Type>[] = e.elements.map((e, i) => {
+        const [init, stmt, vale] = flattenExprToVal(e, env);
+        inits = [...inits, ...init];
+        stmts = [...stmts, ...stmt];
+        return {
+          tag: "store",
+          start: { tag: "id", name: newListName },
+          offset: { tag: "wasmint", value: i },
+          value: vale
+        }
+      })
+      return [
+        [ { name: newListName, type: e.a, value: { tag: "none" } }, ...inits ],
+        [ { tag: "assign", name: newListName, value: allocList }, ...stmts, ...assignsList ],
+        { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newListName } }
+      ];
     case "id":
       return [[], [], {tag: "value", value: { ...e }} ];
     case "literal":

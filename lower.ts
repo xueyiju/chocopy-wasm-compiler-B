@@ -215,10 +215,6 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       var forEndLbl = generateName("$forend");
       var rangeObject = generateName("$rangeobject")
 
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
-    
-      blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
-
       // initialize
       switch(s.vars.tag) {
         case "id":
@@ -227,13 +223,12 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
           var [in_inits, in_stmts,in_expr] = flattenExprToExpr(rangeConstruct, env);
           pushStmtsToLastBlock(blocks, ...in_stmts, {a:NONE,  tag: "assign", name: rangeObject, value: in_expr} );
           break
-        
         default:
           throw new Error("Tuple assignment not supported yet")
       }
-  
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
+      blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
       // generate the condition
-      s.vars
       let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__hasnext__", arguments: []}
 
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
@@ -268,9 +263,11 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
     case "break":
       var currentloop = nameCounters.get("$forbody")
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forend"  + currentloop});
+      return []
     case "continue":
       var currentloop = nameCounters.get("$forbody")
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forbody"  + currentloop})
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forstart"  + currentloop})
+      return []
   }
 }
 

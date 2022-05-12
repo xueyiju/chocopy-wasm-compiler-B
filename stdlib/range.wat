@@ -22,7 +22,7 @@
 
     ;; store the step
     (local.get $addr)
-    (i32.const 4)
+    (i32.const 8)
     (i32.add)
     (local.get $step)
     (i32.store)
@@ -36,7 +36,7 @@
 
     ;; update hasnext value
     (local.get $addr)
-    (i32.const 16)
+    (i32.const 12)
     (i32.add)
 
     ;; check to store correct value in hasnext
@@ -71,7 +71,7 @@
     ;; get the next value
     ;; get the currvalue field
     (local.get $addr)
-    (i32.const 12)
+    (i32.const 16)
     (i32.add)
     (i32.load)
     (local.set $scratch)
@@ -99,7 +99,7 @@
 
     ;; update hasnext
     (local.get $addr)
-    (i32.const 16)
+    (i32.const 12)
     (i32.add)
 
     ;; check to store correct value in hasnext
@@ -108,16 +108,7 @@
     (i32.const 16)
     (i32.add)
     (i32.load)
-
-    ;; get the step field
-    (local.get $addr)
-    (i32.const 8)
-    (i32.add)
-    (i32.load)
-
-    ;; add them up
-    (i32.add)
-    
+        
     ;; get the stop field
     (local.get $addr)
     (i32.const 4)

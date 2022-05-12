@@ -8,45 +8,52 @@
     ;; store the start
     (local.get $addr)
     (i32.const 0)
+    (i32.add)
     (local.get $start)
-    (call $store)
+    (i32.store)
 
     ;; store the stop
     (local.get $addr)
     (i32.const 4)
+    (i32.add)
     (local.get $stop)
-    (call $store)
+    (i32.store)
 
     ;; store the step
     (local.get $addr)
     (i32.const 4)
+    (i32.add)
     (local.get $step)
-    (call $store)
+    (i32.store)
 
     ;; update currvalue
     (local.get $addr)
     (i32.const 16)
+    (i32.add)
     (local.get $start)
-    (call $store)
+    (i32.store)
 
     ;; update hasnext value
     (local.get $addr)
     (i32.const 16)
+    (i32.add)
 
     ;; check to store correct value in hasnext
     ;; get the start field
     (local.get $addr)
     (i32.const 0)
-    (call $load)
+    (i32.add)
+    (i32.load)
     
     ;; get the stop field
     (local.get $addr)
     (i32.const 4)
-    (call $load)
+    (i32.add)
+    (i32.load)
 
     ;; check if the first value is less than stop
     (i32.lt_s)
-    (call $store)
+    (i32.store)
 
     (local.get $addr))
 
@@ -54,7 +61,8 @@
     ;; get the hasnext field
     (local.get $addr)
     (i32.const 12)
-    (call $load))
+    (i32.add)
+    (i32.load))
   
   (func (export "range$__next__") (param $addr i32) (result i32)
     ;; assuming that next is called only if __hasnext__ returns true
@@ -63,7 +71,8 @@
     ;; get the currvalue field
     (local.get $addr)
     (i32.const 12)
-    (call $load)
+    (i32.add)
+    (i32.load)
     (local.set $scratch)
 
     ;; leave two instances of the curr value, one for returning, one for getting the next value
@@ -73,7 +82,8 @@
     ;; get the step field
     (local.get $addr)
     (i32.const 8)
-    (call $load)
+    (i32.add)
+    (i32.load)
 
     ;; add them up
     (i32.add)
@@ -82,23 +92,27 @@
     ;; store the next value in currval
     (local.get $addr)
     (i32.const 16)
+    (i32.add)
     (local.get $scratch)
-    (call $store)
+    (i32.store)
 
     ;; update hasnext
     (local.get $addr)
     (i32.const 16)
+    (i32.add)
 
     ;; check to store correct value in hasnext
     ;; get the currval field
     (local.get $addr)
     (i32.const 16)
-    (call $load)
+    (i32.add)
+    (i32.load)
 
     ;; get the step field
     (local.get $addr)
     (i32.const 8)
-    (call $load)
+    (i32.add)
+    (i32.load)
 
     ;; add them up
     (i32.add)
@@ -106,77 +120,12 @@
     ;; get the stop field
     (local.get $addr)
     (i32.const 4)
-    (call $load)
+    (i32.add)
+    (i32.load)
 
     ;; check if the next value is less than stop
     (i32.lt_s)
 
-    ;; check if the next value is less than stop
-    (i32.lt_s)
-    (call $store))
+    (i32.store))
 
-  (func (export "range$index") (param $addr i32) (param $num i32) (result i32)
-    (local $scratch i32)
-    (local.set $scratch (i32.const -1))
-    ;; return -1 if not in range
-    (block
-      ;; basic check if less than stop
-      (local.get $num)
-      ;; get the stop field
-      (local.get $addr)
-      (i32.const 4)
-      (call $load)
-      (i32.lt_s)
-
-      ;; basic check if >= start
-      (local.get $num)
-      ;; get the start field
-      (local.get $addr)
-      (i32.const 0)
-      (call $load)
-      (i32.ge_s)
-      
-      (i32.and)
-      ;; break to outside of the block
-      br_if 1
-
-      (local.get $num)
-      ;; get the start field
-      (local.get $addr)
-      (i32.const 0)
-      (call $load)
-      (i32.sub)
-
-      ;; get the step field
-      (local.get $addr)
-      (i32.const 8)
-      (call $load)
-      
-      ;; get remainder
-      (i32.rem_s)
-
-      ;; check if rem is 0
-      (i32.const 0)
-      (i32.eq)
-      br_if 1
-
-      ;; finally return a valid index
-      (local.get $num)
-      ;; get the start field
-      (local.get $addr)
-      (i32.const 0)
-      (call $load)
-      (i32.sub)
-
-      ;; get the step field
-      (local.get $addr)
-      (i32.const 8)
-      (call $load)
-      
-      ;; get the index
-      (i32.div_s)
-      (local.set $scratch)
-    )
-    (local.get $scratch)
-  )
 )

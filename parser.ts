@@ -252,12 +252,12 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       return { a: location, tag: "return", value };
     case "AssignStatement":
       c.firstChild(); // go to name
-      const rhsargs = [];
       // Parse LHS
       const target = traverseDestructure(c, s);
       // Parse AssignOp
       c.nextSibling();
       // Parse RHS
+      const rhsargs = [];
       do{
         if(c.name === "AssignOp") 
           break;
@@ -389,29 +389,27 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
 }
 
 function traverseDestructure(c: TreeCursor, s: string):DestructureLHS<SourceLocation>[] {
-  var location = getSourceLocation(c, s);
-  const lhs = [traverseDestructureLHS(c,s)];
-  let hasStarred = lhs[0].isStarred;
-  c.nextSibling();
-  let isDestructure = false; //if only one lhs, then simple assignment
-  // check multiple starred expressions ??
-  while (c.name !== "AssignOp") { // go to AssignOp
-    isDestructure = true; //Since we haven't hit = after one lhs
-    c.nextSibling();
-    if (c.name === "AssignOp") //as soon as we encounter AssignOp
+  const lhsargs : DestructureLHS<SourceLocation>[] = [];
+  var hasStarred = 0;
+
+  do{
+    if(c.name === "AssignOp") 
       break;
-    let tempLhs = traverseDestructureLHS(c,s);
-    if(tempLhs.isStarred){
-      if (hasStarred)
-        throw new Error("PARSE ERROR: Multiple starred expressions.")
-      hasStarred = true;
-    }
-    lhs.push(tempLhs);
-    c.nextSibling(); //go to =
-  }
+    else if (c.type.name === ",") 
+      continue;
+    else {
+      var lhs = traverseDestructureLHS(c,s);
+      if(lhs.isStarred){
+        hasStarred = hasStarred + 1
+        if (hasStarred > 1)
+          throw new Error("PARSE ERROR: Multiple starred expressions.")
+      }
+      lhsargs.push(lhs)
+    } 
+  } while(c.nextSibling())
   // check if we want normal assignment expressions to have * or not
 
-  return lhs;
+  return lhsargs;
 }
 
 function traverseDestructureLHS(c: TreeCursor, s: string):DestructureLHS<SourceLocation> {

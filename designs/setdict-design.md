@@ -27,8 +27,6 @@ set_1 : set[int] = set()
 print(set_1)    # should output set()
 ```
 
-```
-
 5. Add elements to the set. The parameter should be iterable 
 ```python
 set_1 : set[int] = {1, 2} 
@@ -83,7 +81,7 @@ export type Expr<A> =
 No need to update IR for now.
 
 ## New Functions/Datatypes
-The new datatype Set will be added to the codebase. We will likely need to add a new function in `compiler.ts` to handle different method calls of sets (i.e., `update()`, `add()`, `remove()`, `clear()`). 
+The new datatype Set will be added to the codebase. We will likely need to add a new function in `lower.ts` to handle different method calls of sets (i.e., `update()`, `add()`, `remove()`, `clear()`). 
 
 ## Value Representation & Memory Layout
 One variable stores the memory address of the set object, and each element in the set will be represented as i32. We will implement the set using a hash table that is represented as a fixed-size array of buckets of hashables. Each bucket will be pointed to a linked list that stores hashables. All hashables in the same bucket share the same hash value that is used to index into the array of buckets. We create a hash function that turns a key into an index and determines which bucket the hashable will go into. The hash function will also be used to determine how many buckets we need to create. 

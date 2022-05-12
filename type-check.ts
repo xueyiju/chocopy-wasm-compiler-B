@@ -337,6 +337,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
 
       const checked0 = tcExpr(env, locals, expr.elements[0]);
       const proposedType = checked0.a; //type of the 1st element in list
+      elementsWithTypes.push(checked0);
 
       //check that all other elements have the same type as the first element
       for(let i = 1; i < expr.elements.length; i++) {

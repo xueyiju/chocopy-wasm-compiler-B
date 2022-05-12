@@ -9,9 +9,7 @@ import {parser} from "lezer-python";
 async function debug() {
   var source = `
 a : [int] = None
-a = [1, 2, 3]
-a[0] = 5
-a[1]`
+a = [1, 2, 3, 4]`
   const t = parser.parse(source);
   console.log(stringifyTree(t.cursor(),source,0));
   const ast = parse(source);

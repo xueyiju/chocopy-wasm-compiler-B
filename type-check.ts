@@ -188,7 +188,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       if(tDestr.length === tRhs.length || 
         (hasStarred && tDestr.length < tRhs.length)||
         (hasStarred && tDestr.length-1 === tRhs.length)){
-          tcAssignTargets(env, locals, tDestr, tRhs)
+          tcAssignTargets(env, locals, tDestr, tRhs, hasStarred)
           return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
         }
       else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
@@ -247,9 +247,42 @@ export function tcDestructure(env : GlobalTypeEnv, locals : LocalTypeEnv, destr 
   return {...destr, a:[tcAt.a[0], destr.a], lhs:tcAt}
 }
 
-/** Function to check types of destructure assignmnets */
-function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: DestructureLHS<[Type, SourceLocation]>[], tRhs: Expr<[Type, SourceLocation]>[]) {
+/** Function to check types of destructure assignments */
+function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: DestructureLHS<[Type, SourceLocation]>[], tRhs: Expr<[Type, SourceLocation]>[], hasStarred: boolean) {
   
+  let lhs_index = 0
+  let rhs_index = 0
+
+  while (lhs_index < tDestr.length && rhs_index < tRhs.length) {
+    if (tDestr[lhs_index].isStarred) {
+      break;
+    } else {
+      if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
+        throw new TypeCheckError("Type Mismatch while destructuring assignment")
+      } else {
+        lhs_index++
+        rhs_index++
+      }
+    }
+  }
+
+  // Only doing this reverse operation in case of starred
+  if (hasStarred) {
+    if (lhs_index == tDestr.length - 1 && rhs_index == tRhs.length) {
+      //@ts-ignore
+    } else {
+      let rev_lhs_index = tDestr.length - 1;
+      let rev_rhs_index = tRhs.length - 1;
+      while (rev_lhs_index > lhs_index) {
+        if (!isAssignable(env, tDestr[rev_lhs_index].lhs.a[0], tRhs[rev_rhs_index].a[0])) {
+          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+        } else {
+          rev_rhs_index--
+          rev_lhs_index--
+        }
+      }
+    }
+  }
 }
 
 export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<SourceLocation>) : Expr<[Type, SourceLocation]> {

@@ -6,3 +6,6 @@ cli
 *.sw*
 mochawesome-report
 *lock*
+.DS_Store
+.vscode/launch.json
+designs/.DS_Store

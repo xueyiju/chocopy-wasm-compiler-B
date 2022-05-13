@@ -42,7 +42,7 @@ def f(a: int, b: int) -> int:
 ```
 **Dot-plot**
 
-![plot](../example.svg)
+![plot](./example.svg)
 
 > Modifications on the ast / IR to improve efficiency 
 ### 3. Eliminate Unreachable Instructions After Return

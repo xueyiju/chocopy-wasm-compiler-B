@@ -132,13 +132,13 @@ function exprStr(expr: ir.Expr<[Type, SourceLocation]>): string {
 
 export enum JumpType { IF = 'green', ELSE = 'red', GOTO = 'black'}
 
-function createBlock(label: string, stmtStrs: Array<string>): string {
-  const lid = `<lbl> ${label}`;
+function createBlock(lid: string, stmtStrs: Array<string>): string {
+  const label = `<lbl> ${lid}`;
   const stmts = stmtStrs.map((s, i) => `<ins${i}> ${s}`);
   if (stmts.length > 0) {
-    return `"${label}" [label="${lid} | {${stmts.join(' | ')}}"];`;
+    return `"${lid}" [label="${label} | {${stmts.join(' | ')}}"];`;
   } else {
-    return `"${label}" [label="${lid}"];`; 
+    return `"${lid}" [label="${label}"];`; 
   }
 }
 
@@ -199,7 +199,7 @@ function createClass(lid: string, cls: ir.Class<[Type, SourceLocation]>): [strin
 
 type EdgeTarget = [string, string]
 function createEdge(s: EdgeTarget, t: EdgeTarget, jt: JumpType) {
-  return `${s[0]}:${s[1]} -> ${t[0]}:${t[1]} [color = ${jt}];`
+  return `"${s[0]}":${s[1]} -> "${t[0]}":${t[1]} [color = ${jt}];`
 }
 
 export function dotProg(p: ir.Program<[Type, SourceLocation]>): string {
@@ -281,14 +281,14 @@ function inLineStmt(stmt: ir.Stmt<[Type, SourceLocation]>, curBlock: string, i: 
     }
     case "ifjmp":
       const ifjmpLabel = valInline(stmt.cond) + " ? " + stmt.thn + ":" + stmt.els;
-      const jmpIf = createEdge([`"${curBlock}"`, `ins${i.toString()}`], [`"${stmt.thn}"`, "lbl"], JumpType.IF);
-      const jmpElse = createEdge([`"${curBlock}"`, `ins${i.toString()}`], [`"${stmt.els}"`, "lbl"], JumpType.ELSE);
+      const jmpIf = createEdge([`${curBlock}`, `ins${i.toString()}`], [`${stmt.thn}`, "lbl"], JumpType.IF);
+      const jmpElse = createEdge([`${curBlock}`, `ins${i.toString()}`], [`${stmt.els}`, "lbl"], JumpType.ELSE);
       return [ifjmpLabel, [jmpIf, jmpElse]];
     case "jmp":
       const jmpLabel = "goto: " + stmt.lbl;
-      return [jmpLabel, [createEdge([`"${curBlock}"`, `ins${i.toString()}`], [`"${stmt.lbl}"`, "lbl"], JumpType.GOTO)]];
+      return [jmpLabel, [createEdge([`${curBlock}`, `ins${i.toString()}`], [`${stmt.lbl}`, "lbl"], JumpType.GOTO)]];
     case "store":
-      const storeLabel = "st " + valInline(stmt.value) + ": " + valInline(stmt.start) + " -> " + valInline(stmt.offset);
+      const storeLabel = "st " + valInline(stmt.value) + " to " + valInline(stmt.start) + " + " + valInline(stmt.offset);
       return [storeLabel, []];
   }
 }
@@ -311,7 +311,7 @@ function exprInline(expr: ir.Expr<[Type, SourceLocation]>): string {
     case "alloc":
       return "alloc " + expr.amount;
     case "load":
-      return "ld " + expr.start + " -> " + expr.offset
+      return "ld " + expr.start + ", " + expr.offset
     }
 }
 
@@ -333,7 +333,6 @@ async function debug(optAst: boolean = false, optIR: boolean = false) {
   var source = 
 `
 g: int = 0
-u: bool = False
 def f(a: int, b: int) -> int:
   i: int = 0
   x: int = 1
@@ -343,7 +342,6 @@ def f(a: int, b: int) -> int:
     ret = ret * a
     i = i + 1
   return ret + x
-f(3, 5)
 `
   const parsed = parse(source);
   // console.log(JSON.stringify(parsed, null, 2));
@@ -361,7 +359,7 @@ f(3, 5)
   console.log(JSON.stringify(irprogram, (k, v) => typeof v === "bigint" ? v.toString(): v, 2));
   printProgIR(irprogram);
 
-  const render = CliRenderer({ outputFile: "./example.png", format: "png" });
+  const render = CliRenderer({ outputFile: "./example.svg", format: "svg" });
   const dot = dotProg(irprogram);
   await render(dot);
 }

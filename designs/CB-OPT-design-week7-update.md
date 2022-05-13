@@ -3,55 +3,65 @@
 ## A. Test cases / Scenarios
 > Analyses that extract useful guidance for potential transformations without altering the IR
 
-### 1. Liveness Analysis (Not Implemented, will focus on data-flow)
-**Original**
+### 1. Liveness Analysis (Not Implemented)
+We are thinking about doing a backward lookup and maintaining a live set for all variables, and potentially count referring instructions for each variable.
+
+**Pseudocode**
 ```python
-g: int = 0
-def f(a: int, b: int): int
-  i: int = 0
-  x: int = 1
-  x = g
-  ret: int = 0
-  while i < b:
-    ret = ret * a
-    i = i + 1
-  return rex + x
+1: b: int = 3
+2: c: int = 5
+3: d: int = 4
+4: a: int = 1
+5: a = f(b + c)
+6: return a
 ```
-**Passed**
+
+**Living Var at each Block**
 ```python
+1: {}
+2: b
+3: b, c
+4: b, c
+5: a, b, c
+6: a
 ```
 
 ### 2. IR-CFG Visualization
-**Pseudo IR-CFG**
+**Real Python**
 ```python
-while True:
-  A() # L-A
-  if-goto L-C
-  B() # L-B
-  C() # L-C
+g: int = 0
+def f(a: int, b: int) -> int:
+  i: int = 0
+  x: int = 1
+  ret: int = 0
+  x = g
+  while i < b:
+    ret = ret * a
+    i = i + 1
+  return ret + x
 ```
 **Dot-plot**
 
-![plot](./graphviz.svg)
+![plot](../example.svg)
 
 > Modifications on the ast / IR to improve efficiency 
 ### 3. Eliminate Unreachable Instructions After Return
 **Before Optimization**
 ```python
-def f(i:int):
+def f(i:int) -> int:
     return i
     print(i+1)
 ```
 **After Optimization**
 ```python
-def f(i:int):
+def f(i:int) -> int:
     return i
 ```
 
 ### 4. Eliminate Dead Branch (Only Directly Foldable Condition)
 **Before Optimization**
 ```python
-def f(i:int):
+def f(i:int) -> int:
     if True:
       return i + 1
     else:
@@ -59,7 +69,7 @@ def f(i:int):
 ```
 **After Optimization**
 ```python
-def f(i:int):
+def f(i:int) -> int:
     return i + 1
 ```
 
@@ -158,15 +168,30 @@ x:int = 1
 ```
 
 ## B. Modification on AST and IR
-We leave `ast` and `IR` as intact as possible. We are expecting to compute useful informations out of current framework instead of attaching the information to their implementations.
+Both are not changed.
 
 ## C. New Changes
-Two new files `optimize_ast.ts` and `optimize_ir.ts` are added to implement optimizations on `ast` and `ir` respectively.
-We have implemented a majority of our design decisions in "optimize_ast.ts". We have implemented dead code elimination, including unreachable instructions after return, instructions that only affects dead variables, dead branches, redundant code. Our program can also do constant folding for booleans and ints.
-We have built a mechanism to determine whether the program has reached the final optimization or not as well. If not, the program will keep doing oiptmization steps. 
+Two new files `optimize_ast.ts` and `optimize_ir.ts` are added to implement optimizations on `ast` and `ir` respectively. One debugger `debug_ir.ts` is added to print pretty `ir` representation and generate DOT graph. To use this debugger, a new dependency is added: `@diagrams-ts/graphviz-cli-renderer`. Also, the host machine should install [graphviz](https://graphviz.org/download/) as well.
+
+We have implemented a majority of our design decisions in "optimize_ast.ts". We have implemented dead code elimination, including unreachable instructions after `return` and dead branches such as `if True` and `while False`. Our program can also do constant folding for all operations whose operands are constant. Further folding will be available when the constant propagation is facilitated.
+
+The optimization takes place in a iterative fashion until the source code remains unchanged during a pass. Currently, passes available are:
+
+* AST-Level: 
+  1. dead code elimination
+  2. constant folding
+* IR-Level:
+  1. constant folding
+
 
 ## D. New decisions
-We plan to implement two more optimizations in the following weeks, which are combining redundant code and constant propagation. Most likely, we will try to use control-flow anlyasis metioned in class for our implementation on constant propagation. We decide to implement constant propagtaion in "optimize_ir.ts".
+We plan to implement the following optimizations in the next sprint: 1. Constant propagation 2. Liveness Analysis. 
+
+Most likely, we will try to use control-flow anlyasis metioned in class for our implementation on constant propagation which indicates that we will implement constant propagtaion in "optimize_ir.ts" first. 
+
+We also plan to implement liveness analysis at `ir` first since the control flow at this level is less complex, but it does not preclude our intention to introduce this analysis at `ast` since removing dead variable at the earlier stage may bring more benefits, and we can exploit more control-flow semantics despite its complexity.
+
+We already observe noticable difference in the optimality of enforcing the same optimization techniques at different levels. For constant folding, if we can merge operations at `ast`, less intermediate variable will be generated compared with applying folding at `ir` level. Although these redundant variables may be eliminated by further propagation and folding at `ir`, wipping the **seed** out at `ast` can definitely simplify the further optimization. 
 
 ## E. Test
 

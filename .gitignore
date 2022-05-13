@@ -7,4 +7,5 @@ cli
 mochawesome-report
 *lock*
 .vscode/
-example.png
+**/*.png
+**/*.svg

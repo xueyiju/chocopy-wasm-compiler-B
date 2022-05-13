@@ -100,29 +100,67 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       //   { a: s.a, tag: "assign", name: s.name, value: vale}
       // ]];
     case "assign-destr":
-      var rhs = s.rhs.map(a => flattenExprToExpr(a, env));
-      var rhsinits = rhs.map(r => r[0]).flat();
-      var rhsStmts = rhs.map(r => r[1]).flat();
-      var rhsvals = rhs.map(r => r[2]).flat();
-      //TODO Handle starred and ignore cases
-      //Have to run and check if working right! Just adding intuition code for now
-      var lhs = s.destr.map(a => flattenExprToVal(a.lhs, env))
-      var lhsinits = lhs.map(r => r[0]).flat();
-      var lhsStmts = lhs.map(r => r[1]).flat();
-      var lhsvals = lhs.map(r => r[2]).flat();
-      blocks[blocks.length - 1].stmts.push(...rhsStmts, ...lhsStmts)
-      for (let i = 0; i < lhsvals.length; i++) {
-        let l = lhsvals[i];
-        if(l.tag==="id" && l.name!=="_"){
-          blocks[blocks.length - 1].stmts.push({a:l.a, tag:"assign", name: l.name, value:rhsvals[i]})
+      let lhs_index = 0
+      let rhs_index = 0
+      var allinits = []
+      while (lhs_index < s.destr.length && rhs_index < s.rhs.length) {
+        let l = s.destr[lhs_index].lhs
+        let r = s.rhs[rhs_index]
+        if(l.tag === "lookup"){
+          var [oinits, ostmts, oval] = flattenExprToVal(l.obj, env);
+          var [ninits, nstmts, nval] = flattenExprToVal(r, env);
+          if(l.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
+          const classdata = env.classes.get(l.obj.a[0].name);
+          const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(l.field)[0] };
+          pushStmtsToLastBlock(blocks,
+            ...ostmts, ...nstmts, {
+              tag: "store",
+              a: s.a,
+              start: oval,
+              offset: offset,
+              value: nval
+            });
+          allinits.push(...oinits, ...ninits);
         }
+        else if(l.tag === "id" && l.name!=="_"){
+          var [valinits, valstmts, vale] = flattenExprToExpr(r, env);
+          //@ts-ignore
+          //name always in id cases
+          blocks[blocks.length - 1].stmts.push(...valstmts, { a: s.a, tag: "assign", name: l.name, value: vale});
+          allinits.push(...valinits);
+        }
+        rhs_index++;
+        lhs_index++;
       }
-      // lhsvals.forEach(l => {
-      //   //TODO can be tuple or arrayexpression
-      //   //Handling simple case for now
-        
+      return allinits
+      // var rhs = s.rhs.map(a => flattenExprToExpr(a, env));
+      // var rhsinits = rhs.map(r => r[0]).flat();
+      // var rhsStmts = rhs.map(r => r[1]).flat();
+      // var rhsvals = rhs.map(r => r[2]).flat();
+      // //TODO Handle starred and ignore cases
+      // //Have to run and check if working right! Just adding intuition code for now
+      // var lhs = s.destr.map(a => {
+      //   switch(a.lhs.tag){
+      //     case "lookup":
+      //       flattenExprToExpr(a.lhs, env)
+      //       break;
+      //     default:
+      //       flattenExprToVal(a.lhs, env)
+      //   }
       // })
-      return rhsinits
+
+      // var lhsinits = lhs.map(r => r[0]).flat();
+      // var lhsStmts = lhs.map(r => r[1]).flat();
+      // var lhsvals = lhs.map(r => r[2]).flat();
+      // blocks[blocks.length - 1].stmts.push(...rhsStmts, ...lhsStmts)
+      // for (let i = 0; i < lhsvals.length; i++) {
+      //   let l = lhsvals[i];
+      //   if(l.tag==="id" && l.name!=="_"){
+      //     blocks[blocks.length - 1].stmts.push({a:l.a, tag:"assign", name: l.name, value:rhsvals[i]})
+      //   }
+      // }
+
+      // return rhsinits
     case "return":
     var [valinits, valstmts, val] = flattenExprToVal(s.value, env);
     blocks[blocks.length - 1].stmts.push(

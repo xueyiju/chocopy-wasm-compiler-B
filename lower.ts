@@ -139,6 +139,22 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
         });
       return [...oinits, ...ninits];
     }
+    case "index-assign": {
+      var [oinits, ostmts, oval] = flattenExprToVal(s.obj, env);
+      const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
+      var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
+
+      if (s.obj.a[0].tag !== "list") { throw new Error("Compiler's cursed, go home."); }
+      pushStmtsToLastBlock(blocks,
+        ...ostmts, ...istmts, ...nstmts, {
+          tag: "store",
+          a: s.a,
+          start: oval,
+          offset: ival,
+          value: nval
+        });
+      return [...oinits, ...iinits, ...ninits];
+    }
       // return [[...oinits, ...ninits], [...ostmts, ...nstmts, {
       //   tag: "field-assign",
       //   a: s.a,

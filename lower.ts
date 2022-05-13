@@ -113,7 +113,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       blocks[blocks.length - 1].stmts.push(...rhsStmts, ...lhsStmts)
       for (let i = 0; i < lhsvals.length; i++) {
         let l = lhsvals[i];
-        if(l.tag==="id"){
+        if(l.tag==="id" && l.name!=="_"){
           blocks[blocks.length - 1].stmts.push({a:l.a, tag:"assign", name: l.name, value:rhsvals[i]})
         }
       }

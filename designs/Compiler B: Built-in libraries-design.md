@@ -56,9 +56,7 @@ Output:
 ### LCM (least common multiple)
 
 input: 
-print(lcm(4,6))
-print(lcm(3,5))
-print(lcm(2,8))
+1
 Output: 
 12
 15
@@ -159,3 +157,8 @@ to
 $$FunDef { name = $$function{index of function}, ...}
 
 f = Value{ tag:"number", value = {index of function}}
+
+
+
+
+

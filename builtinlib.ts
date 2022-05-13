@@ -135,8 +135,8 @@ function randrange(x:number, y:number, step:number){
 }
 
 
-function sleep(second:number):number{
+function sleep(ms:number):number{
 	const start = Date.now();
-	while (Date.now()-start<second*1000);
+	while (Date.now()-start<ms);
 	return 0;
 }

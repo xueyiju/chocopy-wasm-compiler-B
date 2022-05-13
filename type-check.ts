@@ -25,6 +25,18 @@ defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 
+const defaultGlobalClasses = new Map();
+const rangeFields = new Map<string, Type>();
+rangeFields.set("start", {tag: "number"});
+rangeFields.set("stop", {tag: "number"});
+rangeFields.set("current", {tag: "number"});
+
+const rangeMethods = new Map();
+rangeMethods.set("__init__", [{tag: "number"}, {tag: "number"}, {tag: "class"}])
+rangeMethods.set("hasNext", [{tag: "class"}])
+rangeMethods.set("next", [{tag: "class"}])
+defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
+
 export const defaultTypeEnv = {
   globals: new Map(),
   functions: defaultGlobalFunctions,

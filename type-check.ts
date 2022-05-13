@@ -375,6 +375,20 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeCheckError("method calls require an object");
       }
+    case "ternary":
+      const tExprIfTrue = tcExpr(env, locals, expr.exprIfTrue);
+      const tIfCond = tcExpr(env, locals, expr.ifcond);
+      const tExprIfFalse = tcExpr(env, locals, expr.exprIfFalse);
+      if (tIfCond.a[0] !== BOOL) {
+        throw new TypeCheckError("if condition must be a bool");
+      }
+      const exprIfTrueTyp = tExprIfTrue.a[0];
+      const exprIfFalseTyp = tExprIfFalse.a[0];
+      if (equalType(exprIfTrueTyp, exprIfFalseTyp)) {
+        return { ...expr, a: [exprIfTrueTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
+      }
+      const eitherTyp : Type = { tag: "either", left: exprIfTrueTyp, right: exprIfFalseTyp };
+      return { ...expr, a: [eitherTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
     default: throw new TypeCheckError(`unimplemented type checking for expr: ${expr}`);
   }
 }

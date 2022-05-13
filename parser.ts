@@ -203,6 +203,23 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         tag: "id",
         name: "self"
       };
+    case "ConditionalExpression": // ternary expression
+      c.firstChild(); // Focus on exprIfTrue
+      var exprIfTrue = traverseExpr(c, s);
+      c.nextSibling(); // Focus on if
+      c.nextSibling(); // Focus on cond
+      var ifcond = traverseExpr(c, s);
+      c.nextSibling(); // Focus on else
+      c.nextSibling(); // Focus on exprIfFalse
+      var exprIfFalse = traverseExpr(c, s);
+      c.parent();
+      return {
+        a: location,
+        tag: "ternary",
+        exprIfTrue: exprIfTrue,
+        ifcond: ifcond,
+        exprIfFalse: exprIfFalse
+      };
     default:
       throw new ParseError("Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line);
   }

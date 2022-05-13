@@ -92,7 +92,7 @@ function flattenStmts(s : Array<AST.Stmt<[Type, SourceLocation]>>, blocks: Array
 function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, env : GlobalEnv) : Array<IR.VarInit<[Type, SourceLocation]>> {
   switch(s.tag) {
     case "assign":
-      var [valinits, valstmts, vale] = flattenExprToExpr(s.value, env);
+      var [valinits, valstmts, vale] = flattenExprToExpr(s.value, blocks, env);
       blocks[blocks.length - 1].stmts.push(...valstmts, { a: s.a, tag: "assign", name: s.name, value: vale});
       return valinits
       // return [valinits, [
@@ -113,7 +113,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
     // ]];
   
     case "expr":
-      var [inits, stmts, e] = flattenExprToExpr(s.expr, env);
+      var [inits, stmts, e] = flattenExprToExpr(s.expr, blocks, env);
       blocks[blocks.length - 1].stmts.push(
         ...stmts, {tag: "expr", a: s.a, expr: e }
       );
@@ -196,7 +196,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
   }
 }
 
-function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv) : [Array<IR.VarInit<[Type, SourceLocation]>>, Array<IR.Stmt<[Type, SourceLocation]>>, IR.Expr<[Type, SourceLocation]>] {
+function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, env : GlobalEnv) : [Array<IR.VarInit<[Type, SourceLocation]>>, Array<IR.Stmt<[Type, SourceLocation]>>, IR.Expr<[Type, SourceLocation]>] {
   switch(e.tag) {
     case "uniop":
       var [inits, stmts, val] = flattenExprToVal(e.expr, env);
@@ -289,11 +289,50 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       return [[], [], {tag: "value", value: { ...e }} ];
     case "literal":
       return [[], [], {tag: "value", value: literalToVal(e.value) } ];
+    case "ternary":
+      return flattenExprToExprWithBlocks(e, blocks, env);
+  }
+}
+
+function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, env : GlobalEnv) : [Array<IR.VarInit<[Type, SourceLocation]>>, Array<IR.Stmt<[Type, SourceLocation]>>, IR.Expr<[Type, SourceLocation]>] {
+  switch(e.tag) {
+    case "ternary":
+      var [tinits, tstmts, tval] = flattenExprToVal(e.exprIfTrue, env);
+      var [finits, fstmts, fval] = flattenExprToVal(e.exprIfFalse, env);
+      var [condinits, condstmts, condval] = flattenExprToVal(e.ifcond, env);
+
+      const resultName = generateName("resultVal");
+      const resultInit : IR.VarInit<[Type, SourceLocation]> = { name: resultName, type: e.a[0], value: { tag: "none" } };
+
+      var thenLbl = generateName("$then");
+      var elseLbl = generateName("$else");
+      var endLbl = generateName("$end");
+
+      const condjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: condval, thn: thenLbl, els: elseLbl };
+      const endjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: endLbl };
+
+      console.log(`True val: ${tval}, False val: ${fval}`)
+      const assignTrue : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: tval } };
+      const assignFalse : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: fval } };
+
+      //var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
+      //pushStmtsToLastBlock(blocks, ...tstmts, ...condstmts, ...fstmts)
+      pushStmtsToLastBlock(blocks, condjmp);
+      blocks.push({ a: e.a, label: thenLbl, stmts: [...tstmts, assignTrue] });
+      pushStmtsToLastBlock(blocks, endjmp);
+      blocks.push({ a: e.a, label: elseLbl, stmts: [...fstmts, assignFalse] });
+      pushStmtsToLastBlock(blocks, endjmp);
+      blocks.push({ a: e.a, label: endLbl, stmts: [] });
+
+      return [[...tinits, ...condinits, ...finits, resultInit],
+        [],
+        { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: resultName } }
+      ];
   }
 }
 
 function flattenExprToVal(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv) : [Array<IR.VarInit<[Type, SourceLocation]>>, Array<IR.Stmt<[Type, SourceLocation]>>, IR.Value<[Type, SourceLocation]>] {
-  var [binits, bstmts, bexpr] = flattenExprToExpr(e, env);
+  var [binits, bstmts, bexpr] = flattenExprToExpr(e, [], env);
   if(bexpr.tag === "value") {
     return [binits, bstmts, bexpr.value];
   }

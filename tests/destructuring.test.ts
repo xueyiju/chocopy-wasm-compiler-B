@@ -130,4 +130,30 @@ print(x)
 print(y)
 print(z)` , ["5", "10", "20"]);
 
+assertPrint("destr-fnCallValid", `
+def f() -> int:
+ return 5
+
+x : int = 0
+y : int = 0
+z : int = 0
+
+x, y, z = f() + 20 , 10, -20
+print(x)
+print(y)
+print(z)` , ["25", "10", "-20"]);
+
+assertTCFail("destr-fnCallError", `
+def f() -> bool:
+ return True
+ 
+x : int = 0
+y : int = 0
+z : int = 0
+
+x, y, z = f(), 10, 20
+print(x)
+print(y)
+print(z)`)
+
 });

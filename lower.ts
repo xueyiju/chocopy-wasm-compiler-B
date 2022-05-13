@@ -1,7 +1,8 @@
 import * as AST from './ast';
 import * as IR from './ir';
-import { Type, SourceLocation } from './ast';
+import { Type, SourceLocation, BinOp } from './ast';
 import { GlobalEnv } from './compiler';
+import { isCallChain } from 'typescript';
 
 const nameCounters : Map<string, number> = new Map();
 function generateName(base : string) : string {
@@ -150,7 +151,8 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
           tag: "store",
           a: s.a,
           start: oval,
-          offset: ival,
+          //@ts-ignore
+          offset: {...ival, value: ival.value + BigInt(1)},
           value: nval
         });
       return [...oinits, ...iinits, ...ninits];
@@ -289,7 +291,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         tag: "load",
         start: oval,
         //@ts-ignore
-        offset: ival
+        offset: {...ival, value: ival.value + BigInt(1)}
       }];
     case "construct":
       const classdata = env.classes.get(e.name);
@@ -318,6 +320,12 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const allocList : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length } };
       var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
       var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
+      var storeLength : IR.Stmt<[Type, SourceLocation]> = {
+        tag: "store",
+        start: { tag: "id", name: newListName },
+        offset: { tag: "wasmint", value: 0 },
+        value: { a: [null, null], tag: "num", value: BigInt(e.elements.length) }
+      }
       const assignsList : IR.Stmt<[Type, SourceLocation]>[] = e.elements.map((e, i) => {
         const [init, stmt, vale] = flattenExprToVal(e, env);
         inits = [...inits, ...init];
@@ -325,13 +333,13 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         return {
           tag: "store",
           start: { tag: "id", name: newListName },
-          offset: { tag: "wasmint", value: i },
+          offset: { tag: "wasmint", value: i+1 },
           value: vale
         }
       })
       return [
         [ { name: newListName, type: e.a[0], value: { tag: "none" } }, ...inits ],
-        [ { tag: "assign", name: newListName, value: allocList }, ...stmts, ...assignsList ],
+        [ { tag: "assign", name: newListName, value: allocList }, ...stmts, storeLength, ...assignsList ],
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newListName } }
       ];
     case "id":

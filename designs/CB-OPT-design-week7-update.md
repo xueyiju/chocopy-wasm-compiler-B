@@ -1,4 +1,4 @@
-# Design of Optimization on Compiler B
+# Design of Optimization on Compiler B Week7 Update
 
 ## A. Test cases / Scenarios
 > Analyses that extract useful guidance for potential transformations without altering the IR
@@ -86,7 +86,7 @@ a = a + 1
 return a
 ```
 
-### 6. Constant Propagation
+### 6. Constant Propagation(Haven't Implemented yet)
 
 **Before Optimization**
 ```python
@@ -129,7 +129,7 @@ x: bool = True
 x = False
 ```
 
-### 9. Combine Redundant Code
+### 9. Combine Redundant Code(Haven't Implemented yet)
 
 **Before Optimization**
 ```python
@@ -149,7 +149,7 @@ e = x + y
 a = 2 * e + 3 * e + 5 * e
 ```
 
-### 10. Eliminate Redundant Code
+### 10. Eliminate Redundant Code(Haven't Implemented yet)
 **Before Optimization**
 ```python
 x:int = 1
@@ -162,11 +162,17 @@ x:int = 1
 ```
 
 ## B. Modification on AST and IR
-We aim to leave `ast` and `IR` as intact as possible. We are expecting to compute useful informations out of current framework instead of attaching the information to their implementations.
+We leave `ast` and `IR` as intact as possible. We are expecting to compute useful informations out of current framework instead of attaching the information to their implementations.
 
 ## C. New Changes
-Two new files `ast-opt` and `ir-opt` may be added to implement optimizations on `ast` and `ir` respectively.
-Among these two options, a majority of optimizations will be implemented in the first one since we can take advantage of the existing informations and control-flow awareness. Once we move to the second stage where structured information is obfuscated, we can apply relatively simple and general schemes that optimize the CFG topologically. We may not change the process of *ast -> ir* or *ir -> wasm text* as this may complicate the implementation of optimizations.
+Two new files `optimize_ast.ts` and `optimize_ir.ts` are added to implement optimizations on `ast` and `ir` respectively.
+We have implemented a majority of our design decisions in "optimize_ast.ts". We have implemented dead code elimination, including unreachable instructions after return, instructions that only affects dead variables, dead branches, redundant code. Our program can also do constant folding for booleans and ints.
+We have built a mechanism to determine whether the program has reached the final optimization or not as well. If not, the program will keep doing oiptmization steps. 
 
-## D. Value Rep and Memory Layout
+## D. New decisions
+We plan to implement two more optimizations in the following weeks, which are combining redundant code and constant propagation. Most likely, we will try to use control-flow anlyasis metioned in class for our implementation on constant propagation. We decide to implement constant propagtaion in "optimize_ir.ts".
+
+## E. Test
+
+## F. Value Rep and Memory Layout
 Dynamic optimizations that happen at runtime or may rely on runtime informations are beyond our scope, so we may not introduce new modifications to the runtime environment. Overall, we aim to optimize the program without imposing restrictions or new assumptions on other groups.

@@ -78,6 +78,11 @@ x, y = 5, 6
 print(x)
 print(y)` , ["5", "6"]);
 
+assertPrint("basic-destr2", `
+x : int = 0
+x,  = 5, 
+print(x)` , ["5"]);
+
 assertPrint("destr-underscore", `
 x : int = 0
 y : int  = 0

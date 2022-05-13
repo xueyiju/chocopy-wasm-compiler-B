@@ -2,8 +2,9 @@ import {BasicREPL} from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
-import CodeMirror from "codemirror";
-import "./style.scss";
+// import CodeMirror from "codemirror";
+// import { addAccordionEvent, prettyPrintObjects } from "./scoperender";
+// import "./style.scss";
 
 function stringify(typ: Type, arg: any) : string {
   switch(typ.tag) {
@@ -57,7 +58,7 @@ function webStart() {
         pow: Math.pow
       },
       libmemory: memoryModule.instance.exports,
-      memory_values: memory,
+      memory_values: memory, //it is kind of pointer pointing to heap
       js: {memory: memory}
     };
     var repl = new BasicREPL(importObject);
@@ -66,6 +67,8 @@ function webStart() {
       if(result === undefined) { console.log("skip"); return; }
       if (result.tag === "none") return;
       const elt = document.createElement("pre");
+
+      
       document.getElementById("output").appendChild(elt);
       switch (result.tag) {
         case "num":
@@ -75,7 +78,7 @@ function webStart() {
           elt.innerHTML = (result.value) ? "True" : "False";
           break;
         case "object":
-          elt.innerHTML = `<${result.name} object at ${result.address}`
+          elt.innerHTML = `${result.name} object at ${String(result.address)}`
           break
         default: throw new Error(`Could not render value: ${result}`);
       }
@@ -111,7 +114,8 @@ function webStart() {
           replCodeElement.value = "";
           repl.run(source).then((r) => { 
             console.log(r);
-            renderResult(r); console.log ("run finished") })
+            renderResult(r);
+            console.log ("run finished");})
               .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
       });
@@ -129,37 +133,37 @@ function webStart() {
           .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
 
-    document.getElementById("choose_file").addEventListener("change", function (e) {
-      //clears repl output
-      resetRepl();
-      //resets environment
-      repl = new BasicREPL(importObject);
-      //load file
-      var input: any = e.target;
-      var reader = new FileReader();
-      reader.onload = function () {
-        filecontent = reader.result;
-      };
-      reader.readAsText(input.files[0]);
-    });
+    // document.getElementById("choose_file").addEventListener("change", function (e) {
+    //   //clears repl output
+    //   resetRepl();
+    //   //resets environment
+    //   repl = new BasicREPL(importObject);
+    //   //load file
+    //   var input: any = e.target;
+    //   var reader = new FileReader();
+    //   reader.onload = function () {
+    //     filecontent = reader.result;
+    //   };
+    //   reader.readAsText(input.files[0]);
+    // });
 
-    document.getElementById("load").addEventListener("click", function (e) {
-      // const source = document.getElementById("user-code") as HTMLTextAreaElement;
-      var element = document.querySelector(".CodeMirror") as any;
-      var editor = element.CodeMirror;
-      editor.setValue(filecontent);
-    });
+    // document.getElementById("load").addEventListener("click", function (e) {
+    //   // const source = document.getElementById("user-code") as HTMLTextAreaElement;
+    //   var element = document.querySelector(".CodeMirror") as any;
+    //   var editor = element.CodeMirror;
+    //   editor.setValue(filecontent);
+    // });
 
-    document.getElementById("save").addEventListener("click", function (e) {
-      //download the code in the editor
-      var FileSaver = require("file-saver");
-      var title = (document.getElementById("save_title") as any).value;
-      var element = document.querySelector(".CodeMirror") as any;
-      var editor = element.CodeMirror;
-      var code = editor.getValue();
-      var blob = new Blob([code], { type: "text/plain;charset=utf-8" });
-      FileSaver.saveAs(blob, title);
-    });
+    // document.getElementById("save").addEventListener("click", function (e) {
+    //   //download the code in the editor
+    //   var FileSaver = require("file-saver");
+    //   var title = (document.getElementById("save_title") as any).value;
+    //   var element = document.querySelector(".CodeMirror") as any;
+    //   var editor = element.CodeMirror;
+    //   var code = editor.getValue();
+    //   var blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+    //   FileSaver.saveAs(blob, title);
+    // });
     
     setupRepl();
   });

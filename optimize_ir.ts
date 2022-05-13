@@ -2,6 +2,7 @@ import { Type, Program, SourceLocation, FunDef, Expr, Stmt, Literal, BinOp, UniO
 import * as IR from './ir';
 
 export function optimizeIr(program: IR.Program<[Type, SourceLocation]>) : IR.Program<[Type, SourceLocation]> {
+<<<<<<< HEAD
     const optFuns = program.funs.map(optimizeFuncDef);
     const optClss = program.classes.map(optimizeClass);
     const optBody = program.body.map(optBasicBlock);
@@ -191,3 +192,9 @@ function foldUniop(val: IR.Value<[Type, SourceLocation]>, op: UniOp): IR.Value<[
             return {tag: "none", a: val.a};
     }
 }
+=======
+    // TODO: Add more details
+    return { ...program};
+}
+
+>>>>>>> 41da54e21905ffc65bb66ed43d575a50d4db23e3

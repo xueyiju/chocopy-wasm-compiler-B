@@ -30,6 +30,12 @@ function assert_not_none(arg: any) : any {
   return arg;
 }
 
+function check_range_error(arg: any) : any {
+  if (arg === 0)
+    throw new Error("VALUE ERROR: range() arg 3 must not be zero");
+  return arg;
+}
+
 function webStart() {
   document.addEventListener("DOMContentLoaded", async function() {
 
@@ -41,17 +47,16 @@ function webStart() {
     ).then(bytes => 
       WebAssembly.instantiate(bytes, { js: { mem: memory } })
     );
-    
     const rangeModule = await fetch('range.wasm').then(response => 
       response.arrayBuffer()
     ).then(bytes => 
-      WebAssembly.instantiate(bytes, { js: { mem: memory } })
-    );
-
-
+      WebAssembly.instantiate(bytes, { js: { mem: memory }, imports: {check_range_error: (arg: any) => check_range_error(arg) }} )
+    )
+    
     var importObject = {
       imports: {
         assert_not_none: (arg: any) => assert_not_none(arg),
+        check_range_error: (arg: any) => check_range_error(arg),
         print_num: (arg: number) => print(NUM, arg),
         print_bool: (arg: number) => print(BOOL, arg),
         print_none: (arg: number) => print(NONE, arg),

@@ -58,7 +58,7 @@ function renderClassObject(result: Value, objectTrackList: Array<ObjectField>, e
   } 
   const accordEle = document.createElement("button") as HTMLButtonElement;
   accordEle.setAttribute("class", "accordion");
-  accordEle.innerHTML = "<i class='arrow' id='arrow'></i> " + result.name + " object";
+  accordEle.innerHTML = "<i class='arrow' id='arrow'></i>  " + result.name + " object";
   const addr = document.createElement("p");
   addr.innerHTML = "<b class='tag'>address: </b><p class='val'>" + result.address + "</p>";
   addr.setAttribute("class", "info");

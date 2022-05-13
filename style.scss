@@ -56,9 +56,18 @@ float: left;
     line-break: anywhere;
 }
 .arrow {
-    border: solid black;
+    border: solid brown;
     border-width: 0 3px 3px 0;
     display: inline-block;
     padding: 3px;
     transform: rotate(-45deg);
   }
+
+.panel {
+    width: 100%;
+    padding: 0 0 0 5%;
+    display: none;
+    background-color: LightCyan;
+    overflow: hidden;
+    font-family: monospace;
+}

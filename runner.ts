@@ -13,7 +13,6 @@ import { optimizeIr } from './optimize_ir';
 import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
 import { BlobOptions } from 'buffer';
-// import { printProgIR} from './debug_ir';
 
 export type Config = {
   importObject: any;

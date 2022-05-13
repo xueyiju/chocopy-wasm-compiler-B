@@ -6,8 +6,9 @@ import { lowerProgram } from './lower';
 import { importObject, addLibs  } from "./tests/import-object.test";
 import { BasicREPL } from "./repl";
 import * as ir from './ir';
-import { optimizeAst } from "./optimize_ast"
-// import { CliRenderer } from "@diagrams-ts/graphviz-cli-renderer";
+import { CliRenderer } from "@diagrams-ts/graphviz-cli-renderer";
+import { optimizeAst } from './optimize_ast';
+import { optimizeIr } from './optimize_ir';
 
 
 export function printProgIR(p: ir.Program<[Type, SourceLocation]>) {
@@ -221,7 +222,7 @@ function valInline(val: ir.Value<[Type, SourceLocation]>): string {
 }
 
 // entry point for debugging
-async function debug() {
+async function debug(optAst: boolean = false, optIR: boolean = false) {
   var source = 
 `
 x: int = 0
@@ -234,16 +235,20 @@ if x < 1:
   const repl = new BasicREPL(await addLibs());
   // const program_type = repl.tc(source);
   const config : Config = {importObject: repl.importObject, env: repl.currentEnv, typeEnv: repl.currentTypeEnv, functions: repl.functions};
-  const [tprogram, tenv] = tc(config.typeEnv, parsed);
+  var [tprogram, tenv] = tc(config.typeEnv, parsed);
+  if (optAst)
+    tprogram = optimizeAst(tprogram);
   console.log(JSON.stringify(tprogram, null, 2));
   const globalEnv = augmentEnv(config.env, tprogram);
-  const irprogram = lowerProgram(tprogram, globalEnv);
+  var irprogram = lowerProgram(tprogram, globalEnv);
+  if (optIR)
+    irprogram = optimizeIr(irprogram);
   console.log(JSON.stringify(irprogram, (k, v) => typeof v === "bigint" ? v.toString(): v, 2));
   printProgIR(irprogram);
 
-  // const render = CliRenderer({ outputFile: "./example.png", format: "png" });
-  // const dot = dotProg(irprogram);
-  // await render(dot);
+  const render = CliRenderer({ outputFile: "./example.png", format: "png" });
+  const dot = dotProg(irprogram);
+  await render(dot);
 }
 
-// debug();
+debug();

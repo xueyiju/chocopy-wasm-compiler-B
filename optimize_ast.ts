@@ -250,5 +250,5 @@ function optimizeIfStmt(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<
         }
     }
 
-    return rstmts
+    return rstmts;
 }

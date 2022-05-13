@@ -106,7 +106,9 @@ function webStart() {
           const source = replCodeElement.value;
           elt.value = source;
           replCodeElement.value = "";
-          repl.run(source).then((r) => { renderResult(r); console.log ("run finished") })
+          repl.run(source).then((r) => { 
+            console.log(r);
+            renderResult(r); console.log ("run finished") })
               .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
       });

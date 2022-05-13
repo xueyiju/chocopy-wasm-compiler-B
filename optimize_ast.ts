@@ -1,23 +1,69 @@
-import { Type, Program, SourceLocation, FunDef, Expr, Stmt, Literal, BinOp, UniOp} from './ast';
+import { Type, Program, SourceLocation, FunDef, Expr, Stmt, Literal, BinOp, UniOp, Class} from './ast';
 
 export function optimizeAst(program: Program<[Type, SourceLocation]>) : Program<[Type, SourceLocation]> {
-    // TODO: Add more details
     const optFuns = program.funs.map(fun => optimizeFuncDef(fun));
     var optStmts = program.stmts.map(stmt => optimizeStmt(stmt));
+    const optClasses = program.classes.map(classDef => optimizeClassDef(classDef));
     // optmize ifstmts
-    var optStmtsWithIf = optimizeIfStmt(optStmts)
-    //console.log(optStmtsWithIf)
-    return {...program, funs: optFuns, stmts: optStmtsWithIf};
+    var optStmts = optimizeIfStmt(optStmts);
+    return {...program, funs: optFuns, stmts: optStmts, classes: optClasses};
 }
 
 function optimizeFuncDef(funDef: FunDef<[Type, SourceLocation]>): FunDef<[Type, SourceLocation]> {
-    // TODO: Add more details
+    // Constant folding
     var optBody = funDef.body.map(stmt => optimizeStmt(stmt));
+    // Eliminate unreachable codes after return
+    optBody = removeStmtAfterReturn(optBody);
+    // Eliminate if branches with boolean literal condition
+    optBody = optimizeIfStmt(optBody);
     return {...funDef, body: optBody};
 }
 
+/**
+ * Dead code elimination: Remove the unreachable codes after return statement
+ * 
+ * Note: This function will return the exact same array if there were no return statement in the array
+ * @param stmts An array of statements as the body of function/if-branch/loops
+ * @returns an array statements with no statement after return statement
+ */
+function removeStmtAfterReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
+    const newStmts: Array<Stmt<[Type, SourceLocation]>> = [];
+    for (let stmt of stmts) {
+        switch(stmt.tag) {
+            case "return": {
+                newStmts.push(stmt);
+                return newStmts;
+            } case "if": {
+                const newThenBody = removeStmtAfterReturn(stmt.thn);
+                const newElseBody = removeStmtAfterReturn(stmt.els);
+                const newIfStmt = {...stmt, thn: newThenBody, els: newElseBody};
+                newStmts.push(newIfStmt);
+                break;
+            } case "while": {
+                const newLoopBody = removeStmtAfterReturn(stmt.body);
+                const newWhileStmt = {...stmt, body: newLoopBody};
+                newStmts.push(newWhileStmt);
+                break;
+            } default: {
+                newStmts.push(stmt);
+                break;
+            }
+        }
+    }
+
+    return newStmts;
+}
+
+function optimizeClassDef(classDef: Class<[Type, SourceLocation]>): Class<[Type, SourceLocation]> {
+    // Dead code Elimination: Remove the statements after return inside method body
+    const newMethods: Array<FunDef<[Type, SourceLocation]>> = classDef.methods.map(method => {
+        return optimizeFuncDef(method);
+    });
+
+    return {...classDef, methods: newMethods};
+}
+
 function optimizeExpr(expr: Expr<[Type, SourceLocation]>): Expr<[Type, SourceLocation]> {
-    // TODO: Add more details
     switch (expr.tag){
         case "binop":
             var optLhs = optimizeExpr(expr.left);
@@ -55,7 +101,6 @@ function optimizeExpr(expr: Expr<[Type, SourceLocation]>): Expr<[Type, SourceLoc
 }
 
 function optimizeStmt(stmt: Stmt<[Type, SourceLocation]>): Stmt<[Type, SourceLocation]> {
-    // TODO: Add more details
     switch (stmt.tag){
         case "assign":
             var optValue = optimizeExpr(stmt.value);
@@ -174,7 +219,6 @@ function optimizeIfStmt(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<
     for (var stmt of stmts) {
         switch(stmt.tag) {
             case "if":
-                
                 if (stmt.cond.tag === "literal" && stmt.cond.value.tag === "bool" && stmt.cond.value.value === true) {
                     if (stmt.thn === null) {
                         //console.log("b");

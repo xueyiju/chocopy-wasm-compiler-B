@@ -74,9 +74,9 @@ function renderClassObject(result: Value, objectTrackList: Array<ObjectField>, e
         if (field.objectTrackList.length === 0) {
           fele.innerHTML += "<p class='val'>none</p>";
         } else {
-          // const new_div = document.createElement("div"); //why need a new div?
-          // fele.appendChild(new_div);
-          renderClassObject(field.value, field.objectTrackList, elt);
+          const objEle = document.createElement("pre"); //pre or div?
+          fele.appendChild(objEle);
+          renderClassObject(field.value, field.objectTrackList, objEle);
         }
         break;
       default:
@@ -111,7 +111,7 @@ function renderNewLine(result: Value, elt: HTMLElement){
       elt.innerHTML = (result.value) ? "True" : "False";
       break;
     case "object":
-      elt.innerHTML = `Object: ${result.name}}`
+      elt.innerHTML = `Object: ${result.name}`
       break
     default: 
       throw new Error(`Could not render value: ${result}`);
@@ -124,7 +124,9 @@ export function renderResult(result : Value, objectTrackList: Array<ObjectField>
   document.getElementById("output").appendChild(elt);
   renderNewLine(result, elt);
   if (objectTrackList.length!=0){
-    renderObject(result, objectTrackList, elt);
+    const objEle = document.createElement("pre");
+    document.getElementById("output").appendChild(objEle);
+    renderObject(result, objectTrackList, objEle); // if you not change it will be in the same box
     initialAccordionEvent();
   }
 }

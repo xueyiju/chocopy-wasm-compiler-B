@@ -1,12 +1,29 @@
 import { Type, Program, SourceLocation, FunDef, Expr, Stmt, Literal, BinOp, UniOp, Class} from './ast';
 
+
+let isChanged = false;
+
 export function optimizeAst(program: Program<[Type, SourceLocation]>) : Program<[Type, SourceLocation]> {
-    const optFuns = program.funs.map(fun => optimizeFuncDef(fun));
-    var optStmts = program.stmts.map(stmt => optimizeStmt(stmt));
-    const optClasses = program.classes.map(classDef => optimizeClassDef(classDef));
-    // optmize ifstmts
-    var optStmts = optimizeIfStmt(optStmts);
-    return {...program, funs: optFuns, stmts: optStmts, classes: optClasses};
+    
+    var newProgram = {...program};
+    let counter = 0;
+    do {
+        isChanged = false;
+        counter++;
+        // Optimize function definitions
+        const optFuns = newProgram.funs.map(fun => optimizeFuncDef(fun));
+        // Optimize class definitions
+        const optClasses = newProgram.classes.map(classDef => optimizeClassDef(classDef));
+        // Optimize statements
+        var optStmts = newProgram.stmts.map(stmt => optimizeStmt(stmt));
+        // Dead code elimination for if statements
+        var optStmts = optimizeIfStmt(optStmts);
+        newProgram = {...newProgram, funs: optFuns, stmts: optStmts, classes: optClasses}
+    } while(isChanged);
+
+    console.log(`Optimization completed after ${--counter} iterations.`)
+    
+    return newProgram;
 }
 
 function optimizeFuncDef(funDef: FunDef<[Type, SourceLocation]>): FunDef<[Type, SourceLocation]> {
@@ -32,6 +49,9 @@ function removeStmtAfterReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Arra
         switch(stmt.tag) {
             case "return": {
                 newStmts.push(stmt);
+                if (stmts.indexOf(stmt) < stmts.length-1) {
+                    isChanged = true;
+                }
                 return newStmts;
             } case "if": {
                 const newThenBody = removeStmtAfterReturn(stmt.thn);
@@ -71,6 +91,7 @@ function optimizeExpr(expr: Expr<[Type, SourceLocation]>): Expr<[Type, SourceLoc
             if(optLhs.tag == "literal" && optRhs.tag == "literal"){
                 var A = expr.a;
                 var lit = foldBinop(optLhs.value, optRhs.value, expr.op);
+                isChanged = true;
                 return  { a: A, tag: "literal", value: lit};
             }
             return {...expr, left:optLhs, right:optRhs};
@@ -79,6 +100,7 @@ function optimizeExpr(expr: Expr<[Type, SourceLocation]>): Expr<[Type, SourceLoc
            if(optExpr.tag == "literal"){
                var A = expr.a;
                var lit = foldUniop(optExpr.value, expr.op);
+               isChanged = true;
                return {a: A, tag: "literal", value: lit};
            }
            return {...expr, expr: optExpr};
@@ -231,7 +253,7 @@ function optimizeIfStmt(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<
                     for (var optStmt of optStmts) {
                         rstmts.push(optStmt)
                     }
-                    
+                    isChanged = true;
                 } else if(stmt.cond.tag === "literal" && stmt.cond.value.tag === "bool" && stmt.cond.value.value !== true) {
                     if (stmt.els === null) {
                         //console.log("d");
@@ -242,6 +264,7 @@ function optimizeIfStmt(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<
                     for (var optStmt of optStmts) {
                         rstmts.push(optStmt)
                     }
+                    isChanged = true;
                 }
                 break
             default:

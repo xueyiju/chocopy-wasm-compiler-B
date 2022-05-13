@@ -364,6 +364,16 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
 
 export function traverseType(c : TreeCursor, s : string) : Type {
   // For now, always a VariableName
+  if (c.firstChild()) {
+    if (s.substring(c.from, c.to) === "set") {
+      c.nextSibling();
+      c.nextSibling();
+      let vt : Type = traverseType(c, s);
+      c.parent();
+      return {tag: "set", valueType: vt};
+    }
+    c.parent();
+  }
   let name = s.substring(c.from, c.to);
   switch(name) {
     case "int": return NUM;

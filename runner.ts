@@ -13,6 +13,7 @@ import { optimizeIr } from './optimize_ir';
 import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
 import { BlobOptions } from 'buffer';
+import { printProgIR} from './debug_ir';
 
 export type Config = {
   importObject: any;
@@ -81,6 +82,8 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
   if(irOpt){
     irprogram = optimizeIr(irprogram);
   }
+  printProgIR(irprogram);
+
 
   const progTyp = tprogram.a[0];
   var returnType = "";

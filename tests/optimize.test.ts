@@ -147,7 +147,7 @@ print(a)
   // 17
   assertOptimize("Optimization (Class definition)",
   `
-class Rat:
+class Rat(object):
     def __init__(self:Rat):
         pass
     def f(self:Rat):
@@ -166,7 +166,7 @@ r.b()
   // 18
   assertOptimize("Optimization (Anonymous Class)",
   `
-class Rat:
+class Rat(object):
     def __init__(self:Rat):
         pass
     def f(self:Rat):
@@ -288,4 +288,91 @@ b:int = 0
 b = (100 % 3) % 10 % 2 % 1
 print(b)
 `);
+  // 27
+  assertOptimize("Optimization (Multiple while loop and if branch)",
+`
+a:int = 5
+while a < 0:
+    while False:
+        print(a)
+        pass
+        if False:
+            pass
+        else:
+            print(a)
+
+        if a > 2:
+            print(a+1+2+3)
+    a = a - 1
+    pass
+pass
+`),
+  // 28
+  assertOptimize("Optimization (Multiple builtins)",
+`
+a:int = 5
+b:int = 0
+a = pow(min(a, 100), max(2, 3))
+b = min(a, 100000)
+print(a)
+print(b)
+print(min(a, b))
+`),
+  // 29
+  assertOptimize("Optimization (Field assignment 1)",
+`
+class X(object):
+    x:int = 0
+    def f(self:X) -> int:
+        print(self.x)
+        pass
+        if self.x>0:
+            print(self.x+10)
+        
+        if True:
+            pass
+        else:
+            while False:
+                print(self.x+10)
+        return self.x
+
+x1:X = None
+a:int = 100
+x1 = X()
+print(x1.f())
+x1.x = 1+2+3
+print(x1.f())
+x1.x = a
+print(x1.f())
+if True:
+    x1.x = 1234
+    print(x1.f())
+
+print(X().f())
+X().x = 100
+`),
+  // 30
+  assertOptimize("Optimization (Field assignment 2)",
+`
+class C(object):
+    a:int = 0
+    b:int = 0
+    def __init__(self:C):
+        pass
+    def new(self:C, new_a:int, new_b:int) -> C:
+        self.a = new_a
+        self.b = new_b
+        return self
+    def add(self:C)->int:
+        c:int = 0
+        result:int = 0
+        c = pow((1+2+3+4) * 1 * 2 * 3 % 7, min(2, 3))
+        result = self.a + self.b + c
+        if True:
+            print(result)
+        return result
+
+if True:
+    print(C().new(1, 2).add())
+`)
 });

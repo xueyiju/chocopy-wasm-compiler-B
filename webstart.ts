@@ -4,7 +4,7 @@ import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
 // import CodeMirror from "codemirror";
 import { renderResult, renderError, renderPrint } from "./ouputrender";
-// import "./style.scss";
+import "./style.scss";
 
 function assert_not_none(arg: any) : any {
   if (arg === 0)

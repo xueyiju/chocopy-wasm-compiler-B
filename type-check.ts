@@ -390,7 +390,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           throw new TypeCheckError("method call on an unknown class");
         }
       } else if (tObj.a[0].tag === 'set'){
-        const set_method = ["add", "remove", "get"]
+        const set_method = ["add", "remove", "get", "has"]
         if (set_method.includes(expr.method)){
           tArgs.forEach(t => {
             if (t.tag === "literal"&&tObj.a[0].tag === 'set'){

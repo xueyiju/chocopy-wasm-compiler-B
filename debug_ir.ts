@@ -1,7 +1,7 @@
 import {parse} from './parser';
 import { run, Config, augmentEnv } from "./runner";
 import {emptyLocalTypeEnv, GlobalTypeEnv, tc, tcStmt} from  './type-check';
-import { Program, Type, Value, SourceLocation, BinOp, UniOp } from './ast';
+import { Program, Type, Value, SourceLocation, BinOp, UniOp, Parameter } from './ast';
 import { lowerProgram } from './lower';
 import { importObject, addLibs  } from "./tests/import-object.test";
 import { BasicREPL } from "./repl";
@@ -13,12 +13,66 @@ import { optimizeIr } from './optimize_ir';
 
 export function printProgIR(p: ir.Program<[Type, SourceLocation]>) {
   // p.body.map(bb => bb.stmts.map(stmt => printStmt(stmt)));
-  p.body.map(bb => {
-    console.log("--------------------------------")
-    console.log("L: " + bb.label);
-    bb.stmts.map(stmt => printStmt(stmt));
-    console.log("--------------------------------")
-  });
+  console.log("--------------Inits-------------")
+  p.inits.forEach(v => console.log(valInitStr(v)));
+  console.log("--------------Func-------------")
+  p.funs.forEach(printFuncDef);
+  console.log("--------------CLS-------------")
+  p.classes.forEach(printClass);
+  console.log("--------------Body-------------")
+  p.body.forEach(printBlock);
+}
+
+function valStr(val: ir.Value<[Type, SourceLocation]>): string {
+  switch (val.tag) {
+    case "num":
+    case "wasmint":
+    case "bool":
+      return val.value.toString();
+    case "id":
+      return val.name;
+    case "none":
+      return "None";
+    default:
+      return "unknown";
+  }
+}
+
+function argStr(p: Parameter<[Type, SourceLocation]>): string {
+  return p.name + ": " + p.type.tag;
+}
+
+function valInitStr(val: ir.VarInit<[Type, SourceLocation]>): string {
+  return `Init ${val.name}: ${val.type.tag} = ${valStr(val.value)}`;
+}
+
+function printFuncDef(fdef: ir.FunDef<[Type, SourceLocation]>) {
+  console.log("--------------------------------");
+  console.log("Func: " + fdef.name);
+  fdef.parameters.forEach(p => console.log(argStr(p)));
+  console.log("Ret -> " + fdef.ret.tag);
+  console.log("--- init ---");
+  fdef.inits.forEach(v => console.log(valInitStr(v)));
+  console.log("--- body ---");
+  fdef.body.forEach(printBlock);
+  console.log("--------------------------------");
+}
+
+function printClass(cls: ir.Class<[Type, SourceLocation]>) {
+  console.log("--------------------------------");
+  console.log("Class: " + cls.name);
+  console.log("--- filds ---");
+  cls.fields.forEach(v => console.log(valInitStr(v)));
+  console.log("--- methods ---");
+  cls.methods.forEach(printFuncDef);
+  console.log("--------------------------------");
+}
+
+function printBlock(bb: ir.BasicBlock<[Type, SourceLocation]>) {
+  console.log("--------------------------------")
+  console.log("L: " + bb.label);
+  bb.stmts.forEach(printStmt);
+  console.log("--------------------------------")
 }
 
 function printStmt(stmt: ir.Stmt<[Type, SourceLocation]>) {
@@ -26,21 +80,21 @@ function printStmt(stmt: ir.Stmt<[Type, SourceLocation]>) {
   switch (stmt.tag) {
   case "assign":
     console.log("  " + stmt.name + " = ");
-    printExpr(stmt.value);
+    console.log(exprStr(stmt.value));
     break;
   case "return":
     console.log(" RETURN ");
     break;
   case "expr":
     console.log(stmt.expr.tag);
-    printExpr(stmt.expr);
+    console.log(exprStr(stmt.expr));
     break;
   case "pass":
     console.log(" PASS ");
     break;
   case "ifjmp":
     console.log(" --> " + stmt.thn + " IF ");
-    printVal(stmt.cond); 
+    console.log(valStr(stmt.cond)); 
     console.log(" --> " + stmt.els + " ELSE ");
     break;
   case "jmp":
@@ -53,61 +107,28 @@ function printStmt(stmt: ir.Stmt<[Type, SourceLocation]>) {
   console.log("\n");
 }
 
-function printExpr(expr: ir.Expr<[Type, SourceLocation]>) {
-  console.log("----" + expr.tag);
+function exprStr(expr: ir.Expr<[Type, SourceLocation]>): string {
   switch (expr.tag) {
   case "value":
-    printVal(expr.value);
-    break;
+    return valStr(expr.value)
   case "binop":
-    printVal(expr.left);
-    console.log(BinOp[expr.op]);
-    printVal(expr.right);
-    break;
+    return `${valStr(expr.left)} ${BinOp[expr.op]} ${valStr(expr.right)}`
   case "uniop":
-    console.log(UniOp[expr.op]);
-    printVal(expr.expr);
-    break;
+    return `${UniOp[expr.op]} ${valStr(expr.expr)}`;
   case "builtin1":
-    console.log(expr.name);
-    printVal(expr.arg);
-    break;
+    return `${expr.name} ${valStr(expr.arg)}`;
   case "builtin2":
-    printVal(expr.left);
-    console.log(expr.name);
-    printVal(expr.right);
-    break;
+    return `${expr.name}(${valStr(expr.left)}, ${valStr(expr.right)})`;
   case "call":
-    console.log("F() " + expr.name);
-    expr.arguments.map(printVal);
-    break;
+    const argStrs = expr.arguments.map(valStr).join(", ");
+    return `${expr.name}(${argStrs})`;
   case "alloc":
-    console.log("ALLOC " + expr.amount);
-    break;
+    return ("alloc: " + expr.amount);
   case "load":
-    console.log("LOAD " + expr.start + " " + expr.offset);
-    break;
+    return ("load: " + expr.start + " " + expr.offset);
   }
-  console.log("\n");
 }
 
-function printVal(val: ir.Value<[Type, SourceLocation]>) {
-  console.log(" ");
-  switch (val.tag) {
-  case "num":
-  case "wasmint":
-  case "bool":
-    console.log(val.value.toString());
-    break;
-  case "id":
-    console.log(val.name);
-    break;
-  case "none":
-    console.log("None");
-    break;
-  }
-  console.log(" ");
-}
 
 export enum JumpType { IF = 'green', ELSE = 'red', GOTO = 'black'}
 
@@ -121,6 +142,61 @@ function createBlock(label: string, stmtStrs: Array<string>): string {
   }
 }
 
+function createInits(lid: string, inits: ir.VarInit<[Type, SourceLocation]>[]): string {
+  const initStrs = inits.map(valInitStr);
+  return `"${lid}" [label="Inits | {${initStrs.join(' | ')}}"]`;
+}
+
+function createArgs(lid: string, ps: Parameter<[Type, SourceLocation]>[]): string {
+  const argStrs = `{${ps.map(argStr).join(' | ')}}`;
+  return `"${lid}" [label="Args | ${argStrs}"]`;
+}
+
+function createBody(lid: string, body: ir.BasicBlock<[Type, SourceLocation]>[]): [string, string[]] {
+  const bodyStr = [];
+  bodyStr.push(`subgraph "cluster_${lid}"{`);
+  bodyStr.push(`label="${lid}"`);
+  const jmps: Array<string> = []
+  body.forEach(bb => {
+    const stmtStrs: Array<string>= [];
+    bb.stmts.forEach((stmt, i) => {
+      const sj = inLineStmt(stmt, bb.label, i)
+      stmtStrs.push(sj[0]);
+      jmps.push(...sj[1]);
+    });
+    bodyStr.push(createBlock(bb.label, stmtStrs));
+  });
+  bodyStr.push("}");
+  return [bodyStr.join("\n"), jmps];
+}
+
+function createFuncDef(lid: string, fdef: ir.FunDef<[Type, SourceLocation]>): [string, string[]] {
+  const defStr = [];
+  defStr.push(`subgraph "cluster_${lid}"{`);
+  defStr.push(`label="${fdef.ret.tag} @${fdef.name}"`);
+  defStr.push(createArgs(`$${fdef.name}$args`, fdef.parameters));
+  defStr.push(createInits(`$${fdef.name}$inits`, fdef.inits));
+  const body = createBody(`$${fdef.name}$body`, fdef.body); 
+  defStr.push(body[0]);
+  defStr.push("}");
+  return [defStr.join('\n'), body[1]];
+}
+
+function createClass(lid: string, cls: ir.Class<[Type, SourceLocation]>): [string, string[]] {
+  const clsStr = [];
+  clsStr.push(`subgraph "cluster_${lid}"{`);
+  clsStr.push(`label="${cls.name}"`);
+  clsStr.push(createInits(`$${cls.name}$fields`, cls.fields));
+  const jmps: Array<string> = [];
+  cls.methods.forEach(mdef => {
+    const fsub = createFuncDef(`$${cls.name}${mdef.name}`, mdef);
+    clsStr.push(fsub[0]);
+    jmps.push(...fsub[1]);
+  });
+  clsStr.push("}");
+  return [clsStr.join('\n'), jmps]
+}
+
 type EdgeTarget = [string, string]
 function createEdge(s: EdgeTarget, t: EdgeTarget, jt: JumpType) {
   return `${s[0]}:${s[1]} -> ${t[0]}:${t[1]} [color = ${jt}];`
@@ -129,7 +205,22 @@ function createEdge(s: EdgeTarget, t: EdgeTarget, jt: JumpType) {
 export function dotProg(p: ir.Program<[Type, SourceLocation]>): string {
   const dotStr: Array<string> = [];
   dotStr.push("digraph IR {");
-  dotStr.push("node [shape=record];");
+  dotStr.push(`
+  node [shape=record];
+  graph [labeljust=l];
+  ratio = "fill";
+  `);
+  dotStr.push(createInits("$IR_VARINITS", p.inits));
+  p.funs.forEach(f => {
+    const fsub = createFuncDef(f.name, f);
+    dotStr.push(fsub[0]);
+    dotStr.push(...fsub[1]);
+  });
+  p.classes.forEach(cls => {
+    const clsSub = createClass(cls.name, cls);
+    dotStr.push(clsSub[0]);
+    dotStr.push(...clsSub[1]);
+  });
   p.body.forEach(bb => {
     const stmtStrs: Array<string>= [], jmps: Array<string> = [];
     bb.stmts.forEach((stmt, i) => {
@@ -146,15 +237,31 @@ export function dotProg(p: ir.Program<[Type, SourceLocation]>): string {
   return dotCode;
 
   return `
-  digraph structs {
+  digraph IR {
+
     node [shape=record];
-    "$struct1":f1 -> "struct2":l [color = "green"];
-    "$struct1" [label="<l> $left | <f1> mid& . #92; dle | <f2> valname1 ? $then1:$else1}"];
-    "struct2" [label="<l> one|<f1> two"];
-    "struct4" [label="<l> one"];
-    "struct3" [label="hello&#92;nworld |{ b |{c|<here> d|e}| f}| g | h"];
-    "$struct1":f2 -> "struct3":here;
-}
+    graph [labeljust=l];
+    ratio = "fill";
+  
+  "$IR_VARINITS" [label="Inits | {Init g: number = 0 | Init u: bool = false}"]
+  subgraph cluster_f{
+  label="number @f"
+  "$f$args" [label = "Args | {a: number | b: number}"]
+  "$f$inits" [label="Inits | {Init valname1: bool = None | Init valname2: number = None | Init i: number = 0 | Init x: number = 1 | Init ret: number = 0}"]
+  subgraph "cluster_$f$body"{
+  label="$f$body"
+  "$startFun1" [label="<lbl> $startFun1 | {<ins0> x = g | <ins1> goto: $whilestart1}"];
+  "$whilestart1" [label="<lbl> $whilestart1 | {<ins0> valname1 = i Lt b | <ins1> valname1 ? $whilebody1:$whileend1}"];
+  "$whilebody1" [label="<lbl> $whilebody1 | {<ins0> ret = ret Mul a | <ins1> i = i Plus 1 | <ins2> goto: $whilestart1}"];
+  "$whileend1" [label="<lbl> $whileend1 | {<ins0> valname2 = ret Plus x | <ins1> return valname2}"];
+  }
+  }
+  "$startFun1":ins1 -> "$whilestart1":lbl [color = black];
+  "$whilestart1":ins1 -> "$whilebody1":lbl [color = green];
+  "$whilestart1":ins1 -> "$whileend1":lbl [color = red];
+  "$whilebody1":ins2 -> "$whilestart1":lbl [color = black];
+  "$startProg1" [label="<lbl> $startProg1"];
+  }
   `;
 }
 
@@ -225,10 +332,18 @@ function valInline(val: ir.Value<[Type, SourceLocation]>): string {
 async function debug(optAst: boolean = false, optIR: boolean = false) {
   var source = 
 `
-x: int = 0
-y: int = 1
-if x < 1: 
-  print(1)
+g: int = 0
+u: bool = False
+def f(a: int, b: int) -> int:
+  i: int = 0
+  x: int = 1
+  ret: int = 0
+  x = g
+  while i < b:
+    ret = ret * a
+    i = i + 1
+  return ret + x
+f(3, 5)
 `
   const parsed = parse(source);
   // console.log(JSON.stringify(parsed, null, 2));

@@ -3,26 +3,22 @@
 ## A. Test cases / Scenarios
 > Analyses that extract useful guidance for potential transformations without altering the IR
 
-### 1. Liveness Analysis
+### 1. Liveness Analysis (Not Implemented, will focus on data-flow)
 **Original**
 ```python
-def f(x: int):
-  if True:
-    return x + 1
-  else:
-    x = x * 2
-    return x + 1
+g: int = 0
+def f(a: int, b: int): int
+  i: int = 0
+  x: int = 1
+  x = g
+  ret: int = 0
+  while i < b:
+    ret = ret * a
+    i = i + 1
+  return rex + x
 ```
-**Tagged**
+**Passed**
 ```python
-def f(x: int):
-  if True:
-    return x + 1
-  # Dead
-  else:
-    x = x * 2
-    return x + 1
-  # Dead
 ```
 
 ### 2. IR-CFG Visualization
@@ -52,7 +48,7 @@ def f(i:int):
     return i
 ```
 
-### 4. Eliminate Dead Branch
+### 4. Eliminate Dead Branch (Only Directly Foldable Condition)
 **Before Optimization**
 ```python
 def f(i:int):
@@ -67,7 +63,7 @@ def f(i:int):
     return i + 1
 ```
 
-### 5. Eliminate instructions that only affects dead variables
+### 5. Eliminate instructions that only affects dead variables (Haven't Implemented yet)
 
 **Before Optimization**
 ```python

@@ -4,6 +4,7 @@ import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Clas
 import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
+import { BuiltinLib } from './builtinlib';
 
 export type GlobalTypeEnv = {
   globals: Map<string, Type>,
@@ -19,23 +20,9 @@ export type LocalTypeEnv = {
 }
 
 const defaultGlobalFunctions = new Map();
-defaultGlobalFunctions.set("abs", [[NUM], NUM]);
-
-defaultGlobalFunctions.set("factorial", [[NUM], NUM]);
-defaultGlobalFunctions.set("randint", [[NUM, NUM], NUM]);
-defaultGlobalFunctions.set("randrange", [[NUM, NUM, NUM], NUM]);
-defaultGlobalFunctions.set("time", [[], NUM]);
-defaultGlobalFunctions.set("sleep", [[NUM], NONE]);
-defaultGlobalFunctions.set("lcm", [[NUM, NUM], NUM]);
-defaultGlobalFunctions.set("gcd", [[NUM, NUM], NUM]);
-defaultGlobalFunctions.set("comb", [[NUM, NUM], NUM]);
-defaultGlobalFunctions.set("perm", [[NUM, NUM], NUM]);
-
-defaultGlobalFunctions.set("int", [[BOOL], NUM]);
-defaultGlobalFunctions.set("bool", [[NUM], BOOL]);
-defaultGlobalFunctions.set("max", [[NUM, NUM], NUM]);
-defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
-defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
+BuiltinLib.forEach(x=>{
+  defaultGlobalFunctions.set(x.name, x.typeSign);
+})
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 
 export const defaultTypeEnv = {
@@ -293,6 +280,8 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       }
     case "call":
       if (expr.name === "print") {
+        if (expr.arguments.length===0)
+          throw new TypeCheckError("print needs at least 1 argument");
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
         return {...expr, a: [NONE, expr.a], arguments: tArgs};
       } 

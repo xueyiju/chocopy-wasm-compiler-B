@@ -23,19 +23,31 @@ export function lcm(x:number, y:number):number{
 }
 
 export function comb(x:number, y:number):number{
-  if (x<y)
+  if (x < y || x < 0 || y < 0)
     throw new RunTimeError("comb param error");
-	throw new RunTimeError("not implemented yet");
+
+	return perm(x, y) / perm(y, y)
 }
+
 export function perm(x:number, y:number):number{
-  if (x<y)
+  if (x < y || x < 0 || y < 0)
     throw new RunTimeError("perm param error");
-	throw new RunTimeError("not implemented yet");
+  
+  let result = 1
+  for (var i = 0; i < y; i++) {
+    result *= (x - i)
+  }
+  return result
+
 }
 export function randrange(x:number, y:number, step:number){
   if(y<x) 
     throw new RunTimeError("randrange range error, upperBound less than lowerBound");
-  throw new RunTimeError("not implemented yet");
+  let result = randint(x, y)
+  while ((result - x) % step !== 0) {
+    result = randint(x, y)
+  }
+  return result
 }
 
 

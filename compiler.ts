@@ -1,6 +1,7 @@
 import { Program, Stmt, Expr, Value, Class, VarInit, FunDef } from "./ir"
 import { BinOp, Type, UniOp, SourceLocation } from "./ast"
 import { BOOL, NONE, NUM } from "./utils";
+import { RunTimeError } from "./error_reporting";
 
 export type GlobalEnv = {
   globals: Map<string, boolean>;
@@ -153,19 +154,20 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
       if (expr.name=="print"){
         var valStmts = expr.arguments.map(arg=>{
           let argCode = codeGenValue(arg, env);
-          switch (arg.tag){
-            case "none":
-              argCode.push("(call $print_none)", "drop");
+          switch (arg.a[0]){
+            case NUM:
+              argCode.push("(call $print_num)");
               break;
-            case "num":
-              argCode.push("(call $print_num)", "drop");
+            case BOOL:
+              argCode.push("(call $print_bool)");
               break;
-            case "bool":
-              argCode.push("(call $print_bool)", "drop");
+            case NONE:
+              argCode.push("(call $print_none)");
               break;
             default:
-              argCode.push("(call $print_num)", "drop");
+              throw new RunTimeError("not implemented object print")
           }
+          argCode.push("drop");
           return argCode;
         }).flat();
         return valStmts.slice(0,-1);

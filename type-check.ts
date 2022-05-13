@@ -40,7 +40,7 @@ defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 export const defaultTypeEnv = {
   globals: new Map(),
   functions: defaultGlobalFunctions,
-  classes: new Map(),
+  classes: defaultGlobalClasses
 };
 
 export function emptyGlobalTypeEnv() : GlobalTypeEnv {
@@ -395,6 +395,12 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor
         const tConstruct : Expr<[Type, SourceLocation]> = { a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name };
+
+        //To support range class for now
+        if (expr.name === "range") {
+          return tConstruct;
+        }
+
         const [_, methods] = env.classes.get(expr.name);
         if (methods.has("__init__")) {
           const [initArgs, initRet] = methods.get("__init__");

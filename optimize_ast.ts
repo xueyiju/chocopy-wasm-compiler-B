@@ -231,7 +231,7 @@ function foldBinop(lhs: Literal, rhs: Literal, op: BinOp): Literal{
             if(lhs.tag !== "num" || rhs.tag !== "num"){
                 return {tag: "none"};
             }  
-            return {tag: "num", value: lhs.value + rhs.value};
+            return {tag: "num", value: lhs.value % rhs.value};
         case BinOp.Eq:
             if(lhs.tag === "none" || rhs.tag === "none"){
                 return {tag: "bool", value: true};

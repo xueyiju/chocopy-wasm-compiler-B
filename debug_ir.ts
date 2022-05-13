@@ -6,7 +6,7 @@ import { lowerProgram } from './lower';
 import { importObject, addLibs  } from "./tests/import-object.test";
 import { BasicREPL } from "./repl";
 import * as ir from './ir';
-
+import { optimizeAst } from "./optimize_ast"
 import { CliRenderer } from "@diagrams-ts/graphviz-cli-renderer";
 
 
@@ -226,13 +226,8 @@ async function debug() {
 `
 x: int = 0
 y: int = 1
-if x > y:
-  y = x + 1
-else:
-  if y > 1:
-    y = y + 1
-  else:
-    x = x * 2
+if x < 1: 
+  print(1)
 `
   const parsed = parse(source);
   // console.log(JSON.stringify(parsed, null, 2));

@@ -87,10 +87,17 @@ function optimizeExpr(expr: Expr<[Type, SourceLocation]>): Expr<[Type, SourceLoc
             return {...expr, arguments: optArgs};
         case "builtin1":
             var optArg = optimizeExpr(expr.arg);
+            if (optArg.tag == "literal" && expr.name == "abs" && optArg.value.tag == "num") {
+                return {tag: "literal", value: {tag: "num", value: Math.abs(optArg.value.value)}, a: expr.a};
+            }
             return {...expr, arg: optArg};
         case "builtin2":
             var optLeft = optimizeExpr(expr.left);
             var optRight = optimizeExpr(expr.right);
+            if (optLeft.tag == "literal" && optRight.tag == "literal") {
+                const value = foldBuiltin2(optLeft.value, optRight.value, expr.name);
+                return {tag: "literal", value, a: expr.a};
+            }
             return {...expr, left: optLeft, right: optRight};
         case "method-call":
             var optArgs = expr.arguments.map(e => optimizeExpr(e));
@@ -122,6 +129,25 @@ function optimizeStmt(stmt: Stmt<[Type, SourceLocation]>): Stmt<[Type, SourceLoc
             return {...stmt, value: optValue};
         default:
             return {...stmt};
+    }
+}
+
+function foldBuiltin2(lsh: Literal, rhs: Literal, name: string): Literal {
+    switch (name) {
+        case "max":
+            if (lsh.tag === "num" && rhs.tag === "num")
+                return {tag: "num", value: Math.max(lsh.value, rhs.value)};
+            return {tag: "none"};
+        case "min":
+            if (lsh.tag === "num" && rhs.tag === "num")
+                return {tag: "num", value: Math.min(lsh.value, rhs.value)};
+            return {tag: "none"};
+        case "pow":
+            if (lsh.tag === "num" && rhs.tag === "num")
+                return {tag: "num", value: Math.pow(lsh.value, rhs.value)};
+            return {tag: "none"};
+        default:
+            return {tag: "none"};
     }
 }
 

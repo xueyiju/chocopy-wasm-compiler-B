@@ -6,12 +6,11 @@ import { importObject, addLibs  } from "./tests/import-object.test";
 // entry point for debugging
 async function debug() {
   var source = `
-def f(self: C) -> int:
-  return 6666
-  if True:
-    return 0
-  else:
-    return 100
+x: int = 2
+y: int = 1
+x = max(2 * 4, x + 1)
+y = abs(1 - 2 * 4)
+print(x + y)
 `
   const ast = parse(source);
   

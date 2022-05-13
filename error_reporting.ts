@@ -12,8 +12,8 @@ export class CompileTimeError extends Error {
 
 // I ❤️ TypeScript: https://github.com/microsoft/TypeScript/issues/13965
 export class TypeCheckError extends CompileTimeError {
-    constructor(message?: string) {
-     super("TYPE ERROR: " + message);
+    constructor(message?: string, line?: number) {
+     super("TYPE ERROR: " + message + " at line " + line.toString());
    } 
  }
 
@@ -27,7 +27,7 @@ export class TypeCheckError extends CompileTimeError {
     __proto__: CompileTimeError 
     constructor(message?: string, line?: number) {
      const trueProto = new.target.prototype;
-     super("PARSE ERROR: " + message + "at line " + line.toString());
+     super("PARSE ERROR: " + message + " at line " + line.toString());
      this.__proto__ = trueProto;
    } 
  }

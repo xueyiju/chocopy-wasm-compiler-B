@@ -143,7 +143,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
           op = BinOp.Or;
           break;
         default:
-          throw new ParseError("Could not parse op at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line)
+          throw new ParseError("Could not parse operator at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line)
       }
       c.nextSibling(); // go to rhs
       const rhsExpr = traverseExpr(c, s);
@@ -159,6 +159,10 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       c.firstChild(); // Focus on (
       c.nextSibling(); // Focus on inside
       var expr = traverseExpr(c, s);
+      c.nextSibling(); // Focus on )
+      if(s.substring(c.from, c.to) !== ")") {
+        throw new ParseError("Missing parenthesis", location.line);
+      }
       c.parent();
       return expr;
     case "UnaryExpression":
@@ -299,6 +303,9 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       // console.log("Cond:", cond);
       c.nextSibling(); // Focus on : thn
       c.firstChild(); // Focus on :
+      if(s.substring(c.from, c.to) !== ":") {
+        throw new ParseError("Missing colon", location.line);
+      }
       var thn = [];
       while(c.nextSibling()) {  // Focus on thn stmts
         thn.push(traverseStmt(c,s));
@@ -330,6 +337,9 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
 
       var body = [];
       c.firstChild(); // Focus on :
+      if(s.substring(c.from, c.to) !== ":") {
+        throw new ParseError("Missing colon", location.line);
+      }
       while(c.nextSibling()) {
         body.push(traverseStmt(c, s));
       }

@@ -84,7 +84,7 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
   if(irOpt){
     irprogram = optimizeIr(irprogram);
   }
-  printProgIR(irprogram);
+  // printProgIR(irprogram);
 
   const progTyp = tprogram.a[0];
   var returnType = "";

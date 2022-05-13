@@ -45,12 +45,22 @@
     (i32.const 0)
     (i32.add)
     (i32.load)
+    (local.get $addr)
+    (i32.const 8)
+    (i32.add)
+    (i32.load)
+    (i32.mul)
     
     ;; get the stop field
     (local.get $addr)
     (i32.const 4)
     (i32.add)
     (i32.load)
+    (local.get $addr)
+    (i32.const 8)
+    (i32.add)
+    (i32.load)
+    (i32.mul)
 
     ;; check if the first value is less than stop
     (i32.lt_s)
@@ -108,6 +118,12 @@
     (i32.const 16)
     (i32.add)
     (i32.load)
+
+    (local.get $addr)
+    (i32.const 8)
+    (i32.add)
+    (i32.load)
+    (i32.mul)
         
     ;; get the stop field
     (local.get $addr)
@@ -115,6 +131,11 @@
     (i32.add)
     (i32.load)
 
+    (local.get $addr)
+    (i32.const 8)
+    (i32.add)
+    (i32.load)
+    (i32.mul)
     ;; check if the next value is less than stop
     (i32.lt_s)
 

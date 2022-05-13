@@ -2,6 +2,8 @@ import {BasicREPL} from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
+import CodeMirror from "codemirror";
+import "./style.scss";
 
 export type ObjectField = 
 |{field: string, value: Value}
@@ -68,6 +70,7 @@ function getObject(result: Value, view: Int32Array, relp: BasicREPL): Array<Obje
 }
 
 function webStart() {
+  var filecontent: string | ArrayBuffer;
   document.addEventListener("DOMContentLoaded", async function() {
 
     // https://github.com/mdn/webassembly-examples/issues/5
@@ -143,7 +146,9 @@ function webStart() {
           const source = replCodeElement.value;
           elt.value = source;
           replCodeElement.value = "";
-          repl.run(source).then((r) => { console.log(r); renderResult(r); console.log ("run finished") })
+          repl.run(source).then((r) => { 
+            console.log(r);
+            renderResult(r); console.log ("run finished") })
               .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
       });
@@ -168,6 +173,36 @@ function webStart() {
       })
         .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
+
+    document.getElementById("choose_file").addEventListener("change", function (e) {
+      //load file
+      var input: any = e.target;
+      var reader = new FileReader();
+      reader.onload = function () {
+        filecontent = reader.result;
+      };
+      reader.readAsText(input.files[0]);
+    });
+
+    document.getElementById("load").addEventListener("click", function (e) {
+      //clear repl output
+      resetRepl();
+      //reset environment
+      repl = new BasicREPL(importObject);
+      // Repalce text area with the content in the uploaded file
+      const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      source. value = filecontent.toString();
+    });
+
+    document.getElementById("save").addEventListener("click", function (e) {
+      //download the code in the user-code text area
+      var FileSaver = require("file-saver");
+      var title = (document.getElementById("save_title") as any).value;
+      const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
+      FileSaver.saveAs(blob, title);
+    });
+    
     setupRepl();
   });
 }

@@ -70,6 +70,7 @@ export function augmentEnv(env: GlobalEnv, prog: Program<[Type, SourceLocation]>
 
 
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
+
 export async function run(source : string, config: Config, astOpt: boolean = false, irOpt: boolean = false) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource, string]> {
   const parsed = parse(source);
   var [tprogram, tenv] = tc(config.typeEnv, parsed);
@@ -78,11 +79,11 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
   }
   const globalEnv = augmentEnv(config.env, tprogram);
   var irprogram = lowerProgram(tprogram, globalEnv);
+
   if(irOpt){
     irprogram = optimizeIr(irprogram);
   }
   // printProgIR(irprogram);
-
 
   const progTyp = tprogram.a[0];
   var returnType = "";

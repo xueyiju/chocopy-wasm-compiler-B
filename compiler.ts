@@ -509,26 +509,22 @@ function setFuncs() : Array<string> {
 
   setFuns.push(
     ...[
-      "(func $ha$htable$CreateEntry (param $key i32) (param $val i32) (result i32)",
-      "(local $$allocPointer i32)",
-      "(i32.const 2)   ;; size in bytes",
-      "(call $$gcalloc)",
-      "(local.tee $$allocPointer)",
-      "(local.get $key)",
-      "(i32.store)", // Dumping tag
-      "(local.get $$allocPointer)",
-      "(i32.const 4)",
-      "(i32.add)", // Moving to the next block
-      "(local.get $val)",
-      "(i32.store)", // Dumping value
-      "(local.get $$allocPointer)",
-      "(i32.const 8)",
-      "(i32.add)", // Moving to the next block
-      "(i32.const 0)", //None
-      "(i32.store)", // Dumping None in the next
-      "(local.get $$allocPointer)",
-      "(return))",
-      "",
+      "(func $set$CreateEntry (param $val i32) (result i32)",
+        "(local $$allocPointer i32)",
+
+        "(i32.const 2)   ;; size in bytes",
+        "(call $alloc)",
+        "(local.tee $$allocPointer)",
+        "(local.get $val)",
+        "(i32.store)", 
+        "(local.get $$allocPointer)",
+        "(i32.const 4)",
+        "(i32.add)",
+        "(i32.const 0)", 
+        "(i32.store)", 
+        "(local.get $$allocPointer)",
+        "(return))",
+        "",
     ]
   );
 
@@ -725,6 +721,7 @@ function setFuncs() : Array<string> {
       ")", // Closing if inside else
       ")", // Closing else
       ")", // Closing if
+      "(i32.const 0)",
       "(return))", //
     ]
   );

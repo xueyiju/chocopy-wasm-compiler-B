@@ -263,6 +263,18 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         start: oval,
         offset: { tag: "wasmint", value: offset }}];
     }
+    case "index":
+      const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
+      const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
+      if (e.obj.a[0].tag !== "list") { throw new Error("Compiler's cursed, go home"); }
+      
+      
+      return [[...oinits, ...iinits], [...ostmts, ...istmts], {
+        tag: "load",
+        start: oval,
+        //@ts-ignore
+        offset: ival
+      }];
     case "construct":
       const classdata = env.classes.get(e.name);
       const fields = [...classdata.entries()];
@@ -287,10 +299,10 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       ];
     case "listliteral":
       const newListName = generateName("newList");
-      const allocList : IR.Expr<Type> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length } };
-      var inits : Array<IR.VarInit<Type>> = [];
-      var stmts : Array<IR.Stmt<Type>> = [];
-      const assignsList : IR.Stmt<Type>[] = e.elements.map((e, i) => {
+      const allocList : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length } };
+      var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
+      var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
+      const assignsList : IR.Stmt<[Type, SourceLocation]>[] = e.elements.map((e, i) => {
         const [init, stmt, vale] = flattenExprToVal(e, env);
         inits = [...inits, ...init];
         stmts = [...stmts, ...stmt];
@@ -302,7 +314,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         }
       })
       return [
-        [ { name: newListName, type: e.a, value: { tag: "none" } }, ...inits ],
+        [ { name: newListName, type: e.a[0], value: { tag: "none" } }, ...inits ],
         [ { tag: "assign", name: newListName, value: allocList }, ...stmts, ...assignsList ],
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newListName } }
       ];

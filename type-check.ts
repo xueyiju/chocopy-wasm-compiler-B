@@ -38,11 +38,11 @@ defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 
 const defaultGlobalClasses = new Map();
 const rangeFields = new Map<string, Type>();
-rangeFields.set("start", {tag: "number"});
-rangeFields.set("stop", {tag: "number"});
-rangeFields.set("step", {tag: "number"});
-rangeFields.set("hasnext", {tag: "bool"});
-rangeFields.set("currvalue",  {tag: "number"});
+rangeFields.set("start", NUM);
+rangeFields.set("stop", NUM);
+rangeFields.set("step", NUM);
+rangeFields.set("hasnext", NUM);
+rangeFields.set("currvalue",  NUM);
 // const rangeMethods = new Map();
 
 // func.set(funname , [ [] , []   ])
@@ -52,13 +52,13 @@ rangeFields.set("currvalue",  {tag: "number"});
 // rangeMethods.set("index", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}])
 // defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 const rangeMethods = new Map();
-rangeMethods.set("__init__", [[{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}, {tag: "number"}], {tag: "class", name: "range"}]) // we shall convert range(10) to range(0, 10, 1)
+rangeMethods.set("__init__", [[CLASS("range"), NUM, NUM, NUM], CLASS("range")]) // we shall convert range(10) to range(0, 10, 1)
 //rangeMethods.set("__hasnext__", [[{tag: "class", name: "range"}], [{tag: "bool"}]])
 //rangeMethods.set("__next__", [[{tag: "class", name: "range"}], [{tag: "number"}]])
-rangeMethods.set("__hasnext__", [[{tag: "class", name: "range"},], {tag: "bool"}])
-rangeMethods.set("__next__", [[{tag: "class", name: "range"},], {tag: "number"}])
+rangeMethods.set("__hasnext__", [[CLASS("range")], BOOL])
+rangeMethods.set("__next__", [[CLASS("range")], NUM])
 
-rangeMethods.set("index", [[{tag: "class", name: "range"}, {tag: "number"}], {tag: "number"}])
+rangeMethods.set("index", [[CLASS("range"), NUM], NUM])
 defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 
 export const defaultTypeEnv = {
@@ -244,7 +244,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       var tIterable = tcExpr(env, locals, stmt.iterable);
       locals.currLoop = "for";
       var tForBody = tcBlock(env, locals, stmt.body);
-      if(tVars.a.tag !== "number")
+      if(!equalType(tVars.a, NUM))
         throw new TypeCheckError("Expected type `int`, got type `" + tVars.a.tag + "`");
       if(tIterable.a.tag !== "class" || tIterable.a.name !== "range")
         throw new TypeCheckError("Not an iterable");
@@ -388,7 +388,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
             const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
           console.log(tArgs)
           console.log(initArgs)
-            if(tArgs.every((tArg, i) => tArg.a.tag === initArgs[i + 1].tag)) 
+            if(tArgs.every((tArg, i) => equalType(tArg.a, initArgs[i + 1]))) 
                 return  {a: CLASS(expr.name), tag: "construct", name: expr.name, arguments: tArgs };
             else 
               throw new TypeError("Function call type mismatch: " + expr.name);

@@ -390,6 +390,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
 
 function traverseDestructure(c: TreeCursor, s: string):DestructureLHS<SourceLocation>[] {
   const lhsargs : DestructureLHS<SourceLocation>[] = [];
+  var location = getSourceLocation(c, s);
   var hasStarred = 0;
 
   do{
@@ -402,7 +403,7 @@ function traverseDestructure(c: TreeCursor, s: string):DestructureLHS<SourceLoca
       if(lhs.isStarred){
         hasStarred = hasStarred + 1
         if (hasStarred > 1)
-          throw new Error("PARSE ERROR: Multiple starred expressions.")
+          throw new ParseError("Multiple starred expressions.", location.line)
       }
       lhsargs.push(lhs)
     } 
@@ -428,11 +429,12 @@ function traverseDestructureLHS(c: TreeCursor, s: string):DestructureLHS<SourceL
   return {lhs, isIgnore, isStarred};
 }
 
-function traverseAssignTarget(c: TreeCursor, s: string):AssignTarget<SourceLocation>{
+function traverseAssignTarget(c: TreeCursor, s: string):AssignTarget<SourceLocation> {
+  var location = getSourceLocation(c, s);
   const lhs = traverseExpr(c,s);
   // 2. LHS is valid expression type : "id" | "lookup" 
   if (lhs.tag!=="id" && lhs.tag!=="lookup") {
-    throw new Error("PARSE ERROR: Cannot have "+ lhs.tag + " expression at LHS while parsing assignment statements.")
+    throw new ParseError("Cannot have "+ lhs.tag + " expression at LHS while parsing assignment statements.", location.line)
   }
   return lhs;
 }

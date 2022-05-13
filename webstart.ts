@@ -3,6 +3,10 @@ import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
 
+export type ObjectField = 
+|{field: string, value: Value}
+|{field: string, value: Array<ObjectField>, type: Value}
+
 function stringify(typ: Type, arg: any) : string {
   switch(typ.tag) {
     case "number":
@@ -28,6 +32,39 @@ function assert_not_none(arg: any) : any {
   if (arg === 0)
     throw new Error("RUNTIME ERROR: cannot perform operation on none");
   return arg;
+}
+
+function getObject(result: Value, view: Int32Array, relp: BasicREPL): Array<ObjectField>{
+  let list = new Array<ObjectField>();
+  if(result.tag === "bool" || result.tag === "none" || result.tag === "num"){
+    return list;
+  }
+
+  list.push({field: "address", value: {tag:"num", value: result.address}});
+  //get the field of object
+  const fields = relp.currentTypeEnv.classes.get(result.name)[0];
+  let index = result.address / 4;
+  fields.forEach((value: Type, key: string) => {
+    switch(value.tag){
+      case "number":
+        list.push({field: key, value: {tag: "num", value: view.at(index)}});
+        break;
+      case "bool":
+        list.push({field: key, value: {tag: "bool", value: Boolean(view.at(index))}});
+        break;
+      case "none":
+        list.push({field: key, value: {tag: "none", value: view.at(index)}});
+        break;
+      case "class":
+        const objectResult : Value = {tag: "object", name: value.name, address: view.at(index)};
+        const fieldList = getObject(objectResult, view, relp);
+        list.push({field: key, value: fieldList, type: objectResult});
+        break;
+    }
+    index += 1
+  });
+
+  return list;
 }
 
 function webStart() {
@@ -106,7 +143,7 @@ function webStart() {
           const source = replCodeElement.value;
           elt.value = source;
           replCodeElement.value = "";
-          repl.run(source).then((r) => { renderResult(r); console.log ("run finished") })
+          repl.run(source).then((r) => { console.log(r); renderResult(r); console.log ("run finished") })
               .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
       });
@@ -120,8 +157,16 @@ function webStart() {
       repl = new BasicREPL(importObject);
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       resetRepl();
-      repl.run(source.value).then((r) => { renderResult(r); console.log ("run finished") })
-          .catch((e) => { renderError(e); console.log("run failed", e) });;
+      console.log(source);
+      repl.run(source.value).then((r) => {
+        console.log(r); 
+        console.log(repl.getHeap());
+        console.log(getObject(r, repl.getHeap(), repl));
+        renderResult(r); 
+        console.log ("run finished") 
+        
+      })
+        .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
     setupRepl();
   });

@@ -6,6 +6,10 @@ import { Value, Type } from "./ast";
 import { parse } from "./parser";
 import { kill } from "process";
 
+export type ObjectField = 
+|{field: string, value: Value}
+|{field: string, value: Array<ObjectField>, type: Value}
+
 interface REPL {
   run(source : string) : Promise<any>;
 }
@@ -16,7 +20,6 @@ export class BasicREPL {
   functions: string
   importObject: any
   memory: any
-
 
   constructor(importObject : any) {
     this.importObject = importObject;
@@ -57,9 +60,41 @@ export class BasicREPL {
     return result;
   }
 
+  trackObject(result: Value, view: Int32Array): Array<ObjectField>{
+    let list = new Array<ObjectField>();
+    if(result.tag === "bool" || result.tag === "none" || result.tag === "num"){
+      return list;
+    }
   
+    list.push({field: "address", value: {tag:"num", value: result.address}});
+    //get the field of object
+    const fields = this.currentTypeEnv.classes.get(result.name)[0];
+    let index = result.address / 4;
+    fields.forEach((value: Type, key: string) => {
+      switch(value.tag){
+        case "number":
+          list.push({field: key, value: {tag: "num", value: view.at(index)}});
+          break;
+        case "bool":
+          list.push({field: key, value: {tag: "bool", value: Boolean(view.at(index))}});
+          break;
+        case "none":
+          list.push({field: key, value: {tag: "none", value: view.at(index)}});
+          break;
+        case "class":
+          const objectResult : Value = {tag: "object", name: value.name, address: view.at(index)};
+          const fieldList = this.trackObject(objectResult, view);
+          list.push({field: key, value: fieldList, type: objectResult});
+          break;
+      }
+      index += 1
+    });
+  
+    return list;
+  }
+
   // need information from menmory
-  getHeap(): Int32Array{
+  trackHeap(): Int32Array{
     const view = new Int32Array(this.importObject.js.memory.buffer);
     return view;
   }

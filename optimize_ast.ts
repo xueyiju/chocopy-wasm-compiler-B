@@ -10,6 +10,7 @@ export function optimizeAst(program: Program<[Type, SourceLocation]>) : Program<
     do {
         isChanged = false;
         counter++;
+        console.log(counter);
         // Optimize function definitions
         const optFuns = newProgram.funs.map(fun => optimizeFuncDef(fun));
         // Optimize class definitions
@@ -41,7 +42,7 @@ function optimizeFuncDef(funDef: FunDef<[Type, SourceLocation]>): FunDef<[Type, 
     // Dead code elimination
     var optBody = deadCodeElimination(funDef.body);
     // Constant folding
-    optBody = funDef.body.map(stmt => optimizeStmt(stmt));
+    optBody = optBody.map(stmt => optimizeStmt(stmt));
     return {...funDef, body: optBody};
 }
 
@@ -86,11 +87,12 @@ function DCEForPass(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Typ
  */
 function DCEForReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
     const newStmts: Array<Stmt<[Type, SourceLocation]>> = [];
-    for (let stmt of stmts) {
+    for (let [index, stmt] of stmts.entries()) {
         switch(stmt.tag) {
             case "return": {
                 newStmts.push(stmt);
-                if (stmts.indexOf(stmt) < stmts.length-1) {
+                console.log(stmts.length);
+                if (index < stmts.length-1) {
                     isChanged = true;
                 }
                 return newStmts;

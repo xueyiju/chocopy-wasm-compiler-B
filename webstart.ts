@@ -2,6 +2,8 @@ import {BasicREPL} from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
+import CodeMirror from "codemirror";
+import "./style.scss";
 
 function stringify(typ: Type, arg: any) : string {
   switch(typ.tag) {
@@ -31,6 +33,7 @@ function assert_not_none(arg: any) : any {
 }
 
 function webStart() {
+  var filecontent: string | ArrayBuffer;
   document.addEventListener("DOMContentLoaded", async function() {
 
     // https://github.com/mdn/webassembly-examples/issues/5
@@ -123,6 +126,39 @@ function webStart() {
       repl.run(source.value).then((r) => { renderResult(r); console.log ("run finished") })
           .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
+
+    document.getElementById("choose_file").addEventListener("change", function (e) {
+      //clears repl output
+      resetRepl();
+      //resets environment
+      repl = new BasicREPL(importObject);
+      //load file
+      var input: any = e.target;
+      var reader = new FileReader();
+      reader.onload = function () {
+        filecontent = reader.result;
+      };
+      reader.readAsText(input.files[0]);
+    });
+
+    document.getElementById("load").addEventListener("click", function (e) {
+      // const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      var element = document.querySelector(".CodeMirror") as any;
+      var editor = element.CodeMirror;
+      editor.setValue(filecontent);
+    });
+
+    document.getElementById("save").addEventListener("click", function (e) {
+      //download the code in the editor
+      var FileSaver = require("file-saver");
+      var title = (document.getElementById("save_title") as any).value;
+      var element = document.querySelector(".CodeMirror") as any;
+      var editor = element.CodeMirror;
+      var code = editor.getValue();
+      var blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+      FileSaver.saveAs(blob, title);
+    });
+    
     setupRepl();
   });
 }

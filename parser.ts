@@ -59,9 +59,14 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
       c.parent(); // pop CallExpression
 
       if(genericArgs) {
-        callExpr = {
-          tag: "id",
-          name: callStr.split('[')[0]
+        const genArgsStr = genericArgs.toString();
+        const commaSepArgs = genArgsStr.substring(1, genArgsStr.length - 1);
+        const genTypes = commaSepArgs.split(',').map(s => typeFromString(s));
+        return {
+          tag: "call",
+          name: callStr.split('[')[0],
+          arguments: args,
+          genericArgs: genTypes
         };
       } 
 
@@ -471,6 +476,7 @@ function traverseTypeList(c: TreeCursor, s: string): Array<Type> {
     c.nextSibling(); // focus on type
   }
 
+  c.parent();       // Pop to ArgList
   return types;
 }
 
@@ -497,7 +503,15 @@ export function traverseClass(c : TreeCursor, s : string) : Class<null> {
   c.parent();
 
   if (!methods.find(method => method.name === "__init__")) {
-    methods.push({ name: "__init__", parameters: [{ name: "self", type: CLASS(className) }], ret: NONE, inits: [], body: [] });
+    const genericParents = parents.filter(t => t.tag == "class" && t.name == "Generic" && t.genericArgs);
+    if(genericParents && genericParents.length > 0 && genericParents[0].tag == "class") {
+      const genericParent = genericParents[0];
+      methods.push({ name: "__init__", parameters: 
+        [{ name: "self", type: GENERIC_CLASS(className, genericParent.genericArgs) }], ret: NONE, inits: [], body: [] 
+      });
+    } else {
+      methods.push({ name: "__init__", parameters: [{ name: "self", type: CLASS(className) }], ret: NONE, inits: [], body: [] });
+    }
   }
   return {
     name: className,

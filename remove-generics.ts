@@ -36,15 +36,41 @@ export function removeGenerics(ast: Program<null>): Program<null> {
             return {...i, type: newType};
         }
         return i;
+    }).filter(i => i.type.tag != "type-var");
+
+    const newStmts = ast.stmts.map(s => {
+        if(s.tag == "assign" && s.value.tag == "call" && classEnv.genericArgs.has(s.value.name)) {
+            let newName = s.value.name;
+            s.value.genericArgs.forEach(ga => {
+                newName += '_' + typeString(ga);
+            })
+
+            const newCall = {...s.value, name: newName};
+            return {...s, value: newCall};
+        }
+        return s;
     });
 
-    const newFuns = ast.funs.map(f => specializeFun(f, genericsEnv, classEnv));
+    const newFuns = ast.funs.map(f => removeGenericsFromFun(f, genericsEnv, classEnv));
 
     // now just replace the generic classes with the specialized classes.
     // ex. Create all the Box_number, Box_bool, etc classes for each type in genericsEnv.typeVarSpecializations["T"]
-    let genericClasses: Array<Class<null>> = [];
+    const specializedClasses = ast.classes.map(c => specializeClass(c, genericsEnv, classEnv)).flat();
+    const newClasses = specializedClasses.map(c => removeGenericsFromClass(c, genericsEnv, classEnv));
 
-    return ast;
+    return {...ast, inits: newGlobalInits, funs: newFuns, classes: newClasses, stmts: newStmts};
+}
+
+
+function findTypeVarInits(inits: Array<VarInit<null>>): Map<string, Literal> {
+    let genericNames = new Map<string, Literal>();
+    inits.forEach(i => {
+        if (i.type == TYPE_VAR) {
+            genericNames.set(i.name, i.value);
+        }
+    });
+
+    return genericNames;
 }
 
 function programClassEnv(ast: Program<null>): ClassEnv {
@@ -71,10 +97,6 @@ function programClassEnv(ast: Program<null>): ClassEnv {
     });
 
     return env;
-}
-
-function makeClassWithTypes(generic_class: Class<null>, types: Array<Type>): Array<Class<null>> {
-    return [generic_class];
 }
 
 function getOrDefault(genericTypes: Map<string, Set<Type>>, key: string): Set<Type> {
@@ -118,7 +140,7 @@ function addSpecializationsForType(type: Type, genericsEnv: GenericEnv, classEnv
     });
 }
 
-function specializeFun(fun: FunDef<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): FunDef<null> {
+function removeGenericsFromFun(fun: FunDef<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): FunDef<null> {
     const newInits = fun.inits.map(i => {
         if(i.type.tag == "class" && i.type.genericArgs) {
             addSpecializationsForType(i.type, genericsEnv, classEnv);
@@ -152,13 +174,98 @@ function specializeFun(fun: FunDef<null>, genericsEnv: GenericEnv, classEnv: Cla
     return {...fun, parameters: newParams, ret: newRet, inits: newInits};
 }
 
-function findTypeVarInits(inits: Array<VarInit<null>>): Map<string, Literal> {
-    let genericNames = new Map<string, Literal>();
-    inits.forEach(i => {
-        if (i.type == TYPE_VAR) {
-            genericNames.set(i.name, i.value);
+function removeGenericsFromType(type: Type, variant: Map<string, Type>): Type {
+    if(type.tag == "class" && type.genericArgs){
+        const newGenericArgs = type.genericArgs.map(argType => {
+            return removeGenericsFromType(argType, variant);
+        });
+
+        return {...type, genericArgs: newGenericArgs};
+    } else if (type.tag == "class" && variant.has(type.name)) {
+        return variant.get(type.name);
+    }
+    return type;
+}
+
+function specializeClass(classDef: Class<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): Array<Class<null>> {
+    const genericParent = classDef.parents.find(p => p.tag == "class" && p.name == "Generic" && p.genericArgs);
+    if(!genericParent) {
+        return [classDef];
+    }
+
+    if(genericParent.tag != "class") {
+        return [classDef];
+    }
+
+    const typeVarNames = genericParent.genericArgs.map(ga => {
+        if(ga.tag == "class") {
+            return ga.name;
+        } else {
+            throw new Error("Expected TypeVar in Generic parent args");
         }
     });
 
-    return genericNames;
+    let allVariants = [new Map<string, Type>()];
+    typeVarNames.forEach(name => {
+        let newAllVariants: Array<Map<string, Type>> = [];
+        let specializationsForTypeVar = genericsEnv.typeVarSpecializations.get(name)
+        if(!specializationsForTypeVar) {
+            return;
+        }
+
+        specializationsForTypeVar.forEach(type => {
+            newAllVariants = newAllVariants.concat(allVariants.map(v => {
+                let newV = new Map<string, Type>(v);
+                newV.set(name, type);
+                return newV;
+            }));
+        });
+
+        allVariants = newAllVariants;
+    });
+
+    const newClasses = allVariants.map(variant => {
+        let newName = classDef.name;
+        variant.forEach(t => {newName += "_" + typeString(t);});
+
+        // TODO: fields
+        const newMethods = classDef.methods.map(method => {
+            const newInits = method.inits.map(init => {
+                const newType = removeGenericsFromType(init.type, variant);
+                return {...init, type: newType};
+            });
+
+            const newParams = method.parameters.map(param => {
+                const newType = removeGenericsFromType(param.type, variant);
+                return {...param, type: newType};
+            })
+
+            const newRet = removeGenericsFromType(method.ret, variant);
+
+            return {...method, inits: newInits, parameters: newParams, ret: newRet};
+        });
+
+        // TODO: get rid of Generic parent objects
+
+        return {...classDef, name: newName, methods: newMethods};
+    });
+
+
+    return newClasses;
+}
+
+function removeGenericsFromClass(classDef: Class<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): Class<null> {
+    // Second, rename all specialized generics like with functions, ex. Box[int] to Box_int.
+    
+    const newFields = classDef.fields.map(f => {
+        addSpecializationsForType(f.type, genericsEnv, classEnv);
+
+        const specializationName = typeString(f.type);
+        const newType = CLASS(specializationName);
+        return {...f, type: newType};
+    });
+
+    const newMethods = classDef.methods.map(m => removeGenericsFromFun(m, genericsEnv, classEnv));
+
+    return {...classDef, fields: newFields, methods: newMethods};
 }

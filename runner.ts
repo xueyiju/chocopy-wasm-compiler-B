@@ -72,6 +72,7 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
   const parsed = parse(source);
   console.log(parsed);
   const specialized = removeGenerics(parsed);
+  console.log(specialized);
   const [tprogram, tenv] = tc(config.typeEnv, specialized);
   const globalEnv = augmentEnv(config.env, tprogram);
   const irprogram = lowerProgram(tprogram, globalEnv);

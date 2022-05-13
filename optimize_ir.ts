@@ -5,3 +5,4 @@ export function optimizeIr(program: IR.Program<[Type, SourceLocation]>) : IR.Pro
     // TODO: Add more details
     return { ...program};
 }
+

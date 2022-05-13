@@ -12,6 +12,7 @@ import { optimizeAst } from './optimize_ast';
 import { optimizeIr } from './optimize_ir';
 import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
+import { BlobOptions } from 'buffer';
 
 export type Config = {
   importObject: any;
@@ -69,13 +70,18 @@ export function augmentEnv(env: GlobalEnv, prog: Program<[Type, SourceLocation]>
 
 
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
-export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
+export async function run(source : string, config: Config, astOpt: boolean = false, irOpt: boolean = false) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource, string]> {
   const parsed = parse(source);
   var [tprogram, tenv] = tc(config.typeEnv, parsed);
-  tprogram = optimizeAst(tprogram);
+  if(astOpt){
+    tprogram = optimizeAst(tprogram);
+  }
   const globalEnv = augmentEnv(config.env, tprogram);
   var irprogram = lowerProgram(tprogram, globalEnv);
-  irprogram = optimizeIr(irprogram);
+  if(irOpt){
+    irprogram = optimizeIr(irprogram);
+  }
+
   const progTyp = tprogram.a[0];
   var returnType = "";
   var returnExpr = "";
@@ -128,5 +134,5 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
   console.log(wasmSource);
   const [result, instance] = await runWat(wasmSource, importObject);
 
-  return [PyValue(progTyp, result), compiled.newEnv, tenv, compiled.functions, instance];
+  return [PyValue(progTyp, result), compiled.newEnv, tenv, compiled.functions, instance, wasmSource];
 }

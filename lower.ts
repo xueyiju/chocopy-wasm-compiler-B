@@ -245,7 +245,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
       const className = objTyp.name;
-      const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}}
+      const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { a: e.a, tag: "call", name: `assert_not_none`, arguments: [objval]}}
       const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
       return [
         [...objinits, ...arginits],
@@ -259,6 +259,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const classdata = env.classes.get(e.obj.a[0].name);
       const [offset, _] = classdata.get(e.field);
       return [oinits, ostmts, {
+        a: e.a,
         tag: "load",
         start: oval,
         offset: { tag: "wasmint", value: offset }}];

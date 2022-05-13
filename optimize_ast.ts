@@ -14,26 +14,67 @@ export function optimizeAst(program: Program<[Type, SourceLocation]>) : Program<
         const optFuns = newProgram.funs.map(fun => optimizeFuncDef(fun));
         // Optimize class definitions
         const optClasses = newProgram.classes.map(classDef => optimizeClassDef(classDef));
+        // Dead code elimination for statements after definitions
+        var optStmts = deadCodeElimination(newProgram.stmts);
         // Optimize statements
-        var optStmts = newProgram.stmts.map(stmt => optimizeStmt(stmt));
-        // Dead code elimination for if statements
-        var optStmts = optimizeIfStmt(optStmts);
+        optStmts = optStmts.map(stmt => optimizeStmt(stmt));
         newProgram = {...newProgram, funs: optFuns, stmts: optStmts, classes: optClasses}
     } while(isChanged);
 
-    console.log(`Optimization completed after ${--counter} iterations.`)
+    console.log(`Optimization completed after ${counter} iterations.`)
     
     return newProgram;
 }
 
-function optimizeFuncDef(funDef: FunDef<[Type, SourceLocation]>): FunDef<[Type, SourceLocation]> {
-    // Constant folding
-    var optBody = funDef.body.map(stmt => optimizeStmt(stmt));
+export function deadCodeElimination(stmts:Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
     // Eliminate unreachable codes after return
-    optBody = removeStmtAfterReturn(optBody);
-    // Eliminate if branches with boolean literal condition
-    optBody = optimizeIfStmt(optBody);
+    var optCodeChunk = DCEForReturn(stmts);
+    // Eliminate if branches with boolean literal condition and while loop with false literal as condition
+    optCodeChunk = DCEForControlFlow(optCodeChunk);
+    // Eliminate redundant pass statements
+    optCodeChunk = DCEForPass(optCodeChunk);
+
+    return optCodeChunk;
+}
+
+function optimizeFuncDef(funDef: FunDef<[Type, SourceLocation]>): FunDef<[Type, SourceLocation]> {
+    // Dead code elimination
+    var optBody = deadCodeElimination(funDef.body);
+    // Constant folding
+    optBody = funDef.body.map(stmt => optimizeStmt(stmt));
     return {...funDef, body: optBody};
+}
+
+function optimizeClassDef(classDef: Class<[Type, SourceLocation]>): Class<[Type, SourceLocation]> {
+    // Dead code Elimination: Remove the statements after return inside method body
+    const newMethods: Array<FunDef<[Type, SourceLocation]>> = classDef.methods.map(method => {
+        return optimizeFuncDef(method);
+    });
+
+    return {...classDef, methods: newMethods};
+}
+
+/**
+ * Dead code elimination: Remove the redundant pass statements
+ * Besides the user-defined pass statements, other optimization operations may also generate pass statements
+ * 
+ * @param stmts 
+ * @returns 
+ */
+function DCEForPass(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
+    const newStmts: Array<Stmt<[Type, SourceLocation]>> = [];
+    for (let [index, stmt] of stmts.entries()) {
+        // Only add pass statement when the last statement is pass statement and there is no other valid statements
+        if (stmt.tag === 'pass' && index === stmts.length-1 && newStmts.length === 0) {
+            newStmts.push(stmt);
+        } else if (stmt.tag === 'pass') {
+            continue;
+        } else {
+            newStmts.push(stmt);
+        }
+    }
+
+    return newStmts;
 }
 
 /**
@@ -43,7 +84,7 @@ function optimizeFuncDef(funDef: FunDef<[Type, SourceLocation]>): FunDef<[Type, 
  * @param stmts An array of statements as the body of function/if-branch/loops
  * @returns an array statements with no statement after return statement
  */
-function removeStmtAfterReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
+function DCEForReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
     const newStmts: Array<Stmt<[Type, SourceLocation]>> = [];
     for (let stmt of stmts) {
         switch(stmt.tag) {
@@ -54,13 +95,13 @@ function removeStmtAfterReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Arra
                 }
                 return newStmts;
             } case "if": {
-                const newThenBody = removeStmtAfterReturn(stmt.thn);
-                const newElseBody = removeStmtAfterReturn(stmt.els);
+                const newThenBody = DCEForReturn(stmt.thn);
+                const newElseBody = DCEForReturn(stmt.els);
                 const newIfStmt = {...stmt, thn: newThenBody, els: newElseBody};
                 newStmts.push(newIfStmt);
                 break;
             } case "while": {
-                const newLoopBody = removeStmtAfterReturn(stmt.body);
+                const newLoopBody = DCEForReturn(stmt.body);
                 const newWhileStmt = {...stmt, body: newLoopBody};
                 newStmts.push(newWhileStmt);
                 break;
@@ -72,15 +113,6 @@ function removeStmtAfterReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Arra
     }
 
     return newStmts;
-}
-
-function optimizeClassDef(classDef: Class<[Type, SourceLocation]>): Class<[Type, SourceLocation]> {
-    // Dead code Elimination: Remove the statements after return inside method body
-    const newMethods: Array<FunDef<[Type, SourceLocation]>> = classDef.methods.map(method => {
-        return optimizeFuncDef(method);
-    });
-
-    return {...classDef, methods: newMethods};
 }
 
 function optimizeExpr(expr: Expr<[Type, SourceLocation]>): Expr<[Type, SourceLocation]> {
@@ -236,39 +268,45 @@ function foldUniop(expr: Literal, op: UniOp): Literal{
     }
 }
 
-function optimizeIfStmt(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
+function DCEForControlFlow(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[Type, SourceLocation]>> {
     var rstmts : Stmt<[Type, SourceLocation]>[] = [];
     for (var stmt of stmts) {
         switch(stmt.tag) {
             case "if":
                 if (stmt.cond.tag === "literal" && stmt.cond.value.tag === "bool" && stmt.cond.value.value === true) {
                     if (stmt.thn === null) {
-                        //console.log("b");
                         break;
                     }
-                    //console.log("c");
-                    //console.log(stmt.thn);
-                    const optStmts = optimizeIfStmt(stmt.thn);
-                    //console.log(optStmts);
+                    const optStmts = DCEForControlFlow(stmt.thn);
                     for (var optStmt of optStmts) {
                         rstmts.push(optStmt)
                     }
                     isChanged = true;
                 } else if(stmt.cond.tag === "literal" && stmt.cond.value.tag === "bool" && stmt.cond.value.value !== true) {
                     if (stmt.els === null) {
-                        //console.log("d");
                         break;
                     }
-                    const optStmts = optimizeIfStmt(stmt.els);
-                    //console.log("e");
+                    const optStmts = DCEForControlFlow(stmt.els);
                     for (var optStmt of optStmts) {
                         rstmts.push(optStmt)
                     }
                     isChanged = true;
+                } else {
+                    const ifBody = DCEForControlFlow(stmt.thn);
+                    const elseBody = DCEForControlFlow(stmt.els);
+                    rstmts.push({...stmt, thn: ifBody, els: elseBody});
                 }
-                break
+                break;
+            case "while": 
+                if (stmt.tag === "while" && stmt.cond.tag === "literal" && stmt.cond.value.tag === "bool" && stmt.cond.value.value === false) {
+                    isChanged = true;
+                    rstmts.push({ a: [{tag: "none"}, stmt.a[1]], tag: "pass"});
+                } else {
+                    const newWhileBody = DCEForControlFlow(stmt.body);
+                    rstmts.push({...stmt, body:newWhileBody});
+                }
+                break;
             default:
-                //console.log(stmt)
                 rstmts.push(stmt);
         }
     }

@@ -723,6 +723,7 @@ function setFuncs() : Array<string> {
       ")", // Closing if
       "(i32.const 0)",
       "(return))", //
+      ""
     ]
   );
 
@@ -732,7 +733,7 @@ function setFuncs() : Array<string> {
       "(local $nodePtr i32)", // Local variable to store the address of nodes in linkedList
       "(local $tagHitFlag i32)", // Local bool variable to indicate whether tag is hit
       "(local $$allocPointer i32)",
-      "(i32.const 0)",
+      "(i32.const 4)",
       "(local.set $tagHitFlag)", // Initialize tagHitFlag to False
       "(local.get $baseAddr)",
       "(local.get $key)",
@@ -836,8 +837,11 @@ function setFuncs() : Array<string> {
       "(br 1)",
       ")", // Closing loop
       ")", // Closing Block
+      ")",
+      ")",
       "(local.get $tagHitFlag)",
-      "(return))", //
+      "(return))",//
+      ""
     ]
   );
   return setFuns;

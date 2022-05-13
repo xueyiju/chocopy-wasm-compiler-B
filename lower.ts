@@ -99,7 +99,30 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       //   ...valstmts,
       //   { a: s.a, tag: "assign", name: s.name, value: vale}
       // ]];
-
+    case "assign-destr":
+      var rhs = s.rhs.map(a => flattenExprToExpr(a, env));
+      var rhsinits = rhs.map(r => r[0]).flat();
+      var rhsStmts = rhs.map(r => r[1]).flat();
+      var rhsvals = rhs.map(r => r[2]).flat();
+      //TODO Handle starred and ignore cases
+      //Have to run and check if working right! Just adding intuition code for now
+      var lhs = s.destr.map(a => flattenExprToVal(a.lhs, env))
+      var lhsinits = lhs.map(r => r[0]).flat();
+      var lhsStmts = lhs.map(r => r[1]).flat();
+      var lhsvals = lhs.map(r => r[2]).flat();
+      blocks[blocks.length - 1].stmts.push(...rhsStmts, ...lhsStmts)
+      for (let i = 0; i < lhsvals.length; i++) {
+        let l = lhsvals[i];
+        if(l.tag==="id"){
+          blocks[blocks.length - 1].stmts.push({a:l.a, tag:"assign", name: l.name, value:rhsvals[i]})
+        }
+      }
+      // lhsvals.forEach(l => {
+      //   //TODO can be tuple or arrayexpression
+      //   //Handling simple case for now
+        
+      // })
+      return rhsinits
     case "return":
     var [valinits, valstmts, val] = flattenExprToVal(s.value, env);
     blocks[blocks.length - 1].stmts.push(

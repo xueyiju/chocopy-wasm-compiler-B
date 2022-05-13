@@ -260,6 +260,9 @@ function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: Destr
   while (lhs_index < tDestr.length && rhs_index < tRhs.length) {
     if (tDestr[lhs_index].isStarred) {
       break;
+    } else if (tDestr[lhs_index].isIgnore) {
+      lhs_index++
+      rhs_index++
     } else {
       if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
         throw new TypeCheckError("Type Mismatch while destructuring assignment")
@@ -274,6 +277,9 @@ function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: Destr
   if (hasStarred) {
     if (lhs_index == tDestr.length - 1 && rhs_index == tRhs.length) {
       //@ts-ignore
+    } else if (tDestr[lhs_index].isIgnore) {
+      lhs_index--
+      rhs_index--
     } else {
       let rev_lhs_index = tDestr.length - 1;
       let rev_rhs_index = tRhs.length - 1;

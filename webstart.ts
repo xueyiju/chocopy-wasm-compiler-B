@@ -6,6 +6,10 @@ import { NUM, BOOL, NONE } from './utils';
 // import { addAccordionEvent, prettyPrintObjects } from "./scoperender";
 // import "./style.scss";
 
+export type ObjectField = 
+|{field: string, value: Value}
+|{field: string, value: Array<ObjectField>, type: Value}
+
 function stringify(typ: Type, arg: any) : string {
   switch(typ.tag) {
     case "number":
@@ -31,6 +35,39 @@ function assert_not_none(arg: any) : any {
   if (arg === 0)
     throw new Error("RUNTIME ERROR: cannot perform operation on none");
   return arg;
+}
+
+function getObject(result: Value, view: Int32Array, relp: BasicREPL): Array<ObjectField>{
+  let list = new Array<ObjectField>();
+  if(result.tag === "bool" || result.tag === "none" || result.tag === "num"){
+    return list;
+  }
+
+  list.push({field: "address", value: {tag:"num", value: result.address}});
+  //get the field of object
+  const fields = relp.currentTypeEnv.classes.get(result.name)[0];
+  let index = result.address / 4;
+  fields.forEach((value: Type, key: string) => {
+    switch(value.tag){
+      case "number":
+        list.push({field: key, value: {tag: "num", value: view.at(index)}});
+        break;
+      case "bool":
+        list.push({field: key, value: {tag: "bool", value: Boolean(view.at(index))}});
+        break;
+      case "none":
+        list.push({field: key, value: {tag: "none", value: view.at(index)}});
+        break;
+      case "class":
+        const objectResult : Value = {tag: "object", name: value.name, address: view.at(index)};
+        const fieldList = getObject(objectResult, view, relp);
+        list.push({field: key, value: fieldList, type: objectResult});
+        break;
+    }
+    index += 1
+  });
+
+  return list;
 }
 
 function webStart() {
@@ -129,41 +166,46 @@ function webStart() {
       repl = new BasicREPL(importObject);
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       resetRepl();
-      repl.run(source.value).then((r) => { renderResult(r); console.log ("run finished") })
-          .catch((e) => { renderError(e); console.log("run failed", e) });;
+      console.log(source);
+      repl.run(source.value).then((r) => {
+        console.log(r); 
+        console.log(repl.getHeap());
+        console.log(getObject(r, repl.getHeap(), repl));
+        renderResult(r); 
+        console.log ("run finished") 
+        
+      })
+        .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
 
-    // document.getElementById("choose_file").addEventListener("change", function (e) {
-    //   //clears repl output
-    //   resetRepl();
-    //   //resets environment
-    //   repl = new BasicREPL(importObject);
-    //   //load file
-    //   var input: any = e.target;
-    //   var reader = new FileReader();
-    //   reader.onload = function () {
-    //     filecontent = reader.result;
-    //   };
-    //   reader.readAsText(input.files[0]);
-    // });
+    document.getElementById("choose_file").addEventListener("change", function (e) {
+      //load file
+      var input: any = e.target;
+      var reader = new FileReader();
+      reader.onload = function () {
+        filecontent = reader.result;
+      };
+      reader.readAsText(input.files[0]);
+    });
 
-    // document.getElementById("load").addEventListener("click", function (e) {
-    //   // const source = document.getElementById("user-code") as HTMLTextAreaElement;
-    //   var element = document.querySelector(".CodeMirror") as any;
-    //   var editor = element.CodeMirror;
-    //   editor.setValue(filecontent);
-    // });
+    document.getElementById("load").addEventListener("click", function (e) {
+      //clear repl output
+      resetRepl();
+      //reset environment
+      repl = new BasicREPL(importObject);
+      // Repalce text area with the content in the uploaded file
+      const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      source. value = filecontent.toString();
+    });
 
-    // document.getElementById("save").addEventListener("click", function (e) {
-    //   //download the code in the editor
-    //   var FileSaver = require("file-saver");
-    //   var title = (document.getElementById("save_title") as any).value;
-    //   var element = document.querySelector(".CodeMirror") as any;
-    //   var editor = element.CodeMirror;
-    //   var code = editor.getValue();
-    //   var blob = new Blob([code], { type: "text/plain;charset=utf-8" });
-    //   FileSaver.saveAs(blob, title);
-    // });
+    document.getElementById("save").addEventListener("click", function (e) {
+      //download the code in the user-code text area
+      var FileSaver = require("file-saver");
+      var title = (document.getElementById("save_title") as any).value;
+      const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
+      FileSaver.saveAs(blob, title);
+    });
     
     setupRepl();
   });

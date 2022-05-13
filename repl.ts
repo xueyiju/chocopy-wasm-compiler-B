@@ -4,6 +4,7 @@ import { GlobalEnv } from "./compiler";
 import { tc, defaultTypeEnv, GlobalTypeEnv } from "./type-check";
 import { Value, Type } from "./ast";
 import { parse } from "./parser";
+import { kill } from "process";
 
 interface REPL {
   run(source : string) : Promise<any>;
@@ -15,6 +16,8 @@ export class BasicREPL {
   functions: string
   importObject: any
   memory: any
+
+
   constructor(importObject : any) {
     this.importObject = importObject;
     if(!importObject.js) {
@@ -33,6 +36,8 @@ export class BasicREPL {
     this.currentTypeEnv = defaultTypeEnv;
     this.functions = "";
   }
+
+
   async run(source : string) : Promise<Value> {
     const config : Config = {importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions};
     const [result, newEnv, newTypeEnv, newFunctions, instance] = await run(source, config);
@@ -51,6 +56,15 @@ export class BasicREPL {
     this.importObject.env = currentGlobals;
     return result;
   }
+
+  
+  // need information from menmory
+  getHeap(): Int32Array{
+    const view = new Int32Array(this.importObject.js.memory.buffer);
+    return view;
+  }
+
+
   tc(source: string): Type {
     const config: Config = { importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions };
     const parsed = parse(source);

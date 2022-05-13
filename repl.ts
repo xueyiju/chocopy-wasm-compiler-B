@@ -60,7 +60,7 @@ export class BasicREPL {
     return result;
   }
 
-  trackObject(result: Value, view: Int32Array): Array<ObjectField>{
+  trackObject(result: Value, heapView: Int32Array): Array<ObjectField>{
     let list = new Array<ObjectField>();
     if(result.tag === "bool" || result.tag === "none" || result.tag === "num"){
       return list;
@@ -73,17 +73,17 @@ export class BasicREPL {
     fields.forEach((value: Type, key: string) => {
       switch(value.tag){
         case "number":
-          list.push({field: key, value: {tag: "num", value: view.at(index)}});
+          list.push({field: key, value: {tag: "num", value: heapView.at(index)}});
           break;
         case "bool":
-          list.push({field: key, value: {tag: "bool", value: Boolean(view.at(index))}});
+          list.push({field: key, value: {tag: "bool", value: Boolean(heapView.at(index))}});
           break;
         case "none":
-          list.push({field: key, value: {tag: "none", value: view.at(index)}});
+          list.push({field: key, value: {tag: "none", value: heapView.at(index)}});
           break;
         case "class":
-          const objectResult : Value = {tag: "object", name: value.name, address: view.at(index)};
-          const fieldList = this.trackObject(objectResult, view);
+          const objectResult : Value = {tag: "object", name: value.name, address: heapView.at(index)};
+          const fieldList = this.trackObject(objectResult, heapView);
           list.push({field: key, value: fieldList, type: objectResult});
           break;
       }
@@ -95,8 +95,8 @@ export class BasicREPL {
 
   // need information from menmory
   trackHeap(): Int32Array{
-    const view = new Int32Array(this.importObject.js.memory.buffer);
-    return view;
+    const heapView = new Int32Array(this.importObject.js.memory.buffer);
+    return heapView;
   }
 
 

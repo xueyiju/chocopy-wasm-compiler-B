@@ -3,29 +3,8 @@ import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
 // import CodeMirror from "codemirror";
-// import { addAccordionEvent, prettyPrintObjects } from "./scoperender";
+import { renderResult, renderError, renderPrint } from "./ouputrender";
 // import "./style.scss";
-
-function stringify(typ: Type, arg: any) : string {
-  switch(typ.tag) {
-    case "number":
-      return (arg as number).toString();
-    case "bool":
-      return (arg as boolean)? "True" : "False";
-    case "none":
-      return "None";
-    case "class":
-      return typ.name;
-  }
-}
-
-function print(typ: Type, arg : number) : any {
-  console.log("Logging from WASM: ", arg);
-  const elt = document.createElement("pre");
-  document.getElementById("output").appendChild(elt);
-  elt.innerText = stringify(typ, arg);
-  return arg;
-}
 
 function assert_not_none(arg: any) : any {
   if (arg === 0)
@@ -49,9 +28,9 @@ function webStart() {
     var importObject = {
       imports: {
         assert_not_none: (arg: any) => assert_not_none(arg),
-        print_num: (arg: number) => print(NUM, arg),
-        print_bool: (arg: number) => print(BOOL, arg),
-        print_none: (arg: number) => print(NONE, arg),
+        print_num: (arg: number) => renderPrint(NUM, arg),
+        print_bool: (arg: number) => renderPrint(BOOL, arg),
+        print_none: (arg: number) => renderPrint(NONE, arg),
         abs: Math.abs,
         min: Math.min,
         max: Math.max,
@@ -62,34 +41,6 @@ function webStart() {
       js: {memory: memory}
     };
     var repl = new BasicREPL(importObject);
-
-    function renderResult(result : Value) : void {
-      if(result === undefined) { console.log("skip"); return; }
-      if (result.tag === "none") return;
-      const elt = document.createElement("pre");
-
-    
-      document.getElementById("output").appendChild(elt);
-      switch (result.tag) {
-        case "num":
-          elt.innerText = String(result.value);
-          break;
-        case "bool":
-          elt.innerHTML = (result.value) ? "True" : "False";
-          break;
-        case "object":
-          elt.innerHTML = `${result.name} object at ${String(result.address)}`
-          break
-        default: throw new Error(`Could not render value: ${result}`);
-      }
-    }
-
-    function renderError(result : any) : void {
-      const elt = document.createElement("pre");
-      document.getElementById("output").appendChild(elt);
-      elt.setAttribute("style", "color: red");
-      elt.innerText = String(result);
-    }
 
     function setupRepl() {
       document.getElementById("output").innerHTML = "";
@@ -132,8 +83,8 @@ function webStart() {
       console.log(source);
       repl.run(source.value).then((r) => {
         console.log(r); 
-        console.log(repl.getHeap());
-        console.log(getObject(r, repl.getHeap(), repl));
+        console.log(repl.trackHeap());
+        console.log(repl.trackObject(r, repl.trackHeap()));
         renderResult(r); 
         console.log ("run finished") 
         

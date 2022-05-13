@@ -224,6 +224,30 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
           right: rval
         }];
     case "call":
+      if (e.name === "set") {
+        if (!e.arguments) {
+          // construct empty set
+          const newSetName = generateName("newSet");
+          // size will be 10 for now
+          const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
+          return [
+            [ { name: newSetName, type: e.a[0], value: { tag: "none" } } ],
+            [ { tag: "assign", name: newSetName, value: allocSet } ],
+            { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newSetName } }
+          ]; 
+        } else {
+          const callpairs = e.arguments.map(a => flattenExprToVal(a, env));
+          const callinits = callpairs.map(cp => cp[0]).flat();
+          const callstmts = callpairs.map(cp => cp[1]).flat();
+          const callvals = callpairs.map(cp => cp[2]).flat();
+          return [ callinits, callstmts,
+            {
+              ...e,
+              arguments: callvals
+            }
+          ];  
+        }
+      }
       const callpairs = e.arguments.map(a => flattenExprToVal(a, env));
       const callinits = callpairs.map(cp => cp[0]).flat();
       const callstmts = callpairs.map(cp => cp[1]).flat();
@@ -241,6 +265,14 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const argstmts = argpairs.map(cp => cp[1]).flat();
       const argvals = argpairs.map(cp => cp[2]).flat();
       var objTyp = e.obj.a[0];
+      if(objTyp.tag === "set") {
+        const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `set$${e.method}`, arguments: [objval, ...argvals] }
+        return [
+          [...objinits, ...arginits],
+          [...objstmts, ...argstmts],
+          callMethod
+        ];
+      }
       if(objTyp.tag !== "class") { // I don't think this error can happen
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
@@ -289,6 +321,40 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       return [[], [], {tag: "value", value: { ...e }} ];
     case "literal":
       return [[], [], {tag: "value", value: literalToVal(e.value) } ];
+    case "bracket":
+      const newSetName = generateName("newSet");
+      // 10 buckets for now
+      const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
+      //const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: e.contents.length}};
+      var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
+      var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
+      // var storeLength : IR.Stmt<[Type, SourceLocation]> = {
+      //   tag: "store",
+      //   start: { tag: "id", name: newSetName },
+      //   offset: { tag: "wasmint", value: 0 },
+      //   value: { a: [null, null], tag: "num", value: BigInt(e.contents.length) }
+      // }
+      const assignsSet : IR.Stmt<[Type, SourceLocation]>[] = e.values.map((e, _) => {
+        const [init, stmt, value] = flattenExprToVal(e, env);
+        inits = [...inits, ...init];
+        stmts = [...stmts, ...stmt];
+        // return {
+        //   tag: "store",
+        //   start: { tag: "id", name: newListName },
+        //   offset: { tag: "wasmint", value: i+1 },
+        //   value: vale
+        // }
+        return {
+          tag: "expr",
+          expr: { tag: "call", name: `set$add`, arguments: [{ tag: "id", name: newSetName}, value]}
+        }
+      })
+      return [
+        [ { name: newSetName, type: e.a[0], value: { tag: "none" } }, ...inits ],
+        //[ { tag: "assign", name: newSetName, value: allocSet }, ...stmts, storeLength, ...assignsSet ], 
+        [ { tag: "assign", name: newSetName, value: allocSet }, ...stmts, ...assignsSet ],
+        { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newSetName } }
+      ];
   }
 }
 

@@ -197,6 +197,20 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         obj: objExpr,
         field: propName
       }
+    case "SetExpression":
+      c.firstChild();
+      let setValues = new Array<Expr<any>>();
+      while (c.nextSibling()) {
+        let v : Expr<any> = traverseExpr(c, s);
+        setValues.push(v);
+        c.nextSibling();
+      }
+      c.parent();
+      return {
+        a: location,
+        tag: "bracket",
+        values: setValues
+      }
     case "self":
       return {
         a: location,

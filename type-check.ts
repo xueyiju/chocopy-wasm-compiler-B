@@ -225,12 +225,15 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       var typedObj = tcExpr(env, locals, stmt.obj);
       const typedIndex = tcExpr(env, locals, stmt.index);
       const typedVal = tcExpr(env, locals, stmt.value);
-      if (typedObj.a[0].tag !== "list")
-        throw new TypeCheckError("Index assignments require a list");
-      if (typedIndex.a[0].tag !== "number")
-        throw new TypeCheckError("Index needs to an number");
-      if (!isAssignable(env, typedVal.a[0], typedObj.a[0].type))
-        throw new TypeCheckError(`could not assign value of type: ${typedVal.a[0]}; List expected type: ${typedObj.a[0].type}`);
+      if (typedObj.a[0].tag !== "list") {
+        throw new TypeCheckError("Index assignments require a list"); //TODO: not really, strings could have an index assign
+      }
+      if (typedIndex.a[0].tag !== "number") {
+        throw new TypeCheckError("Index needs to evaluate to a number");
+      }
+      if (!isAssignable(env, typedVal.a[0], typedObj.a[0].type)) {
+        throw new TypeCheckError(`Could not assign value of type: ${typedVal.a[0].tag}; List expected type: ${typedObj.a[0].type.tag}`);
+      }
       return { ...stmt, a: [NONE, stmt.a], obj: typedObj, index: typedIndex, value: typedVal };
   }
 }
@@ -338,7 +341,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
 
         //TODO: update condition later to check for object type equality
         if(elementType !== proposedType) {
-          throw new TypeError("List has incompatible types: " + elementType + " and " + proposedType);
+          throw new TypeError("List has incompatible types: " + elementType.tag + " and " + proposedType.tag);
         }
 
         elementsWithTypes.push(checkedI); //add expression w/ type annotation to new elements list

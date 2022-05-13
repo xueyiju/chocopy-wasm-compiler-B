@@ -144,20 +144,16 @@ function webStart() {
     });
 
     document.getElementById("load").addEventListener("click", function (e) {
-      // const source = document.getElementById("user-code") as HTMLTextAreaElement;
-      var element = document.querySelector(".CodeMirror") as any;
-      var editor = element.CodeMirror;
-      editor.setValue(filecontent);
+      const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      source.setRangeText(filecontent.toString());
     });
 
     document.getElementById("save").addEventListener("click", function (e) {
       //download the code in the editor
       var FileSaver = require("file-saver");
       var title = (document.getElementById("save_title") as any).value;
-      var element = document.querySelector(".CodeMirror") as any;
-      var editor = element.CodeMirror;
-      var code = editor.getValue();
-      var blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+      const source = document.getElementById("user-code") as HTMLTextAreaElement;
+      var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
       FileSaver.saveAs(blob, title);
     });
     

@@ -5,7 +5,7 @@ export type Type =
   | {tag: "number"}
   | {tag: "bool"}
   | {tag: "none"}
-  | {tag: "class", name: string, genericArgs?: Array<string>}
+  | {tag: "class", name: string, genericArgs?: Array<Type>}
   | {tag: "either", left: Type, right: Type }
   | {tag: "type-var"}
 
@@ -13,7 +13,7 @@ export type Parameter<A> = { name: string, type: Type }
 
 export type Program<A> = { a?: A, funs: Array<FunDef<A>>, inits: Array<VarInit<A>>, classes: Array<Class<A>>, stmts: Array<Stmt<A>> }
 
-export type Class<A> = { a?: A, name: string, fields: Array<VarInit<A>>, methods: Array<FunDef<A>>}
+export type Class<A> = { a?: A, name: string, parents: Array<Type>, fields: Array<VarInit<A>>, methods: Array<FunDef<A>>}
 
 export type VarInit<A> = { a?: A, name: string, type: Type, value: Literal }
 

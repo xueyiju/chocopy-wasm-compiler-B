@@ -10,6 +10,7 @@ import {emptyLocalTypeEnv, GlobalTypeEnv, tc, tcStmt} from  './type-check';
 import { Program, Type, Value } from './ast';
 import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
+import { removeGenerics } from './remove-generics';
 
 export type Config = {
   importObject: any;
@@ -69,7 +70,9 @@ export function augmentEnv(env: GlobalEnv, prog: Program<Type>) : GlobalEnv {
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
 export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
   const parsed = parse(source);
-  const [tprogram, tenv] = tc(config.typeEnv, parsed);
+  console.log(parsed);
+  const specialized = removeGenerics(parsed);
+  const [tprogram, tenv] = tc(config.typeEnv, specialized);
   const globalEnv = augmentEnv(config.env, tprogram);
   const irprogram = lowerProgram(tprogram, globalEnv);
   const progTyp = tprogram.a;

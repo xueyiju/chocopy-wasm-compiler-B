@@ -343,6 +343,15 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
   }
 }
 
+function typeFromString(s: string): Type {
+  switch(s) {
+    case "int": return NUM;
+    case "bool": return BOOL;
+    case "TypeVar": return TYPE_VAR;
+    default: return CLASS(s);
+  }
+}
+
 export function traverseType(c : TreeCursor, s : string) : Type {
   // For now, always a VariableName
   let name = s.substring(c.from, c.to);
@@ -357,7 +366,8 @@ export function traverseType(c : TreeCursor, s : string) : Type {
         const className = name.split('[')[0];
         const genericNamesStr = genericArgs.toString();
         const genericNames = genericNamesStr.substring(1, genericNamesStr.length - 1).split(',');
-        return GENERIC_CLASS(className, genericNames);
+        const genericTypes = genericNames.map(gn => typeFromString(gn));
+        return GENERIC_CLASS(className, genericTypes);
       } else {
         return CLASS(name);
       }
@@ -449,6 +459,21 @@ export function traverseFunDef(c : TreeCursor, s : string) : FunDef<null> {
   return { name, parameters, ret, inits, body }
 }
 
+function traverseTypeList(c: TreeCursor, s: string): Array<Type> {
+  let types: Array<Type> = [];
+
+  c.firstChild(); // focus on (
+  c.nextSibling(); // focus on type
+  while(c.type.name !== ")") {
+    const type = traverseType(c, s);
+    types.push(type);
+    c.nextSibling(); // focus on , or )
+    c.nextSibling(); // focus on type
+  }
+
+  return types;
+}
+
 export function traverseClass(c : TreeCursor, s : string) : Class<null> {
   const fields : Array<VarInit<null>> = [];
   const methods : Array<FunDef<null>> = [];
@@ -456,6 +481,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<null> {
   c.nextSibling(); // Focus on class name
   const className = s.substring(c.from, c.to);
   c.nextSibling(); // Focus on arglist/superclass
+  const parents = traverseTypeList(c, s);
   c.nextSibling(); // Focus on body
   c.firstChild();  // Focus colon
   while(c.nextSibling()) { // Focuses first field
@@ -475,6 +501,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<null> {
   }
   return {
     name: className,
+    parents,
     fields,
     methods
   };

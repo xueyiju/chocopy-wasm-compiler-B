@@ -130,10 +130,6 @@ function webStart() {
     });
 
     document.getElementById("choose_file").addEventListener("change", function (e) {
-      //clears repl output
-      resetRepl();
-      //resets environment
-      repl = new BasicREPL(importObject);
       //load file
       var input: any = e.target;
       var reader = new FileReader();
@@ -144,12 +140,17 @@ function webStart() {
     });
 
     document.getElementById("load").addEventListener("click", function (e) {
+      //clear repl output
+      resetRepl();
+      //reset environment
+      repl = new BasicREPL(importObject);
+      // Repalce text area with the content in the uploaded file
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
-      source.setRangeText(filecontent.toString());
+      source. value = filecontent.toString();
     });
 
     document.getElementById("save").addEventListener("click", function (e) {
-      //download the code in the editor
+      //download the code in the user-code text area
       var FileSaver = require("file-saver");
       var title = (document.getElementById("save_title") as any).value;
       const source = document.getElementById("user-code") as HTMLTextAreaElement;

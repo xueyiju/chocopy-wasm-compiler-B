@@ -277,14 +277,14 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
             tag: "field-assign",
             obj: target[0].lhs.obj,
             field: target[0].lhs.field,
-            value: value
+            value: rhsargs[0]
           }
         } else if (target[0].lhs.tag === "id") {
           return {
             a: location,
             tag: "assign",
             name: target[0].lhs.name,
-            value: value
+            value: rhsargs[0]
           }  
         } else {
           throw new ParseError("Unknown target while parsing assignment", location.line);

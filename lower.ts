@@ -261,12 +261,24 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a:  s.iterable.a, name: rangeObject, type:  s.iterable.a, value: { tag: "none" } }]
     
     case "break":
-      var currentloop = nameCounters.get("$forbody")
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forend"  + currentloop});
+      if(s.looptype === "for") {
+        var currentloop = nameCounters.get("$forbody")
+        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forend"  + currentloop});
+      }
+      else {
+        var currentloop = nameCounters.get("$whilebody")
+        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$whileend"  + currentloop});
+      } 
       return []
     case "continue":
-      var currentloop = nameCounters.get("$forbody")
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forstart"  + currentloop})
+      if(s.looptype === "for") {
+        var currentloop = nameCounters.get("$forbody")
+        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forstart"  + currentloop});
+      }
+      else {
+        var currentloop = nameCounters.get("$whilebody")
+        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$whilestart"  + currentloop});
+      } 
       return []
   }
 }

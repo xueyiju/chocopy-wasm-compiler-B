@@ -7,7 +7,7 @@ import { importObject, addLibs  } from "./tests/import-object.test";
 import { BasicREPL } from "./repl";
 import * as ir from './ir';
 import { optimizeAst } from "./optimize_ast"
-import { CliRenderer } from "@diagrams-ts/graphviz-cli-renderer";
+// import { CliRenderer } from "@diagrams-ts/graphviz-cli-renderer";
 
 
 export function printProgIR(p: ir.Program<[Type, SourceLocation]>) {
@@ -241,9 +241,9 @@ if x < 1:
   console.log(JSON.stringify(irprogram, (k, v) => typeof v === "bigint" ? v.toString(): v, 2));
   printProgIR(irprogram);
 
-  const render = CliRenderer({ outputFile: "./example.png", format: "png" });
-  const dot = dotProg(irprogram);
-  await render(dot);
+  // const render = CliRenderer({ outputFile: "./example.png", format: "png" });
+  // const dot = dotProg(irprogram);
+  // await render(dot);
 }
 
 // debug();

@@ -65,7 +65,8 @@ function webStart() {
           replCodeElement.value = "";
           repl.run(source).then((r) => { 
             console.log(r);
-            renderResult(r);
+            var objectTrackList = repl.trackObject(r, repl.trackHeap());
+            renderResult(r, objectTrackList);
             console.log ("run finished");})
               .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
@@ -85,7 +86,8 @@ function webStart() {
         console.log(r); 
         console.log(repl.trackHeap());
         console.log(repl.trackObject(r, repl.trackHeap()));
-        renderResult(r); 
+        var objectTrackList = repl.trackObject(r, repl.trackHeap());
+        renderResult(r, objectTrackList); 
         console.log ("run finished") 
         
       })

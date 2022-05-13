@@ -7,8 +7,10 @@ import { parse } from "./parser";
 import { kill } from "process";
 
 export type ObjectField = 
-|{field: string, value: Value}
-|{field: string, value: Array<ObjectField>, type: Value}
+|{tag:"num", fieldName: string, value: Value}
+|{tag:"bool", fieldName: string, value: Value}
+|{tag:"none", fieldName: string, value: Value}
+|{tag:"object", fieldName: string, value: Value, objectTrackList: Array<ObjectField>}
 
 interface REPL {
   run(source : string) : Promise<any>;
@@ -65,26 +67,26 @@ export class BasicREPL {
     if(result.tag === "bool" || result.tag === "none" || result.tag === "num"){
       return list;
     }
-  
-    list.push({field: "address", value: {tag:"num", value: result.address}});
+
+    // list.push({field: "address", value: {tag:"num", value: result.address}}); //what if a real field named address?
     //get the field of object
     const fields = this.currentTypeEnv.classes.get(result.name)[0];
     let index = result.address / 4;
     fields.forEach((value: Type, key: string) => {
       switch(value.tag){
         case "number":
-          list.push({field: key, value: {tag: "num", value: heapView.at(index)}});
+          list.push({tag:"num", fieldName: key, value: {tag: "num", value: heapView.at(index)}});
           break;
         case "bool":
-          list.push({field: key, value: {tag: "bool", value: Boolean(heapView.at(index))}});
+          list.push({tag:"bool", fieldName: key, value: {tag: "bool", value: Boolean(heapView.at(index))}});
           break;
         case "none":
-          list.push({field: key, value: {tag: "none", value: heapView.at(index)}});
+          list.push({tag:"none", fieldName: key, value: {tag: "none", value: heapView.at(index)}});
           break;
         case "class":
           const objectResult : Value = {tag: "object", name: value.name, address: heapView.at(index)};
           const fieldList = this.trackObject(objectResult, heapView);
-          list.push({field: key, value: fieldList, type: objectResult});
+          list.push({tag: "object", fieldName: key, value: objectResult, objectTrackList: fieldList});
           break;
       }
       index += 1

@@ -35,6 +35,20 @@ function check_range_error(arg: any) : any {
     throw new Error("VALUE ERROR: range() arg 3 must not be zero");
   return arg;
 }
+function check_range_index(start: any, stop:any, step:any, val:any) : any {
+  if(start * step >= stop * step)
+    throw new Error(`${val} is not in range`)
+
+  stop -= 1
+  const len = Math.abs(stop - start)
+  if(len < Math.abs(val - start) || len < Math.abs(val - stop )) 
+    throw new Error(`${val} is not in range`)
+
+  if(Math.abs(val - start) % step != 0) {
+    throw new Error(`${val} is not in range`)
+  }
+  return val
+}
 
 function webStart() {
   document.addEventListener("DOMContentLoaded", async function() {
@@ -50,13 +64,15 @@ function webStart() {
     const rangeModule = await fetch('range.wasm').then(response => 
       response.arrayBuffer()
     ).then(bytes => 
-      WebAssembly.instantiate(bytes, { js: { mem: memory }, imports: {check_range_error: (arg: any) => check_range_error(arg) }} )
-    )
-    
+      WebAssembly.instantiate(bytes, { js: { mem: memory }, 
+              imports: {check_range_error: (arg: any) => check_range_error(arg) ,
+                check_range_index: (arg1: any, arg2:any, arg3:any, arg4:any) => check_range_index(arg1, arg2, arg3, arg4)}})
+    );
     var importObject = {
       imports: {
         assert_not_none: (arg: any) => assert_not_none(arg),
         check_range_error: (arg: any) => check_range_error(arg),
+        check_range_index: (arg1: any, arg2:any, arg3:any, arg4:any) => check_range_index(arg1, arg2, arg3, arg4),
         print_num: (arg: number) => print(NUM, arg),
         print_bool: (arg: number) => print(BOOL, arg),
         print_none: (arg: number) => print(NONE, arg),

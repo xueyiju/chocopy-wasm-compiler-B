@@ -122,6 +122,7 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (func $range$__init__ (import "rangelib" "$range$__init__") (param i32) (param i32) (param i32) (param i32) (result i32))
     (func $range$__hasnext__ (import "rangelib" "$range$__hasnext__") (param i32) (result i32))
     (func $range$__next__ (import "rangelib" "$range$__next__") (param i32) (result i32))
+    (func $range$index (import "rangelib" "$range$index") (param i32) (param i32)  (result i32))
 
     ${globalImports}
     ${globalDecls}

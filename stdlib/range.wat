@@ -1,6 +1,8 @@
 (module
   (memory (import "js" "mem") 1)
   (func $check_range_error (import "imports" "check_range_error") (param i32) (result i32))
+  (func $check_range_index (import "imports" "check_range_index") (param i32)  (param i32) (param i32) (param i32) (result i32))
+
   (global $heap (mut i32) (i32.const 4))
   ;; Take an amount of blocks (4-byte words) to allocate, return an address
   ;; handle suitable for giving to other access methods
@@ -138,7 +140,39 @@
     (i32.mul)
     ;; check if the next value is less than stop
     (i32.lt_s)
-
     (i32.store))
 
+    (func (export "$range$index") (param $addr i32) (param $val i32)  (result i32)
+    (local.get $addr)
+    (i32.const 0)
+    (i32.add)
+    (i32.load)
+
+    (local.get $addr)
+    (i32.const 4)
+    (i32.add)
+    (i32.load)
+
+    (local.get $addr)
+    (i32.const 8)
+    (i32.add)
+    (i32.load)
+
+    (local.get $val)
+
+    (call $check_range_index)
+
+    (local.get $addr)
+    (i32.const 0)
+    (i32.add)
+    (i32.load)
+
+    (i32.sub)
+
+    (local.get $addr)
+    (i32.const 8)
+    (i32.add)
+    (i32.load)
+    
+    (i32.div_s))
 )

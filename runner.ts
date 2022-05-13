@@ -69,13 +69,17 @@ export function augmentEnv(env: GlobalEnv, prog: Program<[Type, SourceLocation]>
 
 
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
-export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
+export async function run(source : string, config: Config, optimize=true) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
   const parsed = parse(source);
   var [tprogram, tenv] = tc(config.typeEnv, parsed);
-  tprogram = optimizeAst(tprogram);
+  if (optimize) {
+    tprogram = optimizeAst(tprogram);
+  }
   const globalEnv = augmentEnv(config.env, tprogram);
   var irprogram = lowerProgram(tprogram, globalEnv);
-  irprogram = optimizeIr(irprogram);
+  if (optimize) {
+    irprogram = optimizeIr(irprogram);
+  }
   const progTyp = tprogram.a[0];
   var returnType = "";
   var returnExpr = "";

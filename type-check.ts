@@ -25,7 +25,8 @@ export type LocalTypeEnv = {
   vars: Map<string, Type>,
   expectedRet: Type,
   actualRet: Type,
-  topLevel: Boolean
+  topLevel: Boolean,
+  currLoop: string
 }
 
 const defaultGlobalFunctions = new Map();
@@ -79,7 +80,8 @@ export function emptyLocalTypeEnv() : LocalTypeEnv {
     vars: new Map(),
     expectedRet: NONE,
     actualRet: NONE,
-    topLevel: true
+    topLevel: true,
+    currLoop: ""
   };
 }
 
@@ -231,25 +233,35 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       return {a: tRet.a, tag: stmt.tag, value:tRet};
     case "while":
       var tCond = tcExpr(env, locals, stmt.cond);
+      locals.currLoop = "while";
       const tBody = tcBlock(env, locals, stmt.body);
       if (!equalType(tCond.a, BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool");
+      locals.currLoop = "";
       return {a: NONE, tag:stmt.tag, cond: tCond, body: tBody};
     case "for":
       var tVars = tcExpr(env, locals, stmt.vars);
       var tIterable = tcExpr(env, locals, stmt.iterable);
+      locals.currLoop = "for";
       var tForBody = tcBlock(env, locals, stmt.body);
       if(tVars.a.tag !== "number")
         throw new TypeCheckError("Expected type `int`, got type `" + tVars.a.tag + "`");
       if(tIterable.a.tag !== "class" || tIterable.a.name !== "range")
         throw new TypeCheckError("Not an iterable");
+      locals.currLoop = "";
       if(stmt.elseBody !== undefined) {
         const tElseBody = tcBlock(env, locals, stmt.elseBody);
         return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
       }
       return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
     case "break":
+      if(locals.currLoop !=="while" && locals.currLoop !== "for")
+        throw new TypeCheckError("break cannot exist outside a loop");
+      return {a: NONE, tag: stmt.tag, looptype: locals.currLoop};
     case "continue":
+      if(locals.currLoop !=="while" && locals.currLoop !== "for")
+      throw new TypeCheckError("continue cannot exist outside a loop");
+      return {a: NONE, tag: stmt.tag, looptype: locals.currLoop};
     case "pass":
       return {a: NONE, tag: stmt.tag};
     case "field-assign":

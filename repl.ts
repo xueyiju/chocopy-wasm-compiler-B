@@ -4,6 +4,13 @@ import { GlobalEnv } from "./compiler";
 import { tc, defaultTypeEnv, GlobalTypeEnv } from "./type-check";
 import { Value, Type } from "./ast";
 import { parse } from "./parser";
+import { kill } from "process";
+
+export type ObjectField = 
+|{tag:"num", fieldName: string, value: Value}
+|{tag:"bool", fieldName: string, value: Value}
+|{tag:"none", fieldName: string, value: Value}
+|{tag:"object", fieldName: string, value: Value, objectTrackList: Array<ObjectField>}
 
 interface REPL {
   run(source : string) : Promise<any>;
@@ -15,6 +22,7 @@ export class BasicREPL {
   functions: string
   importObject: any
   memory: any
+
   constructor(importObject : any) {
     this.importObject = importObject;
     if(!importObject.js) {
@@ -33,6 +41,8 @@ export class BasicREPL {
     this.currentTypeEnv = defaultTypeEnv;
     this.functions = "";
   }
+
+
   async run(source : string) : Promise<Value> {
     const config : Config = {importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions};
     const [result, newEnv, newTypeEnv, newFunctions, instance] = await run(source, config);
@@ -48,13 +58,54 @@ export class BasicREPL {
         currentGlobals[k] = maybeGlobal;
       }
     });
-    this.importObject.env = currentGlobals;
+    this.importObject.env = currentGlobals; //seems useless for now
     return result;
   }
+
+  trackObject(result: Value, heapView: Int32Array): Array<ObjectField>{
+    let list = new Array<ObjectField>();
+    if(result.tag === "bool" || result.tag === "none" || result.tag === "num"){
+      return list;
+    }
+
+    // list.push({field: "address", value: {tag:"num", value: result.address}}); //what if a real field named address?
+    //get the field of object
+    const fields = this.currentTypeEnv.classes.get(result.name)[0];
+    let index = result.address / 4;
+    fields.forEach((value: Type, key: string) => {
+      switch(value.tag){
+        case "number":
+          list.push({tag:"num", fieldName: key, value: {tag: "num", value: heapView.at(index)}});
+          break;
+        case "bool":
+          list.push({tag:"bool", fieldName: key, value: {tag: "bool", value: Boolean(heapView.at(index))}});
+          break;
+        case "none":
+          list.push({tag:"none", fieldName: key, value: {tag: "none", value: heapView.at(index)}});
+          break;
+        case "class":
+          const objectResult : Value = {tag: "object", name: value.name, address: heapView.at(index)};
+          const fieldList = this.trackObject(objectResult, heapView);
+          list.push({tag: "object", fieldName: key, value: objectResult, objectTrackList: fieldList});
+          break;
+      }
+      index += 1
+    });
+  
+    return list;
+  }
+
+  // need information from menmory
+  trackHeap(): Int32Array{
+    const heapView = new Int32Array(this.importObject.js.memory.buffer);
+    return heapView;
+  }
+
+
   tc(source: string): Type {
     const config: Config = { importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions };
     const parsed = parse(source);
     const [result, _] = tc(this.currentTypeEnv, parsed);
-    return result.a;
+    return result.a[0];
   }
 }

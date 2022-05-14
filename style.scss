@@ -1,0 +1,84 @@
+@import "codemirror/lib/codemirror.css";
+@import "codemirror/theme/blackboard.css";
+
+* {
+  box-sizing: border-box;
+}
+
+.editor {
+    float: left;
+    width: 49%;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+.save_load {
+    width: 100%;
+    height: 100%;
+    float: left;
+}
+#ls {
+width: 350px;
+float: left;
+}
+#ls_btns {
+width: 20px;
+float: left;
+}
+#l_save {
+width: 150px;
+float: left;
+}
+.user-code {
+    width: 100%;
+    height: 80em;
+    resize: none;
+    overflow: scroll;
+    font-family: monospace;
+}
+.interactions {
+    float: right;
+    width: 49%;
+    margin-left: 1em;
+    padding: 0;
+    height: 100%;
+}
+.repl-code {
+    height: 2em;
+    width: 30em;
+    text-align: left;
+    font-family: monospace;
+}
+.prompt {
+    vertical-align: middle;
+}
+.output pre {
+    max-width: 100%;
+    white-space: break-spaces;
+    line-break: anywhere;
+}
+.arrow {
+    border: solid brown;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+    transform: rotate(-45deg);
+  }
+
+.panel {
+    width: 100%;
+    padding: 0 0 0 5%;
+    display: none;
+    background-color: LightCyan;
+    overflow: hidden;
+    font-family: monospace;
+}
+
+.CodeMirror {
+    /* Set height, width, borders, and global font properties here */
+    font-family: monospace;
+    height: 500px;
+    padding:5px;
+    margin:10px;
+    border-radius: 50%;
+  }

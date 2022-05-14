@@ -651,7 +651,7 @@ function setFuncs() : Array<string> {
       "(br 1)",
       ")", // Closing loop
       ")", // Closing Block
-      ")", //close else
+      ")", // close else
       ")", // close if
       "(i32.const 0)",
       "(return))",

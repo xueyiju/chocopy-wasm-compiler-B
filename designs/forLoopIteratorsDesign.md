@@ -315,10 +315,6 @@ For new files: We will need to add all the built-in methods described below, we 
  
 The following represents the memory layout for adding a "range value" whenever a call to range is made. Each block is 4 bytes.
  
-<<<<<<< HEAD
-|    start    |     stop    |     step    |   has_next  |   current_value   |
-| ----------- | ----------- | ----------- | ----------- | ----------------- |
-=======
 |    start    |     stop    |     step    |   hasnext  |   currvalue   |
 | ----------- | ----------- | ----------- | ----------- | ----------------- |
 
@@ -327,4 +323,3 @@ The following represents the memory layout for adding a "range value" whenever a
 * range.wat doesn't use alloc, store and load, we will import libmemory in the next implementation
 * break and continue are currently not working for nested loops, will look into this in the next implementation
 
->>>>>>> testBranch

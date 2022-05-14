@@ -57,9 +57,9 @@ describe("Basic range functionalities", () => {
     assertPrint('range: for loop with continue inside the main body', `
     i: int = 0
     for i in range(5):
-        print(i * 100)
+        print(i*100)
         continue
-        print(i)
+        print(i)    
         `, ["0", "100", "200", "300", "400"]);    
 
     assertPrint('range: for loop with continue inside a if statement', `
@@ -93,17 +93,6 @@ describe("Basic range functionalities", () => {
         print(123456)
         `, ["10", "9", "8", "7", "6", "123456"]);  
 
-    assertPrint('range: nested for with break', `
-    i:int = 0
-    j:int = 0
-    for i in range(4):
-        for j in range(4):
-            j = j + 1
-            print(j)
-        break
-        print(10)
-        `, ["1", "2", "3", "4"]);  
-    
     assertPrint('range: inbuilt functions on range 1 ', `
     r : range = None
     r = range(20, 0, -2)

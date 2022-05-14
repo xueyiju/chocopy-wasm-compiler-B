@@ -194,6 +194,31 @@ We also plan to implement liveness analysis at `ir` first since the control flow
 We already observe noticable difference in the optimality of enforcing the same optimization techniques at different levels. For constant folding, if we can merge operations at `ast`, less intermediate variable will be generated compared with applying folding at `ir` level. Although these redundant variables may be eliminated by further propagation and folding at `ir`, wipping the **seed** out at `ast` can definitely simplify the further optimization. 
 
 ## E. Test
+To conduct automatic testing, we implement two functions in the `./tests/asserts.test.ts`, which are `assertOptimize` and `assertPass` functions. For the `assertOptimize` function, we run the codes before and after optimization respectively. **When the runtime results of two generated WASM codes matched, and the length of the optimized WASM code is shorter than the original WASM codes, we consider a test case is passed.** Similarly, for `assertPass` function, the only difference with `assertOptimize` is that the test case is considered pass when the length of optimized WASM code is shorter or equal to the original WASM code. The purpose for this function is for the test cases of `pass` statements since such statements do not generate any WASM codes. For example, a test case like,
+
+```python
+def f():
+    pass
+
+pass
+f()
+pass
+```
+
+will generate the same exact results before and after optimization. Despite that the optimization for `pass` statement does not make a difference in this scenario, such step is still necessary because some of the optimization steps will generate new `pass` statements to the program (for example, for a `while` loop with `False` literal as its condition, we will replace the `while` loop with a `pass` statement to avoid an empty if/function/while/program body).
+
+We added 30 test cases in `optimize.test.ts` for this milestone, which covers 
+* constant folding for different binary operators and unary operators on number and boolean literals;
+* constant folding on builtin functions; 
+* dead code elimination after return
+* dead code elimiation for if branches
+* dead code elimination for while loops
+* dead code elimination for pass statements
+* dead code elimination for nested while and if structures
+* Optimization for class methods
+* Optimization for field assignments
+* A few programs that combine the optimizations above
+
 
 ## F. Value Rep and Memory Layout
 Dynamic optimizations that happen at runtime or may rely on runtime informations are beyond our scope, so we may not introduce new modifications to the runtime environment. Overall, we aim to optimize the program without imposing restrictions or new assumptions on other groups.

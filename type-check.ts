@@ -367,7 +367,6 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }
-      throw new TypeError("Undefined function: " + expr.name);
     case "lookup":
       var tObj = tcExpr(env, locals, expr.obj);
       if (tObj.a[0].tag === "class") {

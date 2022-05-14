@@ -118,8 +118,7 @@ function webStart() {
         //reset environment
         repl = new BasicREPL(importObject);
         // Repalce text area with the content in the uploaded file
-        const source = document.getElementById("user-code") as HTMLTextAreaElement;
-        source.value = filecontent.toString();
+        editor.setValue(filecontent.toString());
       };
       reader.readAsText(input.files[0]);
     });
@@ -132,8 +131,8 @@ function webStart() {
       //download the code in the user-code text area
       var FileSaver = require("file-saver");
       var title = "download";
-      const source = document.getElementById("user-code") as HTMLTextAreaElement;
-      var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
+      const source = editor.getValue();
+      var blob = new Blob([source], { type: "text/plain;charset=utf-8" });
       FileSaver.saveAs(blob, title);
     });
 

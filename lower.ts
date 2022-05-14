@@ -369,6 +369,22 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const nextVal : IR.VarInit<[Type, SourceLocation]> = { name: nextValName, type: e.a[0].type, value: { tag: "none" } };
       const nextValAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextValName, value: callNext };
       const next : IR.Value<[Type, SourceLocation]> = { a: e.a, tag: "id", name: nextValName };
+
+      // // if condition
+      // const condThenLbl = generateName("$then");
+      // const condEndLbl = generateName("$end");
+      // const condElseLbl = generateName("$else");
+      // var cinits : IR.VarInit<[Type, SourceLocation]>[] = []
+      // var cstmts : IR.Stmt<[Type, SourceLocation]>[] = []
+      // var cval;
+      // [cinits, cstmts, cval] = flattenExprToVal(e.ifcond, env);
+
+      // const condJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cval, thn: condThenLbl, els: condElseLbl };
+      // const endJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: condEndLbl };
+
+      // pushStmtsToLastBlock(blocks, ...cstmts, condJmp);
+      // blocks.push({ a: e.a, label: condThenLbl, stmts: [] });
+
       // evaluate lhs
       const [linits, lstmts, lval] = flattenExprToVal(e.lhs, env);
       const nextYieldName = generateName("nextYield");
@@ -377,6 +393,11 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       // for this milestone, we just print out the values
       const callPrint : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: "print_num", arguments: [{ a: e.a, tag: "id", name: nextYieldName }] };
       pushStmtsToLastBlock(blocks, checkObj, nextValAssign, ...lstmts, nextYieldAssign, { tag: "expr", expr: callPrint });
+
+      // pushStmtsToLastBlock(blocks, endJmp);
+      // blocks.push({ a: e.a, label: condElseLbl, stmts: [] });
+      // pushStmtsToLastBlock(blocks, endJmp);
+      // blocks.push({ a: e.a, label: endLbl, stmts: [] });
 
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
 

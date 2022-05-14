@@ -270,7 +270,7 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
       // var currentloop = nameCounters.get("$"+currLoop+"body");
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + depth});
       return []
   }
 }

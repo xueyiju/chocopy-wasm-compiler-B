@@ -92,17 +92,6 @@ describe("Basic range functionalities", () => {
     else:
         print(123456)
         `, ["10", "9", "8", "7", "6", "123456"]);  
-
-    assertPrint('range: nested for with break', `
-    i:int = 0
-    j:int = 0
-    for i in range(4):
-        for j in range(4):
-            j = j + 1
-            print(j)
-        break
-        print(10)
-        `, ["1", "2", "3", "4"]);  
     
     assertPrint('range: inbuilt functions on range 1 ', `
     r : range = None

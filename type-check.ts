@@ -236,22 +236,33 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       const tBody = tcBlock(env, locals, stmt.body);
       if (!equalType(tCond.a[0], BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool");
-      return {a: NONE, tag:stmt.tag, cond: tCond, body: tBody};
+      return {a: [NONE, stmt.a], tag:stmt.tag, cond: tCond, body: tBody};
     case "for":
       var tVars = tcExpr(env, locals, stmt.vars);
       var tIterable = tcExpr(env, locals, stmt.iterable);
+      locals.forCount = locals.forCount+1;
+      locals.currLoop.push(["for",locals.forCount]);
       var tForBody = tcBlock(env, locals, stmt.body);
-      if(tVars.a.tag !== "number")
-        throw new TypeCheckError("Expected type `int`, got type `" + tVars.a.tag + "`");
-      if(tIterable.a.tag !== "class" || tIterable.a.name !== "range")
+      locals.currLoop.pop();
+      if(!equalType(tVars.a[0], NUM))
+        throw new TypeCheckError("Expected type `int`, got type `" + tVars.a[0].tag + "`");
+      if(tIterable.a[0].tag !== "class" || tIterable.a[0].name !== "range")
         throw new TypeCheckError("Not an iterable");
       if(stmt.elseBody !== undefined) {
         const tElseBody = tcBlock(env, locals, stmt.elseBody);
-        return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
+        return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
       }
-      return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
+      return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
     case "break":
+      if(locals.currLoop.length === 0)
+        throw new TypeCheckError("break cannot exist outside a loop");
+      var currLoop = locals.currLoop[locals.currLoop.length-1];
+      return {a: [NONE, stmt.a], tag: stmt.tag, loopDepth: currLoop};
     case "continue":
+      if(locals.currLoop.length === 0)
+        throw new TypeCheckError("continue cannot exist outside a loop");
+      var currLoop = locals.currLoop[locals.currLoop.length-1];
+      return {a: [NONE, stmt.a], tag: stmt.tag, loopDepth: currLoop};
     case "pass":
       return {a: [NONE, stmt.a], tag: stmt.tag};
     case "field-assign":
@@ -376,14 +387,16 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
                 throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");  
             }
             const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
-            if(tArgs.every((tArg, i) => tArg.a === initArgs[i])) 
-                return  {a: CLASS(expr.name), tag: "parameterized-construct", name: expr.name, arguments: tArgs };
-            else 
+          console.log(tArgs)
+          console.log(initArgs)
+            if(tArgs.every((tArg, i) => equalType(tArg.a[0], initArgs[i + 1]))) 
+                return  {a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name, arguments: tArgs };
+           else 
               throw new TypeError("Function call type mismatch: " + expr.name);
           } 
         }
         else {
-          const tConstruct : Expr<Type> = { a: CLASS(expr.name), tag: "construct", name: expr.name };
+          const tConstruct : Expr<[Type, SourceLocation]> = { a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name };
           const [_, methods] = env.classes.get(expr.name);
           if (methods.has("__init__")) {
             const [initArgs, initRet] = methods.get("__init__");
@@ -409,6 +422,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }
+      throw new TypeError("Undefined function: " + expr.name);
     case "lookup":
       var tObj = tcExpr(env, locals, expr.obj);
       if (tObj.a[0].tag === "class") {

@@ -92,7 +92,7 @@ describe("Basic range functionalities", () => {
     else:
         print(123456)
         `, ["10", "9", "8", "7", "6", "123456"]);  
-
+    
     assertPrint('range: inbuilt functions on range 1 ', `
     r : range = None
     r = range(20, 0, -2)

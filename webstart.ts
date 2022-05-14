@@ -39,7 +39,7 @@ function check_range_index(start: any, stop:any, step:any, val:any) : any {
   if(start * step >= stop * step)
     throw new Error(`${val} is not in range`)
 
-  stop -= 1
+  stop -= Math.sign(step)
   const len = Math.abs(stop - start)
   if(len < Math.abs(val - start) || len < Math.abs(val - stop )) 
     throw new Error(`${val} is not in range`)

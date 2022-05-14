@@ -28,7 +28,7 @@ export type LocalTypeEnv = {
   topLevel: Boolean,
   forCount: number,
   whileCount: number,
-  currLoop: Array<string>
+  currLoop: Array<[string, number]>
 }
 
 const defaultGlobalFunctions = new Map();
@@ -237,8 +237,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       return {a: tRet.a, tag: stmt.tag, value:tRet};
     case "while":
       var tCond = tcExpr(env, locals, stmt.cond);
-      locals.currLoop.push("while");
       locals.whileCount = locals.whileCount+1;
+      locals.currLoop.push(["while", locals.whileCount]);
       const tBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
       if (!equalType(tCond.a, BOOL)) 
@@ -248,7 +248,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       var tVars = tcExpr(env, locals, stmt.vars);
       var tIterable = tcExpr(env, locals, stmt.iterable);
       locals.forCount = locals.forCount+1;
-      locals.currLoop.push("for");
+      locals.currLoop.push(["for",locals.forCount]);
       var tForBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
       if(!equalType(tVars.a, NUM))
@@ -264,14 +264,12 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       if(locals.currLoop.length === 0)
         throw new TypeCheckError("break cannot exist outside a loop");
       var currLoop = locals.currLoop[locals.currLoop.length-1];
-      var depth = currLoop === "for" ? locals.forCount : locals.whileCount;
-      return {a: NONE, tag: stmt.tag, loopDepth: [currLoop, depth]};
+      return {a: NONE, tag: stmt.tag, loopDepth: currLoop};
     case "continue":
       if(locals.currLoop.length === 0)
         throw new TypeCheckError("continue cannot exist outside a loop");
       var currLoop = locals.currLoop[locals.currLoop.length-1];
-      var depth = currLoop === "for" ? locals.forCount : locals.whileCount;
-      return {a: NONE, tag: stmt.tag, loopDepth: [currLoop, depth]};
+      return {a: NONE, tag: stmt.tag, loopDepth: currLoop};
     case "pass":
       return {a: NONE, tag: stmt.tag};
     case "field-assign":

@@ -342,6 +342,8 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
       c.parent()
       var elseBody = []
       if(c.nextSibling()) {
+        while(s.substring(c.from, c.to) !== 'else')
+          c.nextSibling()
         c.nextSibling()
         c.firstChild()
         while(c.nextSibling()) {

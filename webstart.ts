@@ -1,9 +1,20 @@
-import {BasicREPL} from './repl';
+import { BasicREPL } from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
 // import CodeMirror from "codemirror";
 import { renderResult, renderError, renderPrint } from "./ouputrender";
+
+
+console.log('this is normoal')
+import CodeMirror from "codemirror";
+import "codemirror/addon/edit/closebrackets";
+import "codemirror/mode/python/python";
+import "codemirror/addon/hint/show-hint";
+import "codemirror/addon/fold/foldcode";
+import "codemirror/addon/fold/foldgutter";
+import "codemirror/addon/fold/brace-fold";
+import "codemirror/addon/fold/comment-fold";
 import "./style.scss";
 
 function assert_not_none(arg: any) : any {
@@ -12,16 +23,18 @@ function assert_not_none(arg: any) : any {
   return arg;
 }
 
+console.log('this is ok')
 function webStart() {
   var filecontent: string | ArrayBuffer;
   document.addEventListener("DOMContentLoaded", async function() {
 
+    console.log('this is okk')
     // https://github.com/mdn/webassembly-examples/issues/5
 
-    const memory = new WebAssembly.Memory({initial:10, maximum:100});
-    const memoryModule = await fetch('memory.wasm').then(response => 
+    const memory = new WebAssembly.Memory({ initial: 10, maximum: 100 });
+    const memoryModule = await fetch('memory.wasm').then(response =>
       response.arrayBuffer()
-    ).then(bytes => 
+    ).then(bytes =>
       WebAssembly.instantiate(bytes, { js: { mem: memory } })
     );
 
@@ -47,7 +60,7 @@ function webStart() {
       const replCodeElement = document.getElementById("next-code") as HTMLTextAreaElement;
       replCodeElement.addEventListener("keypress", (e) => {
 
-        if(e.shiftKey && e.key === "Enter") {
+        if (e.shiftKey && e.key === "Enter") {
         } else if (e.key === "Enter") {
           e.preventDefault();
           const output = document.createElement("div");
@@ -63,12 +76,13 @@ function webStart() {
           const source = replCodeElement.value;
           elt.value = source;
           replCodeElement.value = "";
-          repl.run(source).then((r) => { 
+          repl.run(source).then((r) => {
             console.log(r);
             var objectTrackList = repl.trackObject(r, repl.trackHeap());
             renderResult(r, objectTrackList);
-            console.log ("run finished");})
-              .catch((e) => { renderError(e); console.log("run failed", e) });;
+            console.log("run finished");
+          })
+            .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
       });
     }
@@ -77,19 +91,19 @@ function webStart() {
       document.getElementById("output").innerHTML = "";
     }
 
-    document.getElementById("run").addEventListener("click", function(e) {
+    document.getElementById("run").addEventListener("click", function (e) {
       repl = new BasicREPL(importObject);
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       resetRepl();
       console.log(source);
       repl.run(source.value).then((r) => {
-        console.log(r); 
+        console.log(r);
         console.log(repl.trackHeap());
         console.log(repl.trackObject(r, repl.trackHeap()));
         var objectTrackList = repl.trackObject(r, repl.trackHeap());
-        renderResult(r, objectTrackList); 
-        console.log ("run finished") 
-        
+        renderResult(r, objectTrackList);
+        console.log("run finished")
+
       })
         .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
@@ -100,30 +114,59 @@ function webStart() {
       var reader = new FileReader();
       reader.onload = function () {
         filecontent = reader.result;
+        resetRepl();
+        //reset environment
+        repl = new BasicREPL(importObject);
+        // Repalce text area with the content in the uploaded file
+        const source = document.getElementById("user-code") as HTMLTextAreaElement;
+        source.value = filecontent.toString();
       };
       reader.readAsText(input.files[0]);
     });
 
-    document.getElementById("load").addEventListener("click", function (e) {
-      //clear repl output
-      resetRepl();
-      //reset environment
-      repl = new BasicREPL(importObject);
-      // Repalce text area with the content in the uploaded file
-      const source = document.getElementById("user-code") as HTMLTextAreaElement;
-      source. value = filecontent.toString();
-    });
+    document.getElementById("import").addEventListener("click", function () {
+      document.getElementById("choose_file").click();
+    })
 
     document.getElementById("save").addEventListener("click", function (e) {
       //download the code in the user-code text area
       var FileSaver = require("file-saver");
-      var title = (document.getElementById("save_title") as any).value;
+      var title = "download";
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
       FileSaver.saveAs(blob, title);
     });
-    
+
     setupRepl();
+
+    const textarea = document.getElementById("user-code") as HTMLTextAreaElement;
+    const editor = CodeMirror.fromTextArea(textarea, {
+      mode: "python",
+      theme: "blackboard",
+      lineNumbers: true,
+      autoCloseBrackets: true,
+      lineWrapping: true,
+      foldGutter: true,
+      gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+      extraKeys: {
+        "Ctrl": "autocomplete",
+      },
+      // scrollbarStyle: "simple",
+    } as any);
+    console.log('thy this is not run textarea', textarea)
+    console.log(editor)
+    
+    editor.on("change", (cm, change) => {
+
+        textarea.value = editor.getValue();
+    })
+    editor.on('inputRead', function onChange(editor, input) {
+        if (input.text[0] === ';' || input.text[0] === ' ' || input.text[0] === ":") {
+            return;
+        }
+        (editor as any).showHint({
+        });
+    });
   });
 }
 

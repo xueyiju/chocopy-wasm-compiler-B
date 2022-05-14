@@ -255,22 +255,3 @@ The following represents the memory layout for adding a "range value" whenever a
  
 |    start    |     stop    |     step    |   has_next  |   current_value   |
 | ----------- | ----------- | ----------- | ----------- | ----------------- |
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-
-

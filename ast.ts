@@ -8,6 +8,8 @@ export type Type =
   | {tag: "class", name: string}
   | {tag: "either", left: Type, right: Type }
 
+export type SourceLocation = { line: number }
+
 export type Parameter<A> = { name: string, type: Type }
 
 export type Program<A> = { a?: A, funs: Array<FunDef<A>>, inits: Array<VarInit<A>>, classes: Array<Class<A>>, stmts: Array<Stmt<A>> }
@@ -26,9 +28,17 @@ export type Stmt<A> =
   | {  a?: A, tag: "field-assign", obj: Expr<A>, field: string, value: Expr<A> }
   | {  a?: A, tag: "if", cond: Expr<A>, thn: Array<Stmt<A>>, els: Array<Stmt<A>> }
   | {  a?: A, tag: "while", cond: Expr<A>, body: Array<Stmt<A>> }
+<<<<<<< HEAD
   | {  a?: A, tag: "for", vars: Expr<A>, iterable: Expr<A>, body: Array<Stmt<A>>, elseBody?:Array<Stmt<A>>}
   | {  a?:A,  tag: "break"}
   | {  a?:A,  tag: "continue"}
+=======
+  | {  a?: A, tag: "for", vars: Expr<A>, iterable: Expr<A>, body: Array<Stmt<A>>, elseBody?: Array<Stmt<A>> }
+  | {  a?: A, tag: "break", loopDepth?: [string, number] }
+  | {  a?: A, tag: "continue", loopDepth?: [string, number] }
+
+
+>>>>>>> 684e78719329af44b20584eb73d59f94900035bd
 
 export type Expr<A> =
     {  a?: A, tag: "literal", value: Literal }
@@ -40,8 +50,12 @@ export type Expr<A> =
   | {  a?: A, tag: "call", name: string, arguments: Array<Expr<A>> } 
   | {  a?: A, tag: "lookup", obj: Expr<A>, field: string }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
+<<<<<<< HEAD
   | {  a?: A, tag: "construct", name: string }
   | {  a?: A, tag: "parameterized-construct", name: string, arguments: Array<Expr<A>> }
+=======
+  | {  a?: A, tag: "construct", name: string, arguments?: Array<Expr<A>> }
+>>>>>>> 684e78719329af44b20584eb73d59f94900035bd
 
 export type Literal = 
     { tag: "num", value: number }
@@ -49,7 +63,7 @@ export type Literal =
   | { tag: "none" }
 
 // TODO: should we split up arithmetic ops from bool ops?
-export enum BinOp { Plus, Minus, Mul, IDiv, Mod, Eq, Neq, Lte, Gte, Lt, Gt, Is, And, Or, In};
+export enum BinOp { Plus, Minus, Mul, IDiv, Mod, Eq, Neq, Lte, Gte, Lt, Gt, Is, And, Or};
 
 export enum UniOp { Neg, Not };
 

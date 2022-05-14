@@ -7,7 +7,7 @@ import wabt from 'wabt';
 import { compile, GlobalEnv } from './compiler';
 import {parse} from './parser';
 import {emptyLocalTypeEnv, GlobalTypeEnv, tc, tcStmt} from  './type-check';
-import { Program, Type, Value } from './ast';
+import { Program, Type, Value, SourceLocation } from './ast';
 import { PyValue, NONE, BOOL, NUM, CLASS } from "./utils";
 import { lowerProgram } from './lower';
 
@@ -43,7 +43,7 @@ export async function runWat(source : string, importObject : any) : Promise<any>
 }
 
 
-export function augmentEnv(env: GlobalEnv, prog: Program<Type>) : GlobalEnv {
+export function augmentEnv(env: GlobalEnv, prog: Program<[Type, SourceLocation]>) : GlobalEnv {
   const newGlobals = new Map(env.globals);
   const newClasses = new Map(env.classes);
 
@@ -69,10 +69,11 @@ export function augmentEnv(env: GlobalEnv, prog: Program<Type>) : GlobalEnv {
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
 export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
   const parsed = parse(source);
+  console.log(JSON.stringify(parsed, null, 2));
   const [tprogram, tenv] = tc(config.typeEnv, parsed);
   const globalEnv = augmentEnv(config.env, tprogram);
   const irprogram = lowerProgram(tprogram, globalEnv);
-  const progTyp = tprogram.a;
+  const progTyp = tprogram.a[0];
   var returnType = "";
   var returnExpr = "";
   // const lastExpr = parsed.stmts[parsed.stmts.length - 1]
@@ -102,6 +103,7 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
   const wasmSource = `(module
     (import "js" "memory" (memory 1))
     (func $assert_not_none (import "imports" "assert_not_none") (param i32) (result i32))
+    (func $check_range_error (import "imports" "check_range_error") (param i32) (result i32))
     (func $print_num (import "imports" "print_num") (param i32) (result i32))
     (func $print_bool (import "imports" "print_bool") (param i32) (result i32))
     (func $print_none (import "imports" "print_none") (param i32) (result i32))
@@ -112,10 +114,17 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (func $alloc (import "libmemory" "alloc") (param i32) (result i32))
     (func $load (import "libmemory" "load") (param i32) (param i32) (result i32))
     (func $store (import "libmemory" "store") (param i32) (param i32) (param i32))
+
+    (func $range$__init__ (import "rangelib" "$range$__init__") (param i32) (param i32) (param i32) (param i32) (result i32))
+    (func $range$__hasnext__ (import "rangelib" "$range$__hasnext__") (param i32) (result i32))
+    (func $range$__next__ (import "rangelib" "$range$__next__") (param i32) (result i32))
+    (func $range$index (import "rangelib" "$range$index") (param i32) (param i32)  (result i32))
+
     ${globalImports}
     ${globalDecls}
     ${config.functions}
     ${compiled.functions}
+    
     (func (export "exported_func") ${returnType}
       ${compiled.mainSource}
       ${returnExpr}

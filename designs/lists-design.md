@@ -8,6 +8,8 @@ The tests that do not yet behave as we want are the ones that were supposed to h
 
 One challenge we encountered when trying to add this runtime check was working with the IR. Before we had the IR, we could directly write the assembly code needed for each kind of expression or statement, such as the code to load a value at a specific address, add 1 to it, and use it in the next operation. Now, with the IR, it seems like we have to figure out how that code would look like in the IR format, so that `compiler.ts` can generate the WASM. We are thinking about some different ways to approach this.
 
+We were not expecting to be able to implement lists of any type other than `int` or `bool` this week, but we actually were able to implement it for objects as well, which is reflected in the new test cases we've added. A list of a certain object type can also have `None` elements inside it.
+
 Here are some test cases that we know are behaving in an undesireable way, which we plan to work on next: (this is for us just as much as the instructors!)
 ```
 a: [int] = None

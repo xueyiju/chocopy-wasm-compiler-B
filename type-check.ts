@@ -26,7 +26,9 @@ export type LocalTypeEnv = {
   expectedRet: Type,
   actualRet: Type,
   topLevel: Boolean,
-  currLoop: string
+  forCount: number,
+  whileCount: number,
+  currLoop: Array<string>
 }
 
 const defaultGlobalFunctions = new Map();
@@ -81,7 +83,9 @@ export function emptyLocalTypeEnv() : LocalTypeEnv {
     expectedRet: NONE,
     actualRet: NONE,
     topLevel: true,
-    currLoop: ""
+    forCount: 0,
+    whileCount: 0,
+    currLoop: []
   };
 }
 
@@ -233,35 +237,41 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<n
       return {a: tRet.a, tag: stmt.tag, value:tRet};
     case "while":
       var tCond = tcExpr(env, locals, stmt.cond);
-      locals.currLoop = "while";
+      locals.currLoop.push("while");
+      locals.whileCount = locals.whileCount+1;
       const tBody = tcBlock(env, locals, stmt.body);
+      locals.currLoop.pop();
       if (!equalType(tCond.a, BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool");
-      locals.currLoop = "";
       return {a: NONE, tag:stmt.tag, cond: tCond, body: tBody};
     case "for":
       var tVars = tcExpr(env, locals, stmt.vars);
       var tIterable = tcExpr(env, locals, stmt.iterable);
-      locals.currLoop = "for";
+      locals.forCount = locals.forCount+1;
+      locals.currLoop.push("for");
       var tForBody = tcBlock(env, locals, stmt.body);
+      locals.currLoop.pop();
       if(!equalType(tVars.a, NUM))
         throw new TypeCheckError("Expected type `int`, got type `" + tVars.a.tag + "`");
       if(tIterable.a.tag !== "class" || tIterable.a.name !== "range")
         throw new TypeCheckError("Not an iterable");
-      locals.currLoop = "";
       if(stmt.elseBody !== undefined) {
         const tElseBody = tcBlock(env, locals, stmt.elseBody);
         return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
       }
       return {a: NONE, tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
     case "break":
-      if(locals.currLoop !=="while" && locals.currLoop !== "for")
+      if(locals.currLoop.length === 0)
         throw new TypeCheckError("break cannot exist outside a loop");
-      return {a: NONE, tag: stmt.tag, looptype: locals.currLoop};
+      var currLoop = locals.currLoop[locals.currLoop.length-1];
+      var depth = currLoop === "for" ? locals.forCount : locals.whileCount;
+      return {a: NONE, tag: stmt.tag, loopDepth: [currLoop, depth]};
     case "continue":
-      if(locals.currLoop !=="while" && locals.currLoop !== "for")
-      throw new TypeCheckError("continue cannot exist outside a loop");
-      return {a: NONE, tag: stmt.tag, looptype: locals.currLoop};
+      if(locals.currLoop.length === 0)
+        throw new TypeCheckError("continue cannot exist outside a loop");
+      var currLoop = locals.currLoop[locals.currLoop.length-1];
+      var depth = currLoop === "for" ? locals.forCount : locals.whileCount;
+      return {a: NONE, tag: stmt.tag, loopDepth: [currLoop, depth]};
     case "pass":
       return {a: NONE, tag: stmt.tag};
     case "field-assign":

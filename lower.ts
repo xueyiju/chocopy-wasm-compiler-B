@@ -261,24 +261,16 @@ function flattenStmt(s : AST.Stmt<Type>, blocks: Array<IR.BasicBlock<Type>>, env
       return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a:  s.iterable.a, name: rangeObject, type:  s.iterable.a, value: { tag: "none" } }]
     
     case "break":
-      if(s.looptype === "for") {
-        var currentloop = nameCounters.get("$forbody")
-        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forend"  + currentloop});
-      }
-      else {
-        var currentloop = nameCounters.get("$whilebody")
-        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$whileend"  + currentloop});
-      } 
+      var currLoop = s.loopDepth[0];
+      var depth = s.loopDepth[1];
+      // var currentloop = nameCounters.get("$"+currLoop+"body")
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
       return []
     case "continue":
-      if(s.looptype === "for") {
-        var currentloop = nameCounters.get("$forbody")
-        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$forstart"  + currentloop});
-      }
-      else {
-        var currentloop = nameCounters.get("$whilebody")
-        pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$whilestart"  + currentloop});
-      } 
+      var currLoop = s.loopDepth[0];
+      var depth = s.loopDepth[1];
+      // var currentloop = nameCounters.get("$"+currLoop+"body");
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
       return []
   }
 }

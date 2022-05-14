@@ -33,8 +33,10 @@ export function addBuiltinClasses(env : GlobalEnv) : GlobalEnv {
   env.classes.set("range", rangeFields);
   return env;
 }
+
 export function lowerProgram(p : AST.Program<[Type, SourceLocation]>, env : GlobalEnv) : IR.Program<[Type, SourceLocation]> {
   env = addBuiltinClasses(env);
+  resetLoopLabels();
   var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
   var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
   blocks.push(firstBlock);
@@ -189,7 +191,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       //   endlbl,
       // ]];
     
-    case "while":
+    case "while": 
       var whileStartLbl = generateName("$whilestart");
       var whilebodyLbl = generateName("$whilebody");
       var whileEndLbl = generateName("$whileend");
@@ -263,13 +265,13 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
       var currentloop = nameCounters.get("$"+currLoop+"body")
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + currentloop});
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
       return []
     case "continue":
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
       var currentloop = nameCounters.get("$"+currLoop+"body");
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + currentloop});
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + depth});
       return []
   }
 }
@@ -409,4 +411,12 @@ function flattenExprToVal(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv)
 
 function pushStmtsToLastBlock(blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, ...stmts: Array<IR.Stmt<[Type, SourceLocation]>>) {
   blocks[blocks.length - 1].stmts.push(...stmts);
+}
+
+function resetLoopLabels() {
+  const labels = ["$whilestart", "$whilebody", "$whileend" ,"$forstart", "$forbody", "$forelse", "$forend"]
+ labels.forEach(label => {
+   nameCounters.delete(label)
+ });
+  return;
 }

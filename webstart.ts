@@ -65,8 +65,9 @@ function webStart() {
       response.arrayBuffer()
     ).then(bytes => 
       WebAssembly.instantiate(bytes, { js: { mem: memory }, 
+              libmemory: memoryModule.instance.exports,
               imports: {check_range_error: (arg: any) => check_range_error(arg) ,
-                check_range_index: (arg1: any, arg2:any, arg3:any, arg4:any) => check_range_index(arg1, arg2, arg3, arg4)}})
+              check_range_index: (arg1: any, arg2:any, arg3:any, arg4:any) => check_range_index(arg1, arg2, arg3, arg4)}})
     );
     var importObject = {
       imports: {

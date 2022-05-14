@@ -69,7 +69,17 @@ describe("Basic range functionalities", () => {
             continue
         else:
             print(i)
-        `, ["1", "3", "5", "7", "9"]);      
+        `, ["1", "3", "5", "7", "9"]);  
+
+    assertPrint('range: nested for loop with break', `
+    i: int = 0
+    j:int = 0
+    for i in range(5):
+        print(i)
+        for j in range(2):
+            print(j) 
+        break   
+        `, ["0", "0", "1"]);   
 
     assertPrint('range: for else construct 1', `
     i : int = 0
@@ -122,6 +132,13 @@ describe("Basic range functionalities", () => {
     for i in range(10, 20, 1, 1):
         print(i)
         `);   
+
+    assertTCFail('break statements outside loop', `
+        i : int = 0
+        for i in range(10, 20, 1, 1):
+            print(i)
+        break
+            `);   
 });
 
 

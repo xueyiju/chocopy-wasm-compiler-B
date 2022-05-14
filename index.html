@@ -1,5 +1,6 @@
 <!doctype HTML>
 <html>
+
 <head>
     <meta charset="utf-8">
     <!-- <script src="https://cdn.jsdelivr.net/gh/AssemblyScript/wabt.js@1.0.20/index.js" ></script> -->
@@ -8,45 +9,59 @@
     <script src="https://cdn.jsdelivr.net/gh/AssemblyScript/wabt.js@1.0.20/index.js"></script>
     <script>const wabt = WabtModule;</script>
     <script src="webstart.js"></script>
-    
-    <!-- <script src="./node_modules/codemirror/lib/codemirror.js"></script>
-    <script src="./node_modules/codemirror/addon/edit/closebrackets.js"></script>
-    <script src="./node_modules/codemirror/mode/python/python.js"></script> -->
-    <!-- <script src="../theme/js/test.js"></script> -->
-    <!-- <script src="./node_modules/codemirror/addon/fold/foldcode.js"></script>
-    <script src="./node_modules/codemirror/addon/fold/foldgutter.js"></script>
-    <script src="./node_modules/codemirror/addon/fold/brace-fold.js"></script>
-    <script src="./node_modules/codemirror/addon/fold/comment-fold.js"></script> -->
 </head>
 
 <body>
-    <div class="editor">
-    <button id="run">Run!</button><br/>
-    <div class="save_load">
-        <div id="ls">
-            <label for = "choose_file">Load from:</label>
-            <input type = "file" id = "choose_file" accept=".txt,.py">
-            <br/>
-            <label id = "l_save" for = "save_title">Filename to save:</label>
-            <input id = "save_title">
+    <div class="wathon-playground">
+        <nav id="menu" class="wathon-header">
+            <section class="left label-title-margin">
+                <div class="label-title-left">Python Compiler</div>
+            </section>
+            <section class="left left-button-margin">
+                <div class="left left-button-shadow">
+                    <div class="left label-left-run">
+                        <div class="left" id="run"> Run</div>
+                        <div class="left run-symbol-margin">
+                            <svg class="left-run-symbol" height="14" viewBox="8 4 10 16" width="12"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <a class="left label-left" id="save">Save</a>
+                    <a class="left label-left" id="import">Load</a>
+                    <input style="display: none;" type="file" id="choose_file" accept=".txt,.py">
+                    <a class="left label-left" id="share">Share</a>
+                </div>
+            </section>
+        </nav>
+
+        <div class="wathon-content-wrapper">
+            <div class="wathon-content-border">
+                <div class="dynamic-content-border">
+                    <div class="absolute-content-border">
+                        <div>
+                            <textarea class="user-code" id="user-code"></textarea>
+                        </div>
+                    </div>
+                    <div id="dragbar" style="font-size: 1em;"></div>  
+                    <div class="interection-content-border">
+                        <div class="interactions">
+                            <div class="output" id="output">
+                            </div>
+                            <div id="repl-entry">
+                                <span class="prompt"><code>»</code></span>
+                                <textarea type="text" id="next-code" class="repl-code"></textarea>
+                            </div>
+                        </div>
+                    </div>   
+                </div>
+            </div>
+            
         </div>
-        <div id="ls_btns">
-            <button class = "btn" id = "load">Load</button>
-            <br/>
-            <button class = "btn" id = "save">Save</button>
-        </div>
-    </div>
-    <textarea class="user-code" id="user-code"></textarea>
+        
     </div>
 
-    <div class="interactions">
-        <div class="output" id="output">
-        </div>
-        <div id="repl-entry">
-            <span class="prompt"><code>»</code></span>
-            <textarea type="text" id="next-code" class="repl-code"></textarea>
-        </div>
-    </div>
 </body>
 
 </html>

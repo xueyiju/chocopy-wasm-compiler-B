@@ -1,4 +1,4 @@
-import {BasicREPL} from './repl';
+import { BasicREPL } from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
@@ -31,10 +31,10 @@ function webStart() {
     console.log('this is okk')
     // https://github.com/mdn/webassembly-examples/issues/5
 
-    const memory = new WebAssembly.Memory({initial:10, maximum:100});
-    const memoryModule = await fetch('memory.wasm').then(response => 
+    const memory = new WebAssembly.Memory({ initial: 10, maximum: 100 });
+    const memoryModule = await fetch('memory.wasm').then(response =>
       response.arrayBuffer()
-    ).then(bytes => 
+    ).then(bytes =>
       WebAssembly.instantiate(bytes, { js: { mem: memory } })
     );
 
@@ -60,7 +60,7 @@ function webStart() {
       const replCodeElement = document.getElementById("next-code") as HTMLTextAreaElement;
       replCodeElement.addEventListener("keypress", (e) => {
 
-        if(e.shiftKey && e.key === "Enter") {
+        if (e.shiftKey && e.key === "Enter") {
         } else if (e.key === "Enter") {
           e.preventDefault();
           const output = document.createElement("div");
@@ -76,12 +76,13 @@ function webStart() {
           const source = replCodeElement.value;
           elt.value = source;
           replCodeElement.value = "";
-          repl.run(source).then((r) => { 
+          repl.run(source).then((r) => {
             console.log(r);
             var objectTrackList = repl.trackObject(r, repl.trackHeap());
             renderResult(r, objectTrackList);
-            console.log ("run finished");})
-              .catch((e) => { renderError(e); console.log("run failed", e) });;
+            console.log("run finished");
+          })
+            .catch((e) => { renderError(e); console.log("run failed", e) });;
         }
       });
     }
@@ -90,19 +91,19 @@ function webStart() {
       document.getElementById("output").innerHTML = "";
     }
 
-    document.getElementById("run").addEventListener("click", function(e) {
+    document.getElementById("run").addEventListener("click", function (e) {
       repl = new BasicREPL(importObject);
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       resetRepl();
       console.log(source);
       repl.run(source.value).then((r) => {
-        console.log(r); 
+        console.log(r);
         console.log(repl.trackHeap());
         console.log(repl.trackObject(r, repl.trackHeap()));
         var objectTrackList = repl.trackObject(r, repl.trackHeap());
-        renderResult(r, objectTrackList); 
-        console.log ("run finished") 
-        
+        renderResult(r, objectTrackList);
+        console.log("run finished")
+
       })
         .catch((e) => { renderError(e); console.log("run failed", e) });;
     });
@@ -112,23 +113,20 @@ function webStart() {
       var input: any = e.target;
       var reader = new FileReader();
       reader.onload = function () {
-        console.log('!!! file content change! reader', reader)
         filecontent = reader.result;
+        resetRepl();
+        //reset environment
+        repl = new BasicREPL(importObject);
+        // Repalce text area with the content in the uploaded file
+        const source = document.getElementById("user-code") as HTMLTextAreaElement;
+        source.value = filecontent.toString();
       };
       reader.readAsText(input.files[0]);
     });
 
-    document.getElementById("load").addEventListener("click", function (e) {
-      //clear repl output
-      resetRepl();
-      //reset environment
-      repl = new BasicREPL(importObject);
-      // Repalce text area with the content in the uploaded file
-      const source = document.getElementById("user-code") as HTMLTextAreaElement;
-      source.value = filecontent.toString();
-    });
-
-    console.log('this is run')
+    document.getElementById("import").addEventListener("click", function () {
+      document.getElementById("choose_file").click();
+    })
 
     document.getElementById("save").addEventListener("click", function (e) {
       //download the code in the user-code text area
@@ -138,7 +136,7 @@ function webStart() {
       var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
       FileSaver.saveAs(blob, title);
     });
-    
+
     setupRepl();
 
     const textarea = document.getElementById("user-code") as HTMLTextAreaElement;

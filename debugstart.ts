@@ -9,14 +9,11 @@ import { stringifyTree } from "./treeprinter";
 // entry point for debugging
 async function debug() {
   var source = `
-  i : int = 0
-  for i in range(10, 5, -1):
-      if i < 5:
-          break
-      else:
-          print(i)
-  else:
-      print(123456)`
+  i: int = 0
+  for i in range(5):
+      print(i * 100)
+      continue
+      print(i)`
 
   const t = parser.parse(source);
   const str = stringifyTree(t.cursor(), source, 0);

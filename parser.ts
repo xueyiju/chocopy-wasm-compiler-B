@@ -84,6 +84,21 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
             left: args[0],
             right: args[1]
           }
+        } else if (callName === "set") {
+          expr = {
+            a: location,
+            tag: "call",
+            name: "set",
+            arguments: args
+          }
+        } else if (callName === "len") {
+          expr = {
+            a: location,
+            tag: "method-call",
+            obj: args[0], 
+            method: "length", 
+            arguments: [],
+          }
         }
         else {
           expr = { a: location, tag: "call", name: callName, arguments: args};
@@ -142,6 +157,17 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         case "or":
           op = BinOp.Or;
           break;
+        case "in":
+          c.nextSibling();
+          const rhs = traverseExpr(c, s);
+          c.parent();
+          return {
+            a: location,
+            tag: "method-call",
+            obj: rhs,
+            method: "contains",
+            arguments: [lhsExpr]
+          };
         default:
           throw new ParseError("Could not parse op at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line)
       }
@@ -196,6 +222,20 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         tag: "lookup",
         obj: objExpr,
         field: propName
+      }
+    case "SetExpression":
+      c.firstChild();
+      let setValues = new Array<Expr<any>>();
+      while (c.nextSibling()) {
+        let v : Expr<any> = traverseExpr(c, s);
+        setValues.push(v);
+        c.nextSibling();
+      }
+      c.parent();
+      return {
+        a: location,
+        tag: "bracket",
+        values: setValues
       }
     case "self":
       return {
@@ -350,6 +390,16 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
 
 export function traverseType(c : TreeCursor, s : string) : Type {
   // For now, always a VariableName
+  if (c.firstChild()) {
+    if (s.substring(c.from, c.to) === "set") {
+      c.nextSibling();
+      c.nextSibling();
+      let vt : Type = traverseType(c, s);
+      c.parent();
+      return {tag: "set", valueType: vt};
+    }
+    c.parent();
+  }
   let name = s.substring(c.from, c.to);
   switch(name) {
     case "int": return NUM;

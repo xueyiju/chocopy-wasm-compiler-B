@@ -594,5 +594,69 @@ function setFuncs() : Array<string> {
       "",
     ]
   );
+
+  setFuns.push(
+    ...[
+      "(func $set$remove (param $baseAddr i32) (param $key i32) (result i32)",
+      "(local $prevPtr i32)", 
+      "(local $currPtr i32)", 
+      "(local.get $baseAddr)",
+      "(local.get $key)",
+      "(i32.const 10)", // For now, assume 10 buckets
+      "(i32.rem_u)", // Compute hash
+      "(i32.mul (i32.const 4))", // offset
+      "(i32.add)", // Reach the correct bucket
+      "(local.set $prevPtr)", 
+      "(local.get $prevPtr)",
+      "(i32.load)",
+      "(i32.const 0)", // None
+      "(i32.eq)",
+      "(if",
+      "(then", // the bucket is empty
+      ")", // close then
+      "(else",
+      "(local.get $prevPtr)",
+      "(i32.load)", // Address of the head of linkedList.
+      "(local.set $currPtr)", // currPtr stores the address of the head of the first node.
+      "(block",
+      "(loop",
+      "(local.get $currPtr)",
+      "(i32.load)",
+      "(local.get $key)",
+      "(i32.eq)", // found the element
+      "(if",
+      "(then",
+      "(local.get $prevPtr)",
+      "(local.get $currPtr)",
+      "(i32.const 4)",
+      "(i32.add)",
+      "(i32.load)",
+      "(i32.store)", // Updating the address of next in previous node to the next of the current node.
+      "(local.get $currPtr)",
+      "(i32.const 4)",
+      "(i32.add)",
+      "(local.set $prevPtr)", // Updating the prevPtr to the next of the current node.
+      "(local.get $currPtr)",
+      "(i32.const 4)",
+      "(i32.add)",
+      "(i32.load)",
+      "(local.set $currPtr)", // Updating the pointer
+      ")", // closing then
+      ")", // closing if
+      "(br_if 0", // Opening br_if
+      "(local.get $currPtr)",
+      "(i32.const 0)", // None
+      "(i32.ne)", // If currPtr not None
+      ")", // Closing br_if
+      "(br 1)",
+      ")", // Closing loop
+      ")", // Closing Block
+      ")", //close else
+      ")", // close if
+      "(i32.const 0)",
+      "(return))",
+      "",
+    ]
+  );
   return setFuns;
 }

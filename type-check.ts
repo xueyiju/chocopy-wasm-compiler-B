@@ -1,4 +1,3 @@
-
 import { table } from 'console';
 import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Class, SourceLocation } from './ast';
 import { NUM, BOOL, NONE, CLASS } from './utils';
@@ -15,7 +14,10 @@ export type LocalTypeEnv = {
   vars: Map<string, Type>,
   expectedRet: Type,
   actualRet: Type,
-  topLevel: Boolean
+  topLevel: Boolean,
+  forCount: number,
+  whileCount: number,
+  currLoop: Array<[string, number]>
 }
 
 const defaultGlobalFunctions = new Map();
@@ -27,14 +29,27 @@ defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 
 const defaultGlobalClasses = new Map();
 const rangeFields = new Map<string, Type>();
-rangeFields.set("start", {tag: "number"});
-rangeFields.set("stop", {tag: "number"});
-rangeFields.set("step", {tag: "number"});
-rangeFields.set("has_next", {tag: "bool"});
-rangeFields.set("current_value", {tag: "number"});
+rangeFields.set("start", NUM);
+rangeFields.set("stop", NUM);
+rangeFields.set("step", NUM);
+rangeFields.set("hasnext", NUM);
+rangeFields.set("currvalue",  NUM);
+// const rangeMethods = new Map();
+
+// func.set(funname , [ [] , []   ])
+// rangeMethods.set("__init__", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class", name: "range"}]) // we shall convert range(10) to range(0, 10, 1)
+// rangeMethods.set("__hasnext__", [{tag: "class", name: "range"}, {tag: "bool"}])
+// rangeMethods.set("__next__", [{tag: "class", name: "range"}, {tag: "number"}])
+// rangeMethods.set("index", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}])
+// defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 const rangeMethods = new Map();
-rangeMethods.set("__init__", [{tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class"}]) // we shall convert range(10) to range(0, 10, 1)
-rangeMethods.set("index", [{tag: "number"}, {tag: "number"}])
+rangeMethods.set("__init__", [[CLASS("range"), NUM, NUM, NUM], CLASS("range")]) // we shall convert range(10) to range(0, 10, 1)
+//rangeMethods.set("__hasnext__", [[{tag: "class", name: "range"}], [{tag: "bool"}]])
+//rangeMethods.set("__next__", [[{tag: "class", name: "range"}], [{tag: "number"}]])
+rangeMethods.set("__hasnext__", [[CLASS("range")], BOOL])
+rangeMethods.set("__next__", [[CLASS("range")], NUM])
+
+rangeMethods.set("index", [[CLASS("range"), NUM], NUM])
 defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 
 export const defaultTypeEnv = {
@@ -56,7 +71,10 @@ export function emptyLocalTypeEnv() : LocalTypeEnv {
     vars: new Map(),
     expectedRet: NONE,
     actualRet: NONE,
-    topLevel: true
+    topLevel: true,
+    forCount: 0,
+    whileCount: 0,
+    currLoop: []
   };
 }
 
@@ -213,6 +231,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       return {a: tRet.a, tag: stmt.tag, value:tRet};
     case "while":
       var tCond = tcExpr(env, locals, stmt.cond);
+      locals.whileCount = locals.whileCount+1;
+      locals.currLoop.push(["while", locals.whileCount]);
       const tBody = tcBlock(env, locals, stmt.body);
       if (!equalType(tCond.a[0], BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool");
@@ -347,6 +367,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }
+      throw new TypeError("Undefined function: " + expr.name);
     case "lookup":
       var tObj = tcExpr(env, locals, expr.obj);
       if (tObj.a[0].tag === "class") {

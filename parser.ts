@@ -265,7 +265,8 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       c.firstChild();
       const expr = traverseExpr(c, s);
       c.parent(); // pop going into stmt
-      return { a: location, tag: "expr", expr: expr }
+      return { tag: "expr", expr: expr }
+
     // case "FunctionDefinition":
     //   c.firstChild();  // Focus on def
     //   c.nextSibling(); // Focus on name of function
@@ -341,8 +342,47 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
         cond,
         body
       }
+    case "ForStatement":
+      c.firstChild() // for
+      c.nextSibling() // vars
+      const for_var = traverseExpr(c, s)
+      c.nextSibling()
+      // for when we implement destructuring 
+
+      // while(s.substring(c.from, c.to) == ',') {
+      //   c.nextSibling()
+      //   for_var.push(traverseExpr(c, s))
+      //   c.nextSibling()
+      // }
+      c.nextSibling()
+      const iterable = traverseExpr(c, s)
+      c.nextSibling()
+      var body = []
+      c.firstChild()
+      while(c.nextSibling()) {
+        body.push(traverseStmt(c, s))
+      }
+      c.parent()
+      var elseBody = []
+      if(c.nextSibling()) {
+        while(s.substring(c.from, c.to) !== 'else')
+          c.nextSibling()
+        c.nextSibling()
+        c.firstChild()
+        while(c.nextSibling()) {
+          elseBody.push(traverseStmt(c, s))
+        }
+        c.parent()
+      }
+      c.parent()
+      return {tag: "for", vars: for_var, iterable: iterable, body: body, elseBody: elseBody}
+
     case "PassStatement":
-      return { a: location, tag: "pass" }
+      return { tag: "pass" }
+    case "ContinueStatement":
+      return {tag: "continue"}
+    case "BreakStatement":
+      return {tag: "break"}
     default:
       throw new ParseError("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to), location.line);
   }
@@ -556,5 +596,8 @@ export function traverse(c : TreeCursor, s : string) : Program<SourceLocation> {
 export function parse(source : string) : Program<SourceLocation> {
   const t = parser.parse(source);
   const str = stringifyTree(t.cursor(), source, 0);
+  //console.log(str)
   return traverse(t.cursor(), source);
 }
+
+

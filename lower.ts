@@ -2,6 +2,8 @@ import * as AST from './ast';
 import * as IR from './ir';
 import { Type, SourceLocation } from './ast';
 import { GlobalEnv } from './compiler';
+import { BOOL, CLASS, NONE } from './utils';
+import { deflate } from 'zlib';
 
 const nameCounters : Map<string, number> = new Map();
 function generateName(base : string) : string {
@@ -21,9 +23,21 @@ function generateName(base : string) : string {
 //   return [name, {tag: "label", a: a, name: name}];
 // }
 
-export function lowerProgram(p : AST.Program<[Type, SourceLocation]>, env : GlobalEnv) : IR.Program<[Type, SourceLocation]> {
-    var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
-    var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
+export function addBuiltinClasses(env : GlobalEnv) : GlobalEnv {
+  const rangeFields = new Map<string, [number, IR.Value<Type>]>();
+  rangeFields.set("start", [0, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  rangeFields.set("stop", [1, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  rangeFields.set("step", [2, { a: {tag: "number"}, tag: "wasmint", value: 1 }]);
+  rangeFields.set("hasnext", [3, { a: {tag: "bool"}, tag: "bool", value: false }]);
+  rangeFields.set("currvalue", [2, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  env.classes.set("range", rangeFields);
+  return env;
+}
+
+export function lowerProgram(p : AST.Program<Type>, env : GlobalEnv) : IR.Program<Type> {
+    env = addBuiltinClasses(env); //add the built-in classes
+    var blocks : Array<IR.BasicBlock<Type>> = [];
+    var firstBlock : IR.BasicBlock<Type> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
     blocks.push(firstBlock);
     var inits = flattenStmts(p.stmts, blocks, env);
     return {
@@ -185,7 +199,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       blocks.push({  a: s.a, label: whileStartLbl, stmts: [] })
       var [cinits, cstmts, cexpr] = flattenExprToVal(s.cond, env);
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: whilebodyLbl, els: whileEndLbl });
-
+      
       blocks.push({  a: s.a, label: whilebodyLbl, stmts: [] })
       var bodyinits = flattenStmts(s.body, blocks, env);
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
@@ -193,6 +207,71 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       blocks.push({  a: s.a, label: whileEndLbl, stmts: [] })
 
       return [...cinits, ...bodyinits]
+    
+    case "for":
+      var forStartLbl = generateName("$forstart");
+      var forbodyLbl = generateName("$forbody");
+      var forElseLbl = generateName("$forelse")
+      var forEndLbl = generateName("$forend");
+      var rangeObject = generateName("$rangeobject")
+
+      // initialize
+      switch(s.vars.tag) {
+        case "id":
+          //@ts-ignore - assuming that it's a range class for now 
+          let rangeConstruct: AST.Expr<AST.Type> = { a:s.iterable.a, tag: "construct", name: s.iterable.name, arguments: s.iterable.arguments}
+          var [in_inits, in_stmts,in_expr] = flattenExprToExpr(rangeConstruct, env);
+          pushStmtsToLastBlock(blocks, ...in_stmts, {a:NONE,  tag: "assign", name: rangeObject, value: in_expr} );
+          break
+        default:
+          throw new Error("Tuple assignment not supported yet")
+      }
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
+      blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
+      // generate the condition
+      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__hasnext__", arguments: []}
+
+      var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
+      
+      pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forElseLbl });
+      
+      blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
+
+      switch(s.vars.tag) {
+        case "id":
+          const iterVal: AST.Expr<AST.Type> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__next__", arguments: []}
+          var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
+          pushStmtsToLastBlock(blocks, ...s_stmts, {a:NONE,  tag: "assign", name: s.vars.name, value: s_expr } );
+          break
+        default:
+          throw new Error("Tuple assignment not supported")
+      }
+      var bodyinits = flattenStmts(s.body, blocks, env);
+    
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl });
+
+      blocks.push({  a: s.a, label: forElseLbl, stmts: [] })
+
+      var elsebodyinits = flattenStmts(s.elseBody, blocks, env);
+
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forEndLbl });
+
+      blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
+
+      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a:  s.iterable.a, name: rangeObject, type:  s.iterable.a, value: { tag: "none" } }]
+    
+    case "break":
+      var currLoop = s.loopDepth[0];
+      var depth = s.loopDepth[1];
+      var currentloop = nameCounters.get("$"+currLoop+"body")
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + currentloop});
+      return []
+    case "continue":
+      var currLoop = s.loopDepth[0];
+      var depth = s.loopDepth[1];
+      var currentloop = nameCounters.get("$"+currLoop+"body");
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + currentloop});
+      return []
   }
 }
 
@@ -240,7 +319,8 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const arginits = argpairs.map(cp => cp[0]).flat();
       const argstmts = argpairs.map(cp => cp[1]).flat();
       const argvals = argpairs.map(cp => cp[2]).flat();
-      var objTyp = e.obj.a[0];
+      var objTyp = e.obj.a;
+     
       if(objTyp.tag !== "class") { // I don't think this error can happen
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
@@ -277,6 +357,19 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
           value: value
         }
       });
+      if(e.arguments !== undefined) {
+        const argpairs = e.arguments.map(a => flattenExprToVal(a, env));
+        const arginits = argpairs.map(cp => cp[0]).flat();
+        const argstmts = argpairs.map(cp => cp[1]).flat();
+        const argvals = argpairs.map(cp => cp[2]).flat();
+        return [
+          [ { name: newName, type: e.a, value: { tag: "none" } }, ...arginits],
+          [ { tag: "assign", name: newName, value: alloc }, ...assigns, ...argstmts,
+            { tag: "expr", expr: { tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }, ...argvals] } }
+          ],
+          { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newName } }
+        ];
+      }
 
       return [
         [ { name: newName, type: e.a[0], value: { tag: "none" } }],

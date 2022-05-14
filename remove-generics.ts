@@ -1,6 +1,6 @@
 import { type } from "os";
 import { stringify } from "querystring";
-import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal } from "./ast";
+import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal, SourceLocation } from "./ast";
 import { CLASS, TYPE_VAR } from "./utils";
 
 type GenericEnv = {
@@ -17,7 +17,7 @@ function flat<T>(arr: T[][]): T[] {
     return [].concat(...arr);
 }
 
-export function removeGenerics(ast: Program<null>): Program<null> {
+export function removeGenerics(ast: Program<SourceLocation>): Program<SourceLocation> {
     // Find the TypeVars for this program. Right now I'm just searching the program global variables but ideally in the future
     // this could be done in functions and methods as well.
     let bodyTypeVars = findTypeVarInits(ast.inits);
@@ -79,7 +79,7 @@ export function removeGenerics(ast: Program<null>): Program<null> {
 }
 
 
-function findTypeVarInits(inits: Array<VarInit<null>>): Map<string, Literal> {
+function findTypeVarInits(inits: Array<VarInit<SourceLocation>>): Map<string, Literal> {
     let genericNames = new Map<string, Literal>();
     inits.forEach(i => {
         if (i.type == TYPE_VAR) {
@@ -90,7 +90,7 @@ function findTypeVarInits(inits: Array<VarInit<null>>): Map<string, Literal> {
     return genericNames;
 }
 
-function programClassEnv(ast: Program<null>): ClassEnv {
+function programClassEnv(ast: Program<SourceLocation>): ClassEnv {
     let env = {genericArgs: new Map<string, Array<string>>()};
     ast.classes.forEach(c => {
         const parentGenericArgs = flat(c.parents.map(p => {
@@ -161,7 +161,7 @@ function addSpecializationsForType(type: Type, genericsEnv: GenericEnv, classEnv
     });
 }
 
-function removeGenericsFromFun(fun: FunDef<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): FunDef<null> {
+function removeGenericsFromFun(fun: FunDef<SourceLocation>, genericsEnv: GenericEnv, classEnv: ClassEnv): FunDef<SourceLocation> {
     const newInits = fun.inits.map(i => {
         if(i.type.tag == "class" && i.type.genericArgs) {
             addSpecializationsForType(i.type, genericsEnv, classEnv);
@@ -208,7 +208,7 @@ function removeGenericsFromType(type: Type, variant: Map<string, Type>): Type {
     return type;
 }
 
-function addSpecializationsInClass(classDef: Class<null>, genericsEnv: GenericEnv, classEnv: ClassEnv) {
+function addSpecializationsInClass(classDef: Class<SourceLocation>, genericsEnv: GenericEnv, classEnv: ClassEnv) {
     classDef.fields.forEach(f =>
         addSpecializationsForType(f.type, genericsEnv, classEnv)
     );
@@ -220,7 +220,7 @@ function addSpecializationsInClass(classDef: Class<null>, genericsEnv: GenericEn
     });
 }
 
-function specializeClass(classDef: Class<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): Array<Class<null>> {
+function specializeClass(classDef: Class<SourceLocation>, genericsEnv: GenericEnv, classEnv: ClassEnv): Array<Class<SourceLocation>> {
     const genericParent = classDef.parents.find(p => p.tag == "class" && p.name == "Generic" && p.genericArgs);
     if(!genericParent) {
         return [classDef];
@@ -287,7 +287,7 @@ function specializeClass(classDef: Class<null>, genericsEnv: GenericEnv, classEn
     return newClasses;
 }
 
-function removeGenericsFromClass(classDef: Class<null>, genericsEnv: GenericEnv, classEnv: ClassEnv): Class<null> {
+function removeGenericsFromClass(classDef: Class<SourceLocation>, genericsEnv: GenericEnv, classEnv: ClassEnv): Class<SourceLocation> {
     // Second, rename all specialized generics like with functions, ex. Box[int] to Box_int.
     
     const newFields = classDef.fields.map(f => {

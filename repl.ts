@@ -57,6 +57,6 @@ export class BasicREPL {
     const parsed = parse(source);
     const simplified = removeGenerics(parsed);
     const [result, _] = tc(this.currentTypeEnv, simplified);
-    return result.a;
+    return result.a[0];
   }
 }

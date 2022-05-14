@@ -171,7 +171,7 @@ x:int = 1
 Both are not changed.
 
 ## C. New Changes
-Two new files `optimize_ast.ts` and `optimize_ir.ts` are added to implement optimizations on `ast` and `ir` respectively. One debugger `debug_ir.ts` is added to print pretty `ir` representation and generate DOT graph. To use this debugger, a new dependency is added: `@diagrams-ts/graphviz-cli-renderer`. Also, the host machine should install [graphviz](https://graphviz.org/download/) as well.
+Two new files `optimize_ast.ts` and `optimize_ir.ts` are added to implement optimizations on `ast` and `ir` respectively. One debugger `debug_ir.ts` is added to print pretty `ir` representation and generate DOT graph. To use this debugger, a new dependency is added: `@diagrams-ts/graphviz-cli-renderer`. Also, the host machine should install [graphviz](https://graphviz.org/download/) as well. We also modified the funciton `run`s in `repl.ts` and `runner.ts` by adding two boolean parameters to indicate the optimization option. The optimization is disabled by default. In addition, to observe the length of the optimized WASM code for testing, we also added a new field `watCode` in BasicREPL in order to fetch the generated wasm code after running.
 
 We have implemented a majority of our design decisions in "optimize_ast.ts". We have implemented dead code elimination, including unreachable instructions after `return` and dead branches such as `if True` and `while False`. Our program can also do constant folding for all operations whose operands are constant. Further folding will be available when the constant propagation is facilitated.
 

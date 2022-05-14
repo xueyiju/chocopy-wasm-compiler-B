@@ -142,6 +142,17 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         case "or":
           op = BinOp.Or;
           break;
+        case "in":
+          c.nextSibling();
+          const rhs = traverseExpr(c, s);
+          c.parent();
+          return {
+            a: location,
+            tag: "method-call",
+            obj: rhs,
+            method: "contains",
+            arguments: [lhsExpr]
+          };
         default:
           throw new ParseError("Could not parse op at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line)
       }

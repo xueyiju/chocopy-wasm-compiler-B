@@ -10,9 +10,9 @@ async function debug() {
   a : bool = False
   set_1 = {1,2}
   set_1.add(3)
-  a = set_1.contains(3)`
+  a = 4 in set_1
+  print(a)`
 
-  console.log(source.length)
   const ast = parse(source);
   
   const repl = new BasicREPL(await addLibs());

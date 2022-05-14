@@ -224,30 +224,30 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
           right: rval
         }];
     case "call":
-      // if (e.name === "set") {
-      //   if (!e.arguments) {
-      //     // construct empty set
-      //     const newSetName = generateName("newSet");
-      //     // size will be 10 for now
-      //     const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
-      //     return [
-      //       [ { name: newSetName, type: e.a[0], value: { tag: "none" } } ],
-      //       [ { tag: "assign", name: newSetName, value: allocSet } ],
-      //       { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newSetName } }
-      //     ]; 
-      //   } else {
-      //     const callpairs = e.arguments.map(a => flattenExprToVal(a, env));
-      //     const callinits = callpairs.map(cp => cp[0]).flat();
-      //     const callstmts = callpairs.map(cp => cp[1]).flat();
-      //     const callvals = callpairs.map(cp => cp[2]).flat();
-      //     return [ callinits, callstmts,
-      //       {
-      //         ...e,
-      //         arguments: callvals
-      //       }
-      //     ];  
-      //   }
-      // }
+      if (e.name === "set") {
+        if (!e.arguments) {
+          // construct empty set
+          const newSetName = generateName("newSet");
+          // size will be 10 for now
+          const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
+          return [
+            [ { name: newSetName, type: e.a[0], value: { tag: "none" } } ],
+            [ { tag: "assign", name: newSetName, value: allocSet } ],
+            { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newSetName } }
+          ]; 
+        } else {
+          const callpairs = e.arguments.map(a => flattenExprToVal(a, env));
+          const callinits = callpairs.map(cp => cp[0]).flat();
+          const callstmts = callpairs.map(cp => cp[1]).flat();
+          const callvals = callpairs.map(cp => cp[2]).flat();
+          return [ callinits, callstmts,
+            {
+              ...e,
+              arguments: callvals
+            }
+          ];  
+        }
+      }
       const callpairs = e.arguments.map(a => flattenExprToVal(a, env));
       const callinits = callpairs.map(cp => cp[0]).flat();
       const callstmts = callpairs.map(cp => cp[1]).flat();

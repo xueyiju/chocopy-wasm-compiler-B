@@ -373,7 +373,6 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
     case "method-call":
       var tObj = tcExpr(env, locals, expr.obj);
       var tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
-      console.log("hello1");
       if (tObj.a[0].tag === "class") {
         if (env.classes.has(tObj.a[0].name)) {
           const [_, methods] = env.classes.get(tObj.a[0].name);
@@ -393,10 +392,8 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           throw new TypeCheckError("method call on an unknown class");
         }
       } else if (tObj.a[0].tag === 'set'){
-        console.log("hello2");
         const set_method = ["add", "remove", "get", "contains"]
         if (set_method.includes(expr.method)){
-          console.log("hello3");
           tArgs.forEach(t => {
             if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
               if (tcLiteral(t.value) !== tObj.a[0].valueType){

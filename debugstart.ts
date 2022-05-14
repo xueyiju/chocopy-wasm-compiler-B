@@ -7,10 +7,11 @@ import { importObject, addLibs  } from "./tests/import-object.test";
 async function debug() {
   var source = `
   set_1 : set[int] = None
-  a : bool = False
+  a : int = 0
   set_1 = {1,2}
   set_1.add(3)
-  a = 4 in set_1
+  set_1.add(3)
+  a = len(set_1)
   print(a)`
 
   const ast = parse(source);

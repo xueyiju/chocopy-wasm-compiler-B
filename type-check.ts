@@ -351,6 +351,8 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
            } else {
             throw new TypeError("Function call type mismatch: " + expr.name);
            }
+      } else if (expr.name === "set") {
+        throw new Error("Set constructor not implemented yet");
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }
@@ -392,7 +394,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           throw new TypeCheckError("method call on an unknown class");
         }
       } else if (tObj.a[0].tag === 'set'){
-        const set_method = ["add", "remove", "get", "contains"]
+        const set_method = ["add", "remove", "get", "contains", "length"]
         if (set_method.includes(expr.method)){
           tArgs.forEach(t => {
             if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
@@ -412,6 +414,8 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
         }else if(expr.method === "remove"){
           return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        } else if(expr.method === "length"){
+          return {...expr, a: [NUM, expr.a], obj: tObj, arguments: tArgs};
         }
         return {...expr, a:tObj.a, obj: tObj, arguments: tArgs}
       } else {

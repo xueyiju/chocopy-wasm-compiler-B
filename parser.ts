@@ -84,6 +84,21 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
             left: args[0],
             right: args[1]
           }
+        } else if (callName === "set") {
+          expr = {
+            a: location,
+            tag: "call",
+            name: "set",
+            arguments: args
+          }
+        } else if (callName === "len") {
+          expr = {
+            a: location,
+            tag: "method-call",
+            obj: args[0], 
+            method: "length", 
+            arguments: [],
+          }
         }
         else {
           expr = { a: location, tag: "call", name: callName, arguments: args};

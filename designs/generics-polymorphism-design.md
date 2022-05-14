@@ -1,3 +1,19 @@
+# Week 7 Update
+We sucessfully got all of the tests below working. Run `npm test` to run the generics tests. Some of them had to be slightly modified because
+they had compiler errors otherwise but the changes were pretty minor.
+
+Changes to the AST ended up being: 
+ * New TypeVar type separate from classes, primitives, etc: `{tag: "type-var"}`
+ * Optional generic type arguments for class types.
+ * Parents type array on `AST.Class` for allowing classes to inherit `Generic[T]`
+ * Optional generic args for regular function call exprs.
+
+The "remove generics" pass does mainly two things: 
+ * Collects all the specializations for each TypeVar (ex. in the Introduction below, T is specialized as an int and a bool), then rename
+ all the generic types to their new specialized class names (ex. Box[int] -> Box_number).
+ * Creates new classes for each type var specialization (ex. in the Introduction, new classes Box_number and Box_bool would be created),
+ with TypeVar T swapped out everywhere for number or bool.
+
 # Introduction
 We plan to implement generics (kind of) how python does them, like so:
 ```python
@@ -7,7 +23,7 @@ class Box(Generic[T]):
    x : T = None
 
 b1 : Box[int] = Box()
-b2 : Box[boolean] = Box()
+b2 : Box[bool] = Box()
 ```
 
 Where the generic type is created with `TypeVar()` and the parameter `'T'` is some description for the type. The generic type can then be used by a class like above by inheriting `Generic[T]`. `T` is typed mainly so we don't need to mess with how variable declarations are already handled.

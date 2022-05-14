@@ -131,7 +131,7 @@ function webStart() {
     document.getElementById("save").addEventListener("click", function (e) {
       //download the code in the user-code text area
       var FileSaver = require("file-saver");
-      var title = (document.getElementById("save_title") as any).value;
+      var title = "download";
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       var blob = new Blob([source.value], { type: "text/plain;charset=utf-8" });
       FileSaver.saveAs(blob, title);

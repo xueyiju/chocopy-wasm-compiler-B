@@ -5,64 +5,126 @@ import { NUM, BOOL, NONE, CLASS, typeCheck } from "./helpers.test";
 import { TypeCheckError } from "../type-check";
 import { PyInt, PyBool, PyNone, PyObj } from '../utils';
 
-
-// describe("Parsing range", () => {
-//   assertParse(
-//     "",
-//     `
-// `
-//   );
-
-//   assertParseFail(
-//     "",
-//     `
-// `
-//   );
-
-// });
-
-// describe("Type checking range", () => {
-//   assertTC(
-//     "desc",
-//     `
-// `,
-//     NONE
-//   );
-
-//   assertTCFail(
-//     "desc",
-//     `
-// `
-//   );
-
-// });
-
 describe("Basic range functionalities", () => {
 
     assertPrint('range: one parameter', `
-i: int = 0
-for i in range(5):
-    print(i)
-    `, ["0","1","2","3","4"]);
+    i: int = 0
+    for i in range(5):
+        print(i)
+        `, ["0","1","2","3","4"]);
     
     assertPrint('range: two parameters', `
-i: int = 0
-for i in range(5,10):
-    print(i)
-    `, ["5","6","7","8","9"]);
+    i: int = 0
+    for i in range(5,10):
+        print(i)
+        `, ["5","6","7","8","9"]);
     
     assertPrint('range: three parameters', `
-i: int = 0
-for i in range(0,10,2):
-    print(i)
-    `, ["0","2","4","8"]);
+    i: int = 0
+    for i in range(0,10,2):
+        print(i)
+        `, ["0","2","4","6", "8"]);
     
     assertPrint('range: negative step', `
-i: int = 0
-for i in range(0,-10,-2):
-    print(i)
-    `, ["0","-2","-4","-8"]);
+    i: int = 0
+    for i in range(0,-10,-2):
+        print(i)
+        `, ["0","-2","-4", "-6", "-8"]);
+
+    assertPrint('range: for loop with break', `
+    i: int = 0
+    for i in range(0,-10,-2):
+        print(i)
+        break
+        `, ["0"]);
+
+    assertPrint('range: for loop with break', `
+    i: int = 0
+    for i in range(0,-10,-2):
+        print(i)
+        break
+        `, ["0"]);
+
+    assertPrint('range: for loop with break with an if and else statement', `
+    i: int = 0
+    for i in range(10):
+        if i > 5:
+            break
+        else:
+            print(i)
+        `, ["0", "1", "2", "3", "4","5"]);
+
+    assertPrint('range: for loop with continue inside the main body', `
+    i: int = 0
+    for i in range(5):
+        print(i * 100)
+        continue
+        print(i)
+        `, ["0", "100", "200", "300", "400"]);    
+
+    assertPrint('range: for loop with continue inside a if statement', `
+    i:int = 0
+    for i in range(0, 10, 1):
+        if i % 2 == 0:
+            continue
+        else:
+            print(i)
+        `, ["1", "3", "5", "7", "9"]);      
+
+    assertPrint('range: for else construct 1', `
+    i : int = 0
+    for i in range(10, 0, -1):
+        if i < 5:
+            break
+        else:
+            print(i)
+    else:
+        print(123456)
+        `, ["10", "9", "8", "7", "6", "5"]);  
+        
+    assertPrint('range: for else construct 2', `
+    i : int = 0
+    for i in range(10, 5, -1):
+        if i < 5:
+            break
+        else:
+            print(i)
+    else:
+        print(123456)
+        `, ["10", "9", "8", "7", "6", "123456"]);  
+    
+    assertPrint('range: inbuilt functions on range 1 ', `
+    r : range = None
+    r = range(20, 0, -2)
+    print(r.index(2))
+        `, ["9"]);    
+        
+    assertFail('range: inbuilt functions on range 2 ', `
+    r : range = None
+    r = range(0, 10)
+    print(r.index(10))
+        `);    
+    
+    assertFail('range: value error in range parameters', `
+    i:int = 0
+    for i in range(1, 10, 0):
+        print(i)
+        `);    
+        
+    assertTCFail('range: type checking for loop variable ', `
+    i : bool = False
+    for i in range(10):
+        print(i)
+        `);   
+
+    assertTCFail('range: type checking for range parameters 1', `
+    i : int = 0
+    for i in range(10, 20, 1, 1):
+        print(i)
+        `);   
 });
+
+
 
 // Helpers
 
@@ -134,222 +196,3 @@ sum
 `, PyInt(-45));
 });
 
-
-
-//   assert('multi-arg-local-var', `
-// def f(x: int, y: int, z: int) -> int:
-//   m : int = 0
-//   m = y * x
-//   return m - z
-// f(9, 3, 1)`, PyInt(26));
-
-//   assert('global-local-same-name', `
-// x : int = 1
-// def f(y : int) -> int:
-//   x : int = 2
-//   return x
-  
-// f(0)`, PyInt(2));
-
-//   assert("true", "True", PyBool(true));
-
-//   assert("false", "False", PyBool(false));
-
-//   assert("true and false", "True and False", PyBool(false));
-
-//   assert("true and true", "True and True", PyBool(true));
-
-//   assert("false and false", "False and False", PyBool(false));
-
-//   assert("iftrue", `
-// if True:
-//   5
-// else:
-//   3`, PyInt(5));
-
-//   assert("nestedif", `
-// if True:
-//   if False:
-//     0
-//   else:
-//     1
-// else:
-//   2`, PyInt(1));
-
-//   assert("return inside if", `
-// def f(x : int) -> int:
-//   if x > 0:
-//     return x
-//   else:
-//     return 0
-// f(2)`, PyInt(2));
-
-//   assert("init only", `
-//   x : int = 2
-//   x`, PyInt(2));
-
-//   assert("init before assign", `
-//   x : int = 0
-//   x = x + 2
-//   x`, PyInt(2));
-
-//   assert("two inits", `
-//   x : int = 1
-//   y : int = 2
-//   y = y + x
-//   y`, PyInt(3));
-
-//   assert("init before def", `
-//   x : int = 2
-//   def f() -> int:
-//     return x
-//   f()`, PyInt(2));
-
-//   assert("id fun 1", `
-//   def id(x: int) -> int:
-//     return x
-//   id(1)`, PyInt(1));
-
-//   assert("id fun 2", `
-//   def id_helper(x : int) -> int:
-//     return x
-
-//   def id(x: int) -> int:
-//     return id_helper(x)
-
-//   id(1) + id(2)`, PyInt(3));
-
-//   assert("fib(1)", `
-//   def fib(n : int) -> int:
-//     if n < 2:
-//       return 1
-//     else:
-//       return n * fib(n - 1)
-//   fib(1)`, PyInt(1));
-
-//   assert("fib(2)", `
-//   def fib(n : int) -> int:
-//     if n < 2:
-//       return 1
-//     else:
-//       return n * fib(n - 1)
-//   fib(2)`, PyInt(2));
-
-//   assert("fib(3)", `
-//   def fib(n : int) -> int:
-//     if n < 2:
-//       return 1
-//     else:
-//       return n * fib(n - 1)
-//   fib(3)`, PyInt(6));
-
-//   assert("mutual recursion1", `
-//   def is_even(x : int) -> bool:
-//     if x < 1:
-//       return True
-//     else:
-//       return is_odd(x-1)
-
-//   def is_odd(x : int) -> bool:
-//     return is_even(x - 1)
-
-//   is_even(4)`, PyBool(true));
-
-//   assert("mutual recursion2", `
-//   def is_even(x : int) -> bool:
-//     if x < 1:
-//       return True
-//     else:
-//       return is_odd(x-1)
-
-//   def is_odd(x : int) -> bool:
-//     if x < 1:
-//       return False
-//     else:
-//       return is_even(x - 1)
-
-//   is_even(3)`, PyBool(false));
-
-//   assert("two prints", `
-//   print(True)
-//   print(1)`, PyInt(1));
-
-//   assert("while true", `
-//   x : int = 3
-//   fib : int = 1
-//   while x > 1:
-//     fib = fib * x
-//     x = x - 1
-//   fib`, PyInt(6));
-
-//   assert("parenthesized expr", `
-//   (1 + 1) * 5`, PyInt(10));
-
-//   assert("negative", `-1`, PyInt(-1));
-
-//   assert("negative", `not True`, PyBool(false));
-
-//   assert("negative", `not False`, PyBool(true));
-
-//   assertPrint("print-assert", `
-//   print(1)
-//   print(True)`, ["1", "True"]);
-  
-//   assertPrint("class-with-fields", `
-//   class C(object):
-//     x : int = 1
-//     y : int = 2
-
-//   c1 : C = None
-//   c1 = C()
-//   print(c1.x)
-//   c1.x = 2
-//   print(c1.x)`, ["1", "2"]);
-
-//   assert("class-with-field", `
-//   class C(object):
-//     x : int = 1
-
-//   c1 : C = None
-//   c1 = C()
-//   c1.x`, PyInt(1));
-
-//   assert("class-with-field-assign", `
-//   class C(object):
-//     x : int = 1
-//     y : int = 2
-//   c1 : C = None
-//   c1 = C()
-//   c1.x = c1.y
-//   c1.x`, PyInt(2));
-
-//   assert("class-with-method", `
-//     class C(object):
-//       x : int = 1
-//       y : int = 2
-  
-//       def new(self : C, x : int, y : int) -> C:
-//         self.x = x
-//         self.y = y
-//         return self
-    
-//     c : C = None
-//     c = C().new(3, 4)
-//     c.x`, PyInt(3));
-
-//   assert("test", `def f() -> int: return 1`, PyNone());
-
-//   asserts("multi-repl", [
-//     [`def f() -> int: return 1`, PyNone()],
-//     [`f()`, PyInt(1)],
-//     [`def g() -> int:
-//         return 2`, PyNone()],
-//     [`g()`, PyInt(2)],
-//   ]);
-
-//   assert("return-none", `
-//   class C(object):
-//     x : int = 123
-    
-//   c : C = None
-//   c`, PyNone());

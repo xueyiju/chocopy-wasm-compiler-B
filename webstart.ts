@@ -32,20 +32,20 @@ function assert_not_none(arg: any) : any {
 
 function check_range_error(arg: any) : any {
   if (arg === 0)
-    throw new Error("VALUE ERROR: range() arg 3 must not be zero");
+    throw new Error("RUNTIME ERROR: range() arg 3 must not be zero");
   return arg;
 }
 function check_range_index(start: any, stop:any, step:any, val:any) : any {
   if(start * step >= stop * step)
-    throw new Error(`${val} is not in range`)
+    throw new Error(`RUNTIME ERROR: ${val} is not in range`)
 
   stop -= Math.sign(step)
   const len = Math.abs(stop - start)
   if(len < Math.abs(val - start) || len < Math.abs(val - stop )) 
-    throw new Error(`${val} is not in range`)
+    throw new Error(`RUNTIME ERROR: ${val} is not in range`)
 
   if(Math.abs(val - start) % step != 0) {
-    throw new Error(`${val} is not in range`)
+    throw new Error(`RUNTIME ERROR: ${val} is not in range`)
   }
   return val
 }

@@ -34,6 +34,7 @@ export function addBuiltinClasses(env : GlobalEnv) : GlobalEnv {
   return env;
 }
 export function lowerProgram(p : AST.Program<[Type, SourceLocation]>, env : GlobalEnv) : IR.Program<[Type, SourceLocation]> {
+  env = addBuiltinClasses(env);
   var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
   var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
   blocks.push(firstBlock);

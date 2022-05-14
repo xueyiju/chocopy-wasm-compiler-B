@@ -77,6 +77,17 @@ This week, we took a deep dive into the existing implementation and learned the 
 - Introduced new design, save and load functions that allow users to run and save scripts locally.
 - Implemented heap tracking and printing all current object and its fields, showing with the accordion effect.
 
+You could try this script to see our implement.
+
+```Python
+class C(object):
+    x:int = 0
+
+c:C = None
+c = C()
+c
+```
+
 ### Plan
 
 - Print current heap status. In our code, the heap value can already be read as console.log, however, it is necessary to discuss with the memory management team to further determine the best solution for displaying the heap.

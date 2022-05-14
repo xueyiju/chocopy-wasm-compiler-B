@@ -1,111 +1,175 @@
-## Chocopy Compiler B
-### Error Reporting 
+# Chocopy Compiler B
+## Error Reporting 
 
-For the Chocopy WASM Compiler B, we are implementing an interface for error reporting. Our plan for next week is to implement an interface for reporting the below errors which are being handled in the provided starter code. 
+For the Chocopy WASM Compiler B, we are implementing interfaces for error reporting. Our progress for week 7 is that we implemented interfaces for reporting the below errors.
 
-#### Types of Errors
-The following is the list of errors, we plan on reporting for the next week
+<br/>
+
+### **Types of Errors**
+The following is the list of errors, we reported for the week 7
 1. Compile-time Error
 	- Parse Error
-	- Reference Error
 	- Type Error
 2. Runtime Error
+	- Division by zero
+	- Assert on none
 
-#### Error Reporting Format
-The following is format of the error report, we plan on implementing for the next week
+<br/>
+
+### **Error Reporting Format**
+The following is format of the reported errors, we have implemented for week 7
 1. Type of error
 2. Error message
-3. Source location (line number)
+3. Source location :
+	- line number
+	- column number
+	- source code
 
-####  AST  Changes
+<br/>
+
+###  **AST Changes**
 The following type has to be included in the ast.ts for keeping track of the source location to report the errors:
-> export type SourceLocation = {line_number: number}
+> export type SourceLocation = { line: number, column: number, srcCode: string }
 
-#### IR Changes
-The **SourceLocation** defined in the ast.ts has to be imported in ir.ts as follows: 
-> import {Type, BinOp, UniOp, Parameter, **SourceLocation**} from  './ast';
+<br/>
 
-#### Test Cases
-1.  Parse Error: Missing colon in variable initialization
+### **Changes in parser.ts and type-checker.ts**
+SourceLocation is computed with the help of the Lezer tree using "getSourceLocation()" function in parser.ts
+We also added annotation changes to parser.ts and type-check.ts. Propagated these changes to other files as required (lower.ts, compiler.ts, repl.ts, runner.ts)
+
+Below is the format of the program which the parser and the typechecker takes as input and emits as output:
 ```
-x int = 3
-```
-> "Parse Error: Missing colon at line 1"
+parser.ts:
+- Input: Program<null>
+- Output: Program <SourceLocation>
 
-2.  Parse Error: Missing parenthesis in expression
+type-check.ts
+- Input: Program<SourceLocation>
+- Output: Program<[Type, SourceLocation]>
+```
+
+<br/>
+
+### **Interface for reporting error**
+We added a new file "error_reporting.ts" with includes the following implemented interfaces for throwing errors.
+```
+export class CompileTimeError extends Error {
+	...
+ }
+
+export class TypeCheckError extends CompileTimeError {
+	...
+ }
+
+ export class ParseError extends CompileTimeError {
+	 ...
+ }
+
+ export class RunTimeError extends Error {
+	 ...
+ }
+```
+
+To use this interface, below commands can be used as reference for format:
+- TypeCheckError:
+	> throw new TypeCheckError(\<message\>, \<SourceLocation\>);
+- ParseError:
+	> throw new ParseError(\<message\>, \<SourceLocation\>);
+- RunTimeError:
+	> throw new RunTimeError(\<message\>);
+
+We also added a new file 'runtime_error.ts' which includes the functions to be called in the wasm code for generating runtime errors.
+While implementing the runtime error, the source location is pushed to the wasm stack and they are retrieved while checking for runtime error in wasm.
+
+<br/>
+
+### **Test Cases**
+For testing the error reporting interfaces, we added the test file 'tests/error_reporting.test.ts'. All the tests included are currently passing. Below are the input test program and their respective error reports.
+
+1.  Parse Error: Missing parenthesis in expression
 ```
 x: int = 4
 
 if (x == 6
 	print (6)
 ```
-> "Parse Error: Missing parenthesis at line 2"
 
-3.  Parse Error: Undefined operator
-```    
-print (4 & 5)
-```
-> "Parse Error: Could not parse operator at line 1"
+> "Error: PARSE ERROR: Missing parenthesis in line 3 at column 10  
+if (x == 6"
 
-4.  Parse Error: Invalid syntax
+2.  Parse Error: Invalid syntax
 ```
 x: int = 4
 	
 if (x == 4)::
 	print(x)
 ```
-> "Parse Error: Could not parse stmt at line 3"
 
-5. Parse Error: Missing type annotation in function definition
+> "Error: PARSE ERROR: Could not parse stmt at 25 26: : in line 3 at column 13  
+if (x == 4)::"
+
+3. Parse Error: Missing type annotation in function definition
 ```
 def f(c):
 	print(3)
 
 f(2)
 ```
-> "Parse Error: Missing type annotation for parameter c at line 1"
 
-6.  Type Error: Type mismatch
+> "Error: PARSE ERROR: Missed type annotation for parameter c in line 1 at column 8  
+def f(c):"
+
+4.  Type Error: Type mismatch
 ```
 x: int = 1
 x = True
 ```
-> "Type Error: bool type cannot be assigned to int type at line 2"  
 
-7.  Type Error: Function call type mismatch
+> "Error: TYPE ERROR: `bool` cannot be assigned to `number` type in line 2 at column 8  
+x = True"
+
+5.  Type Error: Function call type mismatch
 ```    
 def f(c: int):
 	print(c)
 
 f(2,3)
 ```
-  > "Type Error: Function call type mismatch: f at line 1"
 
-8.  Type Error: Variable not defined before accessing
+> "Error: TYPE ERROR: Function call type mismatch: f in line 4 at column 6  
+f(2,3)"
+
+6.  Type Error: Variable not defined before accessing
 ```    
 z = 1
 ```
-> "Type Error: unbound id: z at line 1"
 
-9.  Type Error: Function not defined before calling
+> "Error: TYPE ERROR: Unbound id: z in line 1 at column 5  
+z = 1"
+
+7.  Type Error: Function not defined before calling
 ```
 def sum(a: int, b: int) -> int:
 	return a + b
 
 diff(5,7)
 ```
-> "Type Error: Undefined function: diff at line 3"  
 
-10. Type Error: Return type mismatch in a function definition
+> "Error: TYPE ERROR: Undefined function: diff in line 4 at column 9  
+diff(5,7)" 
+
+8. Type Error: Return type mismatch in a function definition
 ```
 def f(c: int) -> int:
 	return True
 
 f(2)
 ```
-> "Type Error: Expected return type int, got type bool at line 2"  
 
-11. Runtime Error: Operation on none
+> "Error: TYPE ERROR: expected return type `number`; got type `bool` in line 2 at column 12  
+	return True"  
+
+9. Runtime Error: Operation on none
 ```
 class C(object):
 	x: int = 0
@@ -113,10 +177,18 @@ class C(object):
 c: C = None
 c.x
 ```
-> "Runtime Error: Cannot perform operation on none at line 5"
+> "Error: RUNTIME ERROR: cannot perform operation on none in line 5 at column 3"
 
-12. Runtime Error: Division by zero
+10. Runtime Error: Division by zero
 ```
-x: int = 100//0
+x: int = 100
+x//0
 ```
-> "Runtime Error: Cannot divide by zero at line 1"
+> "Error: RUNTIME ERROR: division by zero in line 2 at column 4"
+
+11. Runtime Error: Division by zero
+```
+x: int = 100
+x%0
+```
+> "Error: RUNTIME ERROR: division by zero in line 2 at column 3"

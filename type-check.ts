@@ -176,6 +176,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       } else {
         throw new TypeCheckError("Unbound id: " + stmt.name);
       }
+      console.log("nameTyp: ", nameTyp);
+      console.log("left: ", tValExpr.a[0] );
       if(!isAssignable(env, tValExpr.a[0], nameTyp)) 
         throw new TypeCheckError("Non-assignable types");
       return {a: [NONE, stmt.a], tag: stmt.tag, name: stmt.name, value: tValExpr};
@@ -371,6 +373,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
     case "method-call":
       var tObj = tcExpr(env, locals, expr.obj);
       var tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
+      console.log("hello1");
       if (tObj.a[0].tag === "class") {
         if (env.classes.has(tObj.a[0].name)) {
           const [_, methods] = env.classes.get(tObj.a[0].name);
@@ -390,8 +393,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           throw new TypeCheckError("method call on an unknown class");
         }
       } else if (tObj.a[0].tag === 'set'){
+        console.log("hello2");
         const set_method = ["add", "remove", "get", "contains"]
         if (set_method.includes(expr.method)){
+          console.log("hello3");
           tArgs.forEach(t => {
             if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
               if (tcLiteral(t.value) !== tObj.a[0].valueType){
@@ -403,6 +408,13 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           })
         }else{
           throw new TypeCheckError("Unknown Set Method Error");
+        }
+        if (expr.method === "contains"){
+          return {...expr, a: [BOOL, expr.a], obj: tObj, arguments: tArgs};
+        }else if(expr.method === "add"){
+          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        }else if(expr.method === "remove"){
+          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
         }
         return {...expr, a:tObj.a, obj: tObj, arguments: tArgs}
       } else {

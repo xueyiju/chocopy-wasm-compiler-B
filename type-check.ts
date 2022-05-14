@@ -287,6 +287,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
     case "builtin1":
       if (expr.name === "print") {
         const tArg = tcExpr(env, locals, expr.arg);
+        if(tArg.a && tArg.a.tag == "class") {
+          throw new Error("TYPE ERROR: print can't be called on objects");
+        }
+
         return {...expr, a: tArg.a, arg: tArg};
       } else if(env.functions.has(expr.name)) {
         const [[expectedArgTyp], retTyp] = env.functions.get(expr.name);
@@ -331,9 +335,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<n
       } else if(env.functions.has(expr.name)) {
         const [argTypes, retType] = env.functions.get(expr.name);
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
+        console.log(tArgs);
 
         if(argTypes.length === expr.arguments.length &&
-           tArgs.every((tArg, i) => tArg.a === argTypes[i])) {
+           tArgs.every((tArg, i) => isAssignable(env, tArg.a, argTypes[i]))) {
              return {...expr, a: retType, arguments: expr.arguments};
            } else {
             throw new TypeError("Function call type mismatch: " + expr.name);

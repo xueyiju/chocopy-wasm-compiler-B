@@ -24,29 +24,27 @@ function generateName(base : string) : string {
 // }
 
 export function addBuiltinClasses(env : GlobalEnv) : GlobalEnv {
-  const rangeFields = new Map<string, [number, IR.Value<Type>]>();
-  rangeFields.set("start", [0, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
-  rangeFields.set("stop", [1, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
-  rangeFields.set("step", [2, { a: {tag: "number"}, tag: "wasmint", value: 1 }]);
-  rangeFields.set("hasnext", [3, { a: {tag: "bool"}, tag: "bool", value: false }]);
-  rangeFields.set("currvalue", [2, { a: {tag: "number"}, tag: "wasmint", value: 0 }]);
+  const rangeFields = new Map<string, [number, IR.Value<[Type, SourceLocation]>]>();
+  rangeFields.set("start", [0, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 0 }]);
+  rangeFields.set("stop", [1, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 0 }]);
+  rangeFields.set("step", [2, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 1 }]);
+  rangeFields.set("hasnext", [3, { a: [{tag: "number"}, { line: 0 }], tag: "bool", value: false }]);
+  rangeFields.set("currvalue", [2, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 0 }]);
   env.classes.set("range", rangeFields);
   return env;
 }
-
-export function lowerProgram(p : AST.Program<Type>, env : GlobalEnv) : IR.Program<Type> {
-    env = addBuiltinClasses(env); //add the built-in classes
-    var blocks : Array<IR.BasicBlock<Type>> = [];
-    var firstBlock : IR.BasicBlock<Type> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
-    blocks.push(firstBlock);
-    var inits = flattenStmts(p.stmts, blocks, env);
-    return {
-        a: p.a,
-        funs: lowerFunDefs(p.funs, env),
-        inits: [...inits, ...lowerVarInits(p.inits, env)],
-        classes: lowerClasses(p.classes, env),
-        body: blocks
-    }
+export function lowerProgram(p : AST.Program<[Type, SourceLocation]>, env : GlobalEnv) : IR.Program<[Type, SourceLocation]> {
+  var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
+  var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
+  blocks.push(firstBlock);
+  var inits = flattenStmts(p.stmts, blocks, env);
+  return {
+      a: p.a,
+      funs: lowerFunDefs(p.funs, env),
+      inits: [...inits, ...lowerVarInits(p.inits, env)],
+      classes: lowerClasses(p.classes, env),
+      body: blocks
+  }
 }
 
 function lowerFunDefs(fs : Array<AST.FunDef<[Type, SourceLocation]>>, env : GlobalEnv) : Array<IR.FunDef<[Type, SourceLocation]>> {
@@ -219,9 +217,9 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       switch(s.vars.tag) {
         case "id":
           //@ts-ignore - assuming that it's a range class for now 
-          let rangeConstruct: AST.Expr<AST.Type> = { a:s.iterable.a, tag: "construct", name: s.iterable.name, arguments: s.iterable.arguments}
+          let rangeConstruct: AST.Expr<[AST.Type, SourceLocation]> = { a:s.iterable.a, tag: "construct", name: s.iterable.name, arguments: s.iterable.arguments}
           var [in_inits, in_stmts,in_expr] = flattenExprToExpr(rangeConstruct, env);
-          pushStmtsToLastBlock(blocks, ...in_stmts, {a:NONE,  tag: "assign", name: rangeObject, value: in_expr} );
+          pushStmtsToLastBlock(blocks, ...in_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: rangeObject, value: in_expr} );
           break
         default:
           throw new Error("Tuple assignment not supported yet")
@@ -229,7 +227,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
       // generate the condition
-      let condExpr:AST.Expr<AST.Type>  = { a: BOOL,tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__hasnext__", arguments: []}
+      let condExpr:AST.Expr<[AST.Type, SourceLocation]>  = { a:[BOOL, s.a[1]],tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__hasnext__", arguments: []}
 
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
       
@@ -239,9 +237,9 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
 
       switch(s.vars.tag) {
         case "id":
-          const iterVal: AST.Expr<AST.Type> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__next__", arguments: []}
+          const iterVal: AST.Expr<[AST.Type, SourceLocation]> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__next__", arguments: []}
           var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
-          pushStmtsToLastBlock(blocks, ...s_stmts, {a:NONE,  tag: "assign", name: s.vars.name, value: s_expr } );
+          pushStmtsToLastBlock(blocks, ...s_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: s.vars.name, value: s_expr } );
           break
         default:
           throw new Error("Tuple assignment not supported")
@@ -258,7 +256,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
 
       blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
 
-      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a:  s.iterable.a, name: rangeObject, type:  s.iterable.a, value: { tag: "none" } }]
+      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a: s.iterable.a, name: rangeObject, type: s.iterable.a[0], value: { tag: "none" } }]
     
     case "break":
       var currLoop = s.loopDepth[0];
@@ -321,10 +319,10 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const argvals = argpairs.map(cp => cp[2]).flat();
       var objTyp = e.obj.a;
      
-      if(objTyp.tag !== "class") { // I don't think this error can happen
-        throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
+      if(objTyp[0].tag !== "class") { // I don't think this error can happen
+        throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp[0].tag);
       }
-      const className = objTyp.name;
+      const className = objTyp[0].name;
       const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}}
       const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
       return [
@@ -363,7 +361,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         const argstmts = argpairs.map(cp => cp[1]).flat();
         const argvals = argpairs.map(cp => cp[2]).flat();
         return [
-          [ { name: newName, type: e.a, value: { tag: "none" } }, ...arginits],
+          [ { name: newName, type: e.a[0], value: { tag: "none" } }, ...arginits],
           [ { tag: "assign", name: newName, value: alloc }, ...assigns, ...argstmts,
             { tag: "expr", expr: { tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }, ...argvals] } }
           ],

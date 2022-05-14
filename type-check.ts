@@ -326,6 +326,9 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
     case "listliteral":
       if(expr.elements.length == 0) {
         //TODO: figure out how to represent the type for empty listliteral
+        //making it num by default for now
+        const elements: Expr<[Type, SourceLocation]>[] = [];
+        return {...expr, elements, a: [{tag: "list", type: NUM}, expr.a]};
       }
 
       const elementsWithTypes: Array<Expr<[Type, SourceLocation]>> = [];
@@ -335,12 +338,14 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       elementsWithTypes.push(checked0);
 
       //check that all other elements have the same type as the first element
+      //TODO: account for the case where the first element could be None and the rest are objects of some class
       for(let i = 1; i < expr.elements.length; i++) {
         const checkedI = tcExpr(env, locals, expr.elements[i]);
         const elementType = checkedI.a[0];
 
-        //TODO: update condition later to check for object type equality
-        if(elementType !== proposedType) {
+        //TODO: make error message better, use the name of the class if it's an object
+        //also update condition to account for subtypes
+        if(!isAssignable(env, elementType, proposedType)) {
           throw new TypeError("List has incompatible types: " + elementType.tag + " and " + proposedType.tag);
         }
 
@@ -378,7 +383,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
 
         if(argTypes.length === expr.arguments.length &&
-           tArgs.every((tArg, i) => tArg.a[0] === argTypes[i])) {
+           tArgs.every((tArg, i) => isAssignable(env, tArg.a[0], argTypes[i]))) {
              return {...expr, a: [retType, expr.a], arguments: tArgs};
            } else {
             throw new TypeError("Function call type mismatch: " + expr.name);

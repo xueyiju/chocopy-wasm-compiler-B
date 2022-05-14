@@ -1,6 +1,6 @@
 import * as AST from './ast';
 import * as IR from './ir';
-import { Type, SourceLocation, BinOp } from './ast';
+import { Type, SourceLocation } from './ast';
 import { GlobalEnv } from './compiler';
 import { isCallChain } from 'typescript';
 
@@ -144,18 +144,20 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var [oinits, ostmts, oval] = flattenExprToVal(s.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
-
-      if (s.obj.a[0].tag !== "list") { throw new Error("Compiler's cursed, go home."); }
-      pushStmtsToLastBlock(blocks,
-        ...ostmts, ...istmts, ...nstmts, {
-          tag: "store",
-          a: s.a,
-          start: oval,
-          //@ts-ignore
-          offset: {...ival, value: ival.value + BigInt(1)},
-          value: nval
-        });
-      return [...oinits, ...iinits, ...ninits];
+      
+      if (s.obj.a[0].tag === "list") {
+        pushStmtsToLastBlock(blocks,
+          ...ostmts, ...istmts, ...nstmts, {
+            tag: "store",
+            a: s.a,
+            start: oval,
+            //@ts-ignore
+            offset: {...ival, value: ival.value + ((typeof ival.value === 'bigint')?(BigInt(1)):(1))},
+            value: nval
+          });
+        return [...oinits, ...iinits, ...ninits];
+      }
+      else { throw new Error("Compiler's cursed, go home."); }
     }
       // return [[...oinits, ...ninits], [...ostmts, ...nstmts, {
       //   tag: "field-assign",
@@ -284,15 +286,17 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
     case "index":
       const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
-      if (e.obj.a[0].tag !== "list") { throw new Error("Compiler's cursed, go home"); }
-      
-      
-      return [[...oinits, ...iinits], [...ostmts, ...istmts], {
-        tag: "load",
-        start: oval,
-        //@ts-ignore
-        offset: {...ival, value: ival.value + BigInt(1)}
-      }];
+
+      if (e.obj.a[0].tag === "list") { 
+        return [[...oinits, ...iinits], [...ostmts, ...istmts], {
+          tag: "load",
+          start: oval,
+          //@ts-ignore
+          offset: {...ival, value: ival.value + ((typeof ival.value === 'bigint')?(BigInt(1)):(1))}
+        }];
+      }
+      else { throw new Error("Compiler's cursed, go home"); }
+
     case "construct":
       const classdata = env.classes.get(e.name);
       const fields = [...classdata.entries()];

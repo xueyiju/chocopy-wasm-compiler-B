@@ -1,3 +1,61 @@
+# Week 7 Update (5/13/22)
+
+We were not able to get all 10 of our test cases from last week to pass. Tests 1, 2, 3, 6, 7, 8, 9, and 10 pass, but tests 4 and 5 do not yet behave as we eventually intend them to.
+
+We currently have some basic list functionality implemented. A list can be created by enclosing a series of comma-separated values in square brackets. Currently, all the elements in the list must be of the same type. Elements can be accessed using the `listname[index]` syntax, and elements can also be assigned using the `listname[index] = newvalue` syntax.
+
+The tests that do not yet behave as we want are the ones that were supposed to have `index out of bounds` errors. We knew that this would be a runtime check, but we did not realize initially that in order to print the error message, we would need to add a call to a new TypeScript function from the WASM that would print this error message.
+
+One challenge we encountered when trying to add this runtime check was working with the IR. Before we had the IR, we could directly write the assembly code needed for each kind of expression or statement, such as the code to load a value at a specific address, add 1 to it, and use it in the next operation. Now, with the IR, it seems like we have to figure out how that code would look like in the IR format, so that `compiler.ts` can generate the WASM. We are thinking about some different ways to approach this.
+
+Here are some test cases that we know are behaving in an undesireable way, which we plan to work on next: (this is for us just as much as the instructors!)
+```
+a: [int] = None
+b: int = 100
+
+a = [1, 2, 3]
+a[3] = 99999999
+
+b
+```
+*Output:* `99999999`
+
+The way that it is right now, we are able to assign elements to indexes are out of bounds. This is pretty bad because we could modify the memory of other parts of the program. In the above example, setting `a[3]` to `99999999` actually modifies the value of `b`. Even if we can't get the proper `index out of bounds` error yet, we hope to make this at least produce a WASM error so that this bad memory modification is not allowed.
+
+---
+
+```
+a: [int] = None
+a = [66, -5, 10]
+a[1+0]
+```
+*Output:* `66`
+
+Whenever the index expression is anything other than a literal value, the index access is off by 1. This is due to the way we have our lists laid out in memory (scroll to the very bottom of this file to see). In order to access the element at index `i`, the offset for the load needs to be `i+1`. Currently when we lower the code and make the `"load"` expression, we're just adding 1 to whatever the index evaluates to, which works for literal numbers. However, for anything other than a literal, the `IR.Value` will be an `"id"`, so we can't directly add 1 to that. We are still figuring out what to do about that.
+
+---
+
+```
+a: [bool] = None
+a = []
+```
+*Output:* `Error: TYPE ERROR: Non-assignable types`
+
+This shouldn't have any errors, as an empty list should be assignable as a list of booleans. We are still trying to figure out what type to respresent the empty list as, maybe as a list of some sort of "any" type that another group will come up with.
+
+---
+
+```
+a: [[int]] = None
+a = [[100, 4], [5], [99, -7, 3]]
+a[0][1]
+```
+*Output:* `1`
+
+For some reason we haven't figured out yet, the last element of each list in this list always seems to come out as `1`. All the other list accesses seem to give the value that we expect, but `a[0][1]`, `a[1][0]`, and `a[2][2]` all evaluate to `1`.
+
+# Week 6 Update (5/6/22)
+
 ## Test cases for lists
 
 

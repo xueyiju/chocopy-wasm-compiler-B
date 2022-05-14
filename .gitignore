@@ -9,3 +9,4 @@ mochawesome-report
 .vscode/
 **/*.png
 **/*.svg
+!/designs/example.svg

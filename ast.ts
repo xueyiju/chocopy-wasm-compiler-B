@@ -7,11 +7,7 @@ export type Type =
   | {tag: "none"}
   | {tag: "class", name: string}
   | {tag: "either", left: Type, right: Type }
-  // // generator type
-  // | { 
-  //   tag: "generator", 
-  //   type: Type // type of item generated each time calling next()
-  // }
+  | {tag: "generator", type: Type } // generator type
 
 export type SourceLocation = { line: number }
 
@@ -57,17 +53,8 @@ export type Expr<A> =
   | {  a?: A, tag: "index", obj: Expr<A>, index: Expr<A> }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
   | {  a?: A, tag: "construct", name: string }
-  // // comprehension expression
-  // | { 
-  //   a?: A, 
-  //   tag: "comprehension", 
-  //   type: Type, // type of comprehension - list/set/dict/generator
-  //   lhs: Expr<A>, 
-  //   item: string, 
-  //   iterable: Expr<A>, 
-  //   ifcond?: Expr<A> 
-  // }
-  | { a?: A, tag: "ternary", exprIfTrue: Expr<A>, ifcond: Expr<A>, exprIfFalse: Expr<A> } // ternary expression
+  | {  a?: A, tag: "comprehension", type: Type, lhs: Expr<A>, item: string, iterable: Expr<A>, ifcond?: Expr<A> } // comprehension expression
+  | {  a?: A, tag: "ternary", exprIfTrue: Expr<A>, ifcond: Expr<A>, exprIfFalse: Expr<A> } // ternary expression
 
 export type Literal = 
     { tag: "num", value: number }

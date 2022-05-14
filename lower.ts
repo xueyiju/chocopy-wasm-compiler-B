@@ -290,6 +290,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
     case "literal":
       return [[], [], {tag: "value", value: literalToVal(e.value) } ];
     case "ternary":
+    case "comprehension":
       return flattenExprToExprWithBlocks(e, blocks, env);
   }
 }
@@ -311,16 +312,14 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const condjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: condval, thn: thenLbl, els: elseLbl };
       const endjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: endLbl };
 
-      console.log(`True val: ${tval}, False val: ${fval}`)
       const assignTrue : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: tval } };
       const assignFalse : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: fval } };
 
-      //var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
-      //pushStmtsToLastBlock(blocks, ...tstmts, ...condstmts, ...fstmts)
+      pushStmtsToLastBlock(blocks, ...tstmts, ...condstmts, ...fstmts)
       pushStmtsToLastBlock(blocks, condjmp);
-      blocks.push({ a: e.a, label: thenLbl, stmts: [...tstmts, assignTrue] });
+      blocks.push({ a: e.a, label: thenLbl, stmts: [assignTrue] });
       pushStmtsToLastBlock(blocks, endjmp);
-      blocks.push({ a: e.a, label: elseLbl, stmts: [...fstmts, assignFalse] });
+      blocks.push({ a: e.a, label: elseLbl, stmts: [assignFalse] });
       pushStmtsToLastBlock(blocks, endjmp);
       blocks.push({ a: e.a, label: endLbl, stmts: [] });
 
@@ -328,6 +327,66 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
         [],
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: resultName } }
       ];
+    case "comprehension":
+      // (lhsexpr for item in iterableexpr if condexpr)
+      // obtain the iterable obj
+      const [objinits, objstmts, objval] = flattenExprToVal(e.iterable, env);
+      var objTyp = e.iterable.a[0];
+      if(objTyp.tag !== "class") { // I don't think this error can happen
+        throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
+      }
+      const objClassName = objTyp.name;
+      const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}};
+      // method calls
+      const callHasnext : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${objClassName}$hasnext`, arguments: [objval] };
+      const callNext : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${objClassName}$next`, arguments: [objval] }
+
+      const whileStartLbl = generateName("$whilestart");
+      const whilebodyLbl = generateName("$whilebody");
+      const whileEndLbl = generateName("$whileend");
+
+      // jump to start
+      pushStmtsToLastBlock(blocks, ...objstmts, checkObj, { tag: "jmp", lbl: whileStartLbl });
+      blocks.push({  a: e.a, label: whileStartLbl, stmts: [] });
+      // call hasnext
+      const hasnextValName = generateName("condVal");
+      const hasnextVal : IR.VarInit<[Type, SourceLocation]> = { name: hasnextValName, type: { tag: "bool" }, value: { tag: "bool", value: false } };
+      const hasnextValAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: hasnextValName, value: callHasnext };
+      const hasnext : IR.Value<[Type, SourceLocation]> = { a: e.a, tag: "id", name: hasnextValName };
+      const hasnextjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: hasnext, thn: whilebodyLbl, els: whileEndLbl };
+      pushStmtsToLastBlock(blocks, hasnextValAssign, hasnextjmp);
+
+      // body: call next and print result
+      blocks.push({  a: e.a, label: whilebodyLbl, stmts: [] })
+      const nextValName = e.item;
+      if (e.a[0].tag !== "generator"
+        // || e.a[0].tag !== "list"
+        // || e.a[0].tag !== "set"
+        // || e.a[0].tag !== "dictionary"
+      ) {
+        throw new Error("Iterable is cursed, go home!");
+      }
+      const nextVal : IR.VarInit<[Type, SourceLocation]> = { name: nextValName, type: e.a[0].type, value: { tag: "none" } };
+      const nextValAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextValName, value: callNext };
+      const next : IR.Value<[Type, SourceLocation]> = { a: e.a, tag: "id", name: nextValName };
+      // evaluate lhs
+      const [linits, lstmts, lval] = flattenExprToVal(e.lhs, env);
+      const nextYieldName = generateName("nextYield");
+      const nextYield : IR.VarInit<[Type, SourceLocation]> = { name: nextYieldName, type: e.a[0].type, value: { tag: "none" } };
+      const nextYieldAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextYieldName, value: { tag: "value", value: lval } };
+      // for this milestone, we just print out the values
+      const callPrint : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: "print_num", arguments: [{ a: e.a, tag: "id", name: nextYieldName }] };
+      pushStmtsToLastBlock(blocks, checkObj, nextValAssign, ...lstmts, nextYieldAssign, { tag: "expr", expr: callPrint });
+
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
+
+      blocks.push({  a: e.a, label: whileEndLbl, stmts: [] })
+
+      return [
+        [...objinits, ...linits, hasnextVal, nextVal, nextYield],
+        [],
+        { tag: "value", value: lval }
+      ]
   }
 }
 

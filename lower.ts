@@ -264,13 +264,15 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
     case "break":
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
-      var currentloop = nameCounters.get("$"+currLoop+"body")
+      // var currentloop = nameCounters.get("$"+currLoop+"body")
+      nameCounters;
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
       return []
     case "continue":
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
-      var currentloop = nameCounters.get("$"+currLoop+"body");
+      nameCounters;
+      // var currentloop = nameCounters.get("$"+currLoop+"body");
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + depth});
       return []
   }

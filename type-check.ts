@@ -234,6 +234,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       locals.whileCount = locals.whileCount+1;
       locals.currLoop.push(["while", locals.whileCount]);
       const tBody = tcBlock(env, locals, stmt.body);
+      locals.currLoop.pop();
       if (!equalType(tCond.a[0], BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool");
       return {a: [NONE, stmt.a], tag:stmt.tag, cond: tCond, body: tBody};

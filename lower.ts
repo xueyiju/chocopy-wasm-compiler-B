@@ -144,6 +144,9 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var [oinits, ostmts, oval] = flattenExprToVal(s.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
+
+      //get offset, since it's actually i+1
+      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(ival, iinits, istmts);
       
       if (s.obj.a[0].tag === "list") {
         pushStmtsToLastBlock(blocks,
@@ -151,8 +154,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
             tag: "store",
             a: s.a,
             start: oval,
-            //@ts-ignore
-            offset: {...ival, value: ival.value + ((typeof ival.value === 'bigint')?(BigInt(1)):(1))},
+            offset: offsetValue,
             value: nval
           });
         return [...oinits, ...iinits, ...ninits];
@@ -287,12 +289,14 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
 
+      //get offset, since it's actually i+1
+      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(ival, iinits, istmts);
+
       if (e.obj.a[0].tag === "list") { 
         return [[...oinits, ...iinits], [...ostmts, ...istmts], {
           tag: "load",
           start: oval,
-          //@ts-ignore
-          offset: {...ival, value: ival.value + ((typeof ival.value === 'bigint')?(BigInt(1)):(1))}
+          offset: offsetValue
         }];
       }
       else { throw new Error("Compiler's cursed, go home"); }
@@ -328,7 +332,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         tag: "store",
         start: { tag: "id", name: newListName },
         offset: { tag: "wasmint", value: 0 },
-        value: { a: [null, null], tag: "num", value: BigInt(e.elements.length) }
+        value: { a: [{tag: "number"}, e.a[1]], tag: "num", value: BigInt(e.elements.length) }
       }
       const assignsList : IR.Stmt<[Type, SourceLocation]>[] = e.elements.map((e, i) => {
         const [init, stmt, vale] = flattenExprToVal(e, env);
@@ -374,6 +378,19 @@ function flattenExprToVal(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv)
       {tag: "id", name: newName, a: e.a}
     ];
   }
+}
+
+function listIndexOffsets(ival: IR.Value<[AST.Type, AST.SourceLocation]>, iinits: IR.VarInit<[AST.Type, AST.SourceLocation]>[],
+        istmts: IR.Stmt<[AST.Type, AST.SourceLocation]>[]) : IR.Value<[AST.Type, AST.SourceLocation]> {
+  const value1: IR.Value<[Type, SourceLocation]> = { a: ival.a, tag: "wasmint", value: 1 };
+  const indexAdd1Expr: IR.Expr<[Type, SourceLocation]> = {  a: ival.a, tag: "binop", op: AST.BinOp.Plus, left: ival, right: value1};
+  const offsetName = generateName("offsetname");
+  const offsetInit: IR.VarInit<[Type, SourceLocation]> = { a: ival.a, name: offsetName, type: {tag: "number"}, value: { tag: "none" } }
+  iinits.push(offsetInit);
+  const setOffset : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", a: ival.a, name: offsetName, value: indexAdd1Expr };
+  istmts.push(setOffset);
+  const offsetValue: IR.Value<[Type, SourceLocation]> = {tag: "id", name: offsetName, a: ival.a}
+  return offsetValue;
 }
 
 function pushStmtsToLastBlock(blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, ...stmts: Array<IR.Stmt<[Type, SourceLocation]>>) {

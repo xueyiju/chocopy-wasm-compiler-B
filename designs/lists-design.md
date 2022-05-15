@@ -35,6 +35,8 @@ a[1+0]
 
 Whenever the index expression is anything other than a literal value, the index access is off by 1. This is due to the way we have our lists laid out in memory (scroll to the very bottom of this file to see). In order to access the element at index `i`, the offset for the load needs to be `i+1`. Currently when we lower the code and make the `"load"` expression, we're just adding 1 to whatever the index evaluates to, which works for literal numbers. However, for anything other than a literal, the `IR.Value` will be an `"id"`, so we can't directly add 1 to that. We are still figuring out what to do about that.
 
+*Update 5/14/22: We figured it out. It now produces the output `-5`, which is correct.*
+
 ---
 
 ```

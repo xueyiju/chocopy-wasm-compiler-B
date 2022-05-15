@@ -24,6 +24,8 @@ b
 
 The way that it is right now, we are able to assign elements to indexes are out of bounds. This is pretty bad because we could modify the memory of other parts of the program. In the above example, setting `a[3]` to `99999999` actually modifies the value of `b`. Even if we can't get the proper `index out of bounds` error yet, we hope to make this at least produce a WASM error so that this bad memory modification is not allowed.
 
+*Update 5/15/22: This program now produces an error message that says `Error: RUNTIME ERROR: cannot perform operation on none`. This error message is just a placeholder for now to get any (index >= length of list) to throw a runtime error. Bad memory modification is no longer allowed.*
+
 ---
 
 ```

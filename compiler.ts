@@ -107,6 +107,28 @@ function codeGenStmt(stmt: Stmt<[Type, SourceLocation]>, env: GlobalEnv): Array<
     case "pass":
       return []
 
+    case "check-index":
+      const getIndex = codeGenValue(stmt.index, env);
+      const getAddress = codeGenValue(stmt.address, env);
+      return [...getIndex, ...getAddress, 
+        `(i32.const 0)
+        (call $load)
+        (i32.ge_s)
+        (if
+          (then
+            (i32.const 0)
+            (call $assert_not_none)
+            (local.set $$selector)
+          )
+          (else)
+        )
+        `]
+        // TODO: we don't actually want to call $assert_not_none, that's just a placeholder for
+        //    a "list index out of bounds" error that we can define later
+        // Note: Apparently $assert_not_none returns some value, so (local.set $$selector) is just there
+        //    to get that value off the stack. Otherwise WASM complains.
+        //    Fine to set $$selector because the program will throw an error before it gets there
+
     case "ifjmp":
       const thnIdx = env.labels.findIndex(e => e === stmt.thn);
       const elsIdx = env.labels.findIndex(e => e === stmt.els);

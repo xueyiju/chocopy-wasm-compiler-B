@@ -145,6 +145,10 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
 
+      //index out of bounds check
+      const checkIndex: IR.Stmt<[Type, SourceLocation]> = {tag: "check-index", address: oval, index: ival};
+      istmts.push(checkIndex);
+
       //get offset, since it's actually i+1
       const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(ival, iinits, istmts);
       
@@ -288,6 +292,10 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
     case "index":
       const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
+
+      //index out of bounds check
+      const checkIndex: IR.Stmt<[Type, SourceLocation]> = {tag: "check-index", address: oval, index: ival};
+      istmts.push(checkIndex);
 
       //get offset, since it's actually i+1
       const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(ival, iinits, istmts);

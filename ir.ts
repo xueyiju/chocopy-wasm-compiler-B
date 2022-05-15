@@ -18,6 +18,7 @@ export type Stmt<A> =
   | {  a?: A, tag: "pass" }
   | {  a?: A, tag: "ifjmp", cond: Value<A>, thn: string, els: string }
   | {  a?: A, tag: "jmp", lbl: string }
+  | {  a?: A, tag: "check-index", address: Value<A>, index: Value<A> }
 
   | { a?: A, tag: "store", start: Value<A>, offset: Value<A>, value: Value<A> } // start should be an id
 

@@ -60,6 +60,8 @@ a[0][1]
 
 For some reason we haven't figured out yet, the last element of each list in this list always seems to come out as `1`. All the other list accesses seem to give the value that we expect, but `a[0][1]`, `a[1][0]`, and `a[2][2]` all evaluate to `1`.
 
+*Update 5/15/22: We figured this one out as well. Allocating (num elements + 1) spots for each list instead of just (num elements) spots fixed the problem. This program now correctly outputs `4`, and `a[1][0]` and `a[2][2]` correctly evaluate to `5` and `3`, respectively.*
+
 # Week 6 Update (5/6/22)
 
 ## Test cases for lists

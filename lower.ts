@@ -333,7 +333,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       ];
     case "listliteral":
       const newListName = generateName("newList");
-      const allocList : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length } };
+      const allocList : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length + 1 } };
       var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
       var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
       var storeLength : IR.Stmt<[Type, SourceLocation]> = {

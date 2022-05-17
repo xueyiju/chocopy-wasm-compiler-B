@@ -31,6 +31,14 @@ describe("Basic range functionalities", () => {
         print(i)
         `, ["0","-2","-4", "-6", "-8"]);
 
+    assertPrint('for loop within a function', `
+    def print_loop(start:int, stop:int, step:int):
+        i: int = 0
+        for i in range(start, stop, step):
+            print(i)
+    print_loop(0, 5, 1)
+        `, ["0","1","2","3","4"]);
+
     assertPrint('range: for loop with break', `
     i: int = 0
     for i in range(0,-10,-2):
@@ -80,6 +88,19 @@ describe("Basic range functionalities", () => {
             print(j) 
         break   
         `, ["0", "0", "1"]);   
+
+    assertPrint('range: nested for/while loop with break and continue', `
+    i: int = 0
+    j:int = 0
+    n:int = 5
+    for i in range(n):
+        print(i)
+        while j < 2:
+            j = j + 1
+            continue
+            print(j)
+        break   
+        `, ["0"]);  
 
     assertPrint('range: for else construct 1', `
     i : int = 0

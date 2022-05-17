@@ -317,9 +317,3 @@ The following represents the memory layout for adding a "range value" whenever a
  
 |    start    |     stop    |     step    |   hasnext  |   currvalue   |
 | ----------- | ----------- | ----------- | ----------- | ----------------- |
-
-## Next week's to-dos and limitations of this implementation
-
-* range.wat doesn't use alloc, store and load, we will import libmemory in the next implementation
-* break and continue are currently not working for nested loops, will look into this in the next implementation
-

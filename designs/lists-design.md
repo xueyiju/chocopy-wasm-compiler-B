@@ -1,3 +1,9 @@
+# Week 8 Update (5/20/22)
+
+*Update 5/15/22: This program now produces an error message that says `Error: RUNTIME ERROR: cannot perform operation on none`. This error message is just a placeholder for now to get any (index >= length of list) to throw a runtime error. Bad memory modification is no longer allowed.*
+
+*Update 5/17/22: The error message now says `Index ${index} out of bounds`.*
+
 # Week 7 Update (5/13/22)
 
 We were not able to get all 10 of our test cases from last week to pass. Tests 1, 2, 3, 6, 7, 8, 9, and 10 pass, but tests 4 and 5 do not yet behave as we eventually intend them to.
@@ -23,8 +29,6 @@ b
 *Output:* `99999999`
 
 The way that it is right now, we are able to assign elements to indexes are out of bounds. This is pretty bad because we could modify the memory of other parts of the program. In the above example, setting `a[3]` to `99999999` actually modifies the value of `b`. Even if we can't get the proper `index out of bounds` error yet, we hope to make this at least produce a WASM error so that this bad memory modification is not allowed.
-
-*Update 5/15/22: This program now produces an error message that says `Error: RUNTIME ERROR: cannot perform operation on none`. This error message is just a placeholder for now to get any (index >= length of list) to throw a runtime error. Bad memory modification is no longer allowed.*
 
 ---
 
@@ -115,7 +119,7 @@ a[4]
 ```
 *Output:*
 ```
-Error: Index 4 out of bounds
+RUNTIME ERROR: Index 4 out of bounds
 ```
 ---
 
@@ -128,7 +132,7 @@ a[-1]
 ```
 *Output:*
 ```
-Error: Index -1 out of bounds
+RUNTIME ERROR: Index -1 out of bounds
 ```
 ---
 

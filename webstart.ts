@@ -31,7 +31,7 @@ function assert_not_none(arg: any) : any {
 }
 
 function list_index_oob(arg: any) {
-  throw new Error(`Index ${arg} out of bounds`);
+  throw new Error(`RUNTIME ERROR: Index ${arg} out of bounds`);
 }
 
 function webStart() {

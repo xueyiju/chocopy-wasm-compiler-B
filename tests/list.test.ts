@@ -19,10 +19,10 @@ describe("List tests", () => {
     print(a[0])`, [`2`]);
 
     // 4
-    // assertFail("out-of-bounds", `
-    // a: [int] = None
-    // a = [2, 4, 6, 8]
-    // a[4]`);
+    assertFail("out-of-bounds", `
+    a: [int] = None
+    a = [2, 4, 6, 8]
+    a[4]`);
 
     // 5    
     // assertFail("negative-index", `

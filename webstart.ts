@@ -30,6 +30,10 @@ function assert_not_none(arg: any) : any {
   return arg;
 }
 
+function list_index_oob(arg: any) {
+  throw new Error(`Index ${arg} out of bounds`);
+}
+
 function webStart() {
   document.addEventListener("DOMContentLoaded", async function() {
 
@@ -45,6 +49,7 @@ function webStart() {
     var importObject = {
       imports: {
         assert_not_none: (arg: any) => assert_not_none(arg),
+        list_index_oob: (arg: any) => list_index_oob(arg),
         print_num: (arg: number) => print(NUM, arg),
         print_bool: (arg: number) => print(BOOL, arg),
         print_none: (arg: number) => print(NONE, arg),

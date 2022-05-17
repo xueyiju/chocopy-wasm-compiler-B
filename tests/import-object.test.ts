@@ -25,6 +25,10 @@ function assert_not_none(arg: any) : any {
   return arg;
 }
 
+function list_index_oob(arg: any) {
+  throw new Error(`Index ${arg} out of bounds`);
+}
+
 export async function addLibs() {
   const bytes = readFileSync("build/memory.wasm");
   const memory = new WebAssembly.Memory({initial:10, maximum:100});
@@ -42,6 +46,7 @@ export const importObject : any = {
     //  We can then examine output to see what would have been printed in the
     //  console.
     assert_not_none: (arg: any) => assert_not_none(arg),
+    list_index_oob: (arg: any) => list_index_oob(arg),
     print: (arg: any) => print(Type.Num, arg),
     print_num: (arg: number) => print(Type.Num, arg),
     print_bool: (arg: number) => print(Type.Bool, arg),

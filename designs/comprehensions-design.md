@@ -2,6 +2,21 @@
 
 ---
 
+## Week7 Update
+
+We couldn't implement all features described in the design document submitted last week, but we do have some progress.
+
+As is stated in the previous design document, comprehension expressions include list comprehension (```[]```), set/dictionary comprehension (```{}```), as well as generator comprehension (```()```). We mainly focused on generator comprehension this week, because other types of comprehension require the work of other groups.  
+
+In terms of the iterable object, we only support 
+```Range()``` objects for now. In milestone 2, with the work of other groups, we will also be able to handle other iterable objects, i.e. ```list```, ```set```, ```dictionary```, ```tuple```, ```generator```.
+
+We added a ```Range``` class and a ```Generator``` class to ```repl.ts```. They both work, but are a little bit flawed. The ```Range``` and ```Generator``` classes share a same problem, that they can not properly stop iteration. We want any ```Range``` and ```Generator``` objects to stop returning items in the ```next()``` method, when the ```iterator``` comes to the end of the iterable object. However, we haven't implement this stop behavior in the ```next()``` method yet, but we checked it in the comprehension expression part. In addition, our generator comprehension cannot really act the way it should be ---- we can now only print out all items it will yield while calling ```next()```.
+
+---
+## Week 6 contents
+___
+
 ## Test Cases
 
 Comprehensions follow this format:

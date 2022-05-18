@@ -52,23 +52,65 @@ export type TypeError = {
   message: string
 }
 
-export function equalType(t1: Type, t2: Type) {
+export function equalType(t1: Type, t2: Type) : boolean {
   return (
     t1 === t2 ||
-    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name)
+    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
+    (t1.tag === "generator" && t2.tag === "generator" && equalType(t1.type, t2.type))
   );
 }
 
-export function isNoneOrClass(t: Type) {
-  return t.tag === "none" || t.tag === "class";
+export function isNoneOrClass(t: Type) : boolean {
+  return t.tag === "none" || t.tag === "class" || t.tag === "generator";
 }
 
-export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type): boolean {
-  return equalType(t1, t2) || t1.tag === "none" && t2.tag === "class" 
+export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type) : boolean {
+  return (
+    equalType(t1, t2) ||
+    (t1.tag === "none" && t2.tag === "class") ||
+    (t1.tag === "none" && t2.tag === "generator") ||
+    // can assign generator created with comprehension to generator class object
+    (t1.tag === "generator" && t2.tag === "class" && t2.name === "generator") ||
+    // for generator<A> and generator<B>, A needs to be subtype of B
+    (t1.tag === "generator" && t2.tag === "generator" && isSubtype(env, t1.type, t2.type))
+  );
 }
 
 export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolean {
   return isSubtype(env, t1, t2);
+}
+
+export function isIterableType(t: Type) : [Boolean, Type] {
+  // check if t is an iterable type
+  // if true, also return type of each item in the iterable
+  switch (t.tag) {
+    case "either":
+      return isIterableType(t.left) || isIterableType(t.right);
+    case "class":
+      return [t.name === "Range", NUM]; // for MS1, Range object is considered as iterable
+    case "generator":
+    // assume more iterable types will be implemented by other groups
+    // case "list":
+    // case "string":
+    // case "tuple":
+    // case "set":
+    // case "dictionary":
+      return [true, t.type]; // assume other iterable types also have a field "type" (of each item)
+    default:
+      return [false, undefined];
+  }
+}
+
+export function isCompType(t: Type): Boolean {
+  switch (t.tag) {
+    case "generator":
+    // case "list":
+    // case "set":
+    // case "dictionary":
+      return true;
+    default:
+      return false;
+  }
 }
 
 export function join(env : GlobalTypeEnv, t1 : Type, t2 : Type) : Type {
@@ -375,6 +417,47 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeCheckError("method calls require an object");
       }
+    case "ternary":
+      const tExprIfTrue = tcExpr(env, locals, expr.exprIfTrue);
+      const tIfCond = tcExpr(env, locals, expr.ifcond);
+      const tExprIfFalse = tcExpr(env, locals, expr.exprIfFalse);
+      if (!equalType(tIfCond.a[0], BOOL)) {
+        throw new TypeCheckError("if condition must be a bool");
+      }
+      const exprIfTrueTyp = tExprIfTrue.a[0];
+      const exprIfFalseTyp = tExprIfFalse.a[0];
+      if (equalType(exprIfTrueTyp, exprIfFalseTyp)) {
+        return { ...expr, a: [exprIfTrueTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
+      }
+      const eitherTyp : Type = { tag: "either", left: exprIfTrueTyp, right: exprIfFalseTyp };
+      return { ...expr, a: [eitherTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
+    case "comprehension":
+      const tIterable = tcExpr(env, locals, expr.iterable);
+      const [isIterable, itemTyp] = isIterableType(tIterable.a[0])
+      if (!isIterable) {
+        throw new TypeCheckError(`Type ${tIterable.a[0]} is not iterable`);
+      }
+      if (locals.vars.has(expr.item)) {
+        throw new TypeCheckError(`id ${expr.item} already exists locally`);
+      } else {
+        locals.vars.set(expr.item, itemTyp);
+      }
+      var tCompIfCond = undefined;
+      if (expr.ifcond) {
+        tCompIfCond = tcExpr(env, locals, expr.ifcond);
+        if (!equalType(tCompIfCond.a[0], BOOL)) {
+          throw new TypeCheckError("if condition must be a bool");
+        }
+      }
+      const tLhs = tcExpr(env, locals, expr.lhs);
+      if (expr.type.tag == "generator" 
+        // || expr.type.tag == "list"
+        // || expr.type.tag == "set"
+        // || expr.type.tag == "dictionary"
+      ) {
+        expr.type = { ...(expr.type), type: itemTyp };
+      }
+      return { ...expr, a: [expr.type, expr.a], lhs: tLhs, iterable: tIterable, ifcond: tCompIfCond };
     default: throw new TypeCheckError(`unimplemented type checking for expr: ${expr}`);
   }
 }

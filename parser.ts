@@ -203,6 +203,85 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         tag: "id",
         name: "self"
       };
+    case "ConditionalExpression": // ternary expression
+      c.firstChild(); // Focus on exprIfTrue
+      var exprIfTrue = traverseExpr(c, s);
+      c.nextSibling(); // Focus on if
+      c.nextSibling(); // Focus on cond
+      var ifcond = traverseExpr(c, s);
+      c.nextSibling(); // Focus on else
+      c.nextSibling(); // Focus on exprIfFalse
+      var exprIfFalse = traverseExpr(c, s);
+      c.parent();
+      return {
+        a: location,
+        tag: "ternary",
+        exprIfTrue: exprIfTrue,
+        ifcond: ifcond,
+        exprIfFalse: exprIfFalse
+      };
+    // comprehensions
+    case "ComprehensionExpression":
+    //case "ArrayComprehensionExpression":
+    //case "DictionaryComprehensionExpression":
+    //case "SetComprehensionExpression":
+      c.firstChild(); // Focus on ()/[]/{}
+      var compTyp : Type = NONE;
+      const symbol = s.substring(c.from, c.to);
+      switch (symbol) {
+        case "(":
+          compTyp = { tag: "generator", type: NONE };
+          break;
+        // case "[":
+        //   compTyp = { tag: "list", type: NONE };
+        //   break;
+        // case "{":
+        //   compTyp = { tag: "set", type: NONE }; // or Dict -- Milestone 2
+        //   break;
+        default:
+          throw new ParseError("Could not parse comprehension");
+      }
+      c.nextSibling(); // Focus on lhs
+      var lhs = traverseExpr(c, s);
+      c.nextSibling(); // Focus on for
+      c.nextSibling(); // Focus on item
+      var itemName = s.substring(c.from, c.to);
+      c.nextSibling(); // Focus on in
+      c.nextSibling(); // Focus on iterable expr
+      var iterable = traverseExpr(c, s);
+      c.nextSibling(); // Focus on if/)/]/}
+      var compIfCond : Expr<SourceLocation> = undefined;
+      var nextSymbol = s.substring(c.from, c.to);
+      if (nextSymbol === "if") {
+        c.nextSibling(); // Focus on ifcond
+        compIfCond = traverseExpr(c, s);
+        c.nextSibling(); // Focus on )/]/}
+        nextSymbol = s.substring(c.from, c.to);
+      }
+      const pair = symbol + nextSymbol;
+      if (pair !== "()" && pair !== "[]" && pair !== "{}") {
+        throw new ParseError("Comprehension start and end mismatch");
+      }
+      c.parent();
+      if (compIfCond == undefined) {
+        return {
+          a: location,
+          tag: "comprehension",
+          type: compTyp,
+          lhs: lhs,
+          item: itemName,
+          iterable: iterable
+        };
+      }
+      return {
+        a: location,
+        tag: "comprehension",
+        type: compTyp,
+        lhs: lhs,
+        item: itemName,
+        iterable: iterable,
+        ifcond: compIfCond
+      };
     default:
       throw new ParseError("Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line);
   }

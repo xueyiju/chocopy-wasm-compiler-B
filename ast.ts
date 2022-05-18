@@ -7,7 +7,6 @@ export type Type =
   | {tag: "none"}
   | {tag: "class", name: string}
   | {tag: "either", left: Type, right: Type }
-  | {tag: "function", params: Type[], ret: Type}
 
 export type SourceLocation = { line: number }
 

@@ -19,6 +19,8 @@ export type Config = {
   functions: string        // prelude functions
 }
 
+export var sourceCode = "";
+
 // NOTE(joe): This is a hack to get the CLI Repl to run. WABT registers a global
 // uncaught exn handler, and this is not allowed when running the REPL
 // (https://nodejs.org/api/repl.html#repl_global_uncaught_exceptions). No reason
@@ -69,6 +71,7 @@ export function augmentEnv(env: GlobalEnv, prog: Program<[Type, SourceLocation]>
 // export async function run(source : string, config: Config) : Promise<[Value, compiler.GlobalEnv, GlobalTypeEnv, string]> {
 export async function run(source : string, config: Config) : Promise<[Value, GlobalEnv, GlobalTypeEnv, string, WebAssembly.WebAssemblyInstantiatedSource]> {
   const parsed = parse(source);
+  sourceCode = source;
   const [tprogram, tenv] = tc(config.typeEnv, parsed);
   const globalEnv = augmentEnv(config.env, tprogram);
   const irprogram = lowerProgram(tprogram, globalEnv);
@@ -103,6 +106,8 @@ export async function run(source : string, config: Config) : Promise<[Value, Glo
     (import "js" "memory" (memory 1))
     (func $division_by_zero (import "imports" "division_by_zero") (param i32) (param i32) (param i32) (result i32))
     (func $assert_not_none (import "imports" "assert_not_none") (param i32) (param i32) (param i32) (result i32))
+    (func $stack_push (import "imports" "stack_push") (param i32))
+    (func $stack_clear (import "imports" "stack_clear"))
     (func $print_num (import "imports" "print_num") (param i32) (result i32))
     (func $print_bool (import "imports" "print_bool") (param i32) (result i32))
     (func $print_none (import "imports" "print_none") (param i32) (result i32))

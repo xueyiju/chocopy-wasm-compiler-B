@@ -89,3 +89,33 @@ describe("Error Reporting tests", () => {
     `x: int = 100\nx%0`,2,3);
 
  });
+
+ /*
+RUNTIME ERROR:
+
+def a() -> int:
+    i: int = 0
+    j: int = 0
+    j = b(i)
+    return j
+
+def b(z: int) -> int:
+    k: int = 5
+    if z == 0:
+        c34()
+    return k + z
+
+def c34():
+    print(1//0)
+
+a()
+
+Output: 
+Error: Traceback (most recent call last): 
+in line 16: a() 
+in line 4: j = b(i) 
+in line 10: c34() 
+
+RUNTIME ERROR: division by zero in line 14 at column 14
+
+ */

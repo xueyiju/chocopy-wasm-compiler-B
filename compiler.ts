@@ -68,7 +68,7 @@ export function compile(ast: Program<[Type, SourceLocation]>, env: GlobalEnv) : 
   bodyCommands += ") ;; end $loop"
 
   // const commandGroups = ast.stmts.map((stmt) => codeGenStmt(stmt, withDefines));
-  const allCommands = [...localDefines, ...inits, bodyCommands];
+  const allCommands = [...localDefines, ...inits, `(call $stack_clear)`, bodyCommands];
   withDefines.locals.clear();
   return {
     globals: globalNames,
@@ -175,6 +175,8 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
 
     case "call":
       var valStmts = expr.arguments.map((arg) => codeGenValue(arg, env)).flat();
+      valStmts.push(`(i32.const ${expr.a[1].line})`);
+      valStmts.push(`(call $stack_push)`);
       if(expr.name === 'assert_not_none'){
         valStmts.push(`(i32.const ${expr.a[1].line})(i32.const ${expr.a[1].column}) `);
       }
@@ -187,7 +189,6 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
         `call $alloc`
       ];
     case "load":
-      console.log("expr at load = ", expr.a)
       return [
         ...codeGenValue(expr.start, env),
         `(i32.const ${expr.a[1].line})(i32.const ${expr.a[1].column}) (call $assert_not_none)`,

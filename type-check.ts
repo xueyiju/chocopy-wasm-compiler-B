@@ -52,19 +52,28 @@ export type TypeError = {
   message: string
 }
 
-export function equalType(t1: Type, t2: Type) {
+export function equalType(t1: Type, t2: Type) : boolean {
   return (
     t1 === t2 ||
-    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name)
+    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
+    (t1.tag === "generator" && t2.tag === "generator" && equalType(t1.type, t2.type))
   );
 }
 
-export function isNoneOrClass(t: Type) {
-  return t.tag === "none" || t.tag === "class";
+export function isNoneOrClass(t: Type) : boolean {
+  return t.tag === "none" || t.tag === "class" || t.tag === "generator";
 }
 
-export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type): boolean {
-  return equalType(t1, t2) || t1.tag === "none" && t2.tag === "class" 
+export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type) : boolean {
+  return (
+    equalType(t1, t2) ||
+    (t1.tag === "none" && t2.tag === "class") ||
+    (t1.tag === "none" && t2.tag === "generator") ||
+    // can assign generator created with comprehension to generator class object
+    (t1.tag === "generator" && t2.tag === "class" && t2.name === "generator") ||
+    // for generator<A> and generator<B>, A needs to be subtype of B
+    (t1.tag === "generator" && t2.tag === "generator" && isSubtype(env, t1.type, t2.type))
+  );
 }
 
 export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolean {

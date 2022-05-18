@@ -305,9 +305,9 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const resultName = generateName("resultVal");
       const resultInit : IR.VarInit<[Type, SourceLocation]> = { name: resultName, type: e.a[0], value: { tag: "none" } };
 
-      var thenLbl = generateName("$then");
-      var elseLbl = generateName("$else");
-      var endLbl = generateName("$end");
+      var thenLbl = generateName("$ternaryThen");
+      var elseLbl = generateName("$ternaryElse");
+      var endLbl = generateName("$tenerayEnd");
 
       const condjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: condval, thn: thenLbl, els: elseLbl };
       const endjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: endLbl };
@@ -315,11 +315,16 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const assignTrue : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: tval } };
       const assignFalse : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: fval } };
 
-      pushStmtsToLastBlock(blocks, ...tstmts, ...condstmts, ...fstmts)
+      // in case of a lonely ternary expression in the program
+      if (blocks.length == 0) {
+        blocks.push({ a: e.a, label: generateName("$ternaryBlock"), stmts: [] });
+      }
+      
+      pushStmtsToLastBlock(blocks, ...condstmts)
       pushStmtsToLastBlock(blocks, condjmp);
-      blocks.push({ a: e.a, label: thenLbl, stmts: [assignTrue] });
+      blocks.push({ a: e.a, label: thenLbl, stmts: [...tstmts, assignTrue] });
       pushStmtsToLastBlock(blocks, endjmp);
-      blocks.push({ a: e.a, label: elseLbl, stmts: [assignFalse] });
+      blocks.push({ a: e.a, label: elseLbl, stmts: [...fstmts, assignFalse] });
       pushStmtsToLastBlock(blocks, endjmp);
       blocks.push({ a: e.a, label: endLbl, stmts: [] });
 
@@ -368,12 +373,15 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const nextVal : IR.VarInit<[Type, SourceLocation]> = { name: nextValName, type: e.a[0].type, value: { tag: "none" } };
       const nextValAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextValName, value: callNext };
 
+      // push call to next to blocks before lhs statements get pushed on the next line
+      pushStmtsToLastBlock(blocks, nextValAssign);
+
       // TODO: assign-destructure
       // evaluate lhs
-      const [linits, lstmts, lval] = flattenExprToVal(e.lhs, env);
+      const [linits, lstmts, lval] = flattenExprToExpr(e.lhs, blocks, env); // careful with ternary case
       const nextYieldName = generateName("nextYield");
       const nextYield : IR.VarInit<[Type, SourceLocation]> = { name: nextYieldName, type: e.a[0].type, value: { tag: "none" } };
-      const nextYieldAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextYieldName, value: { tag: "value", value: lval } };
+      const nextYieldAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextYieldName, value: lval };
       // for this milestone, we just print out the values
       const callPrint : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: "print_num", arguments: [{ a: e.a, tag: "id", name: nextYieldName }] };
 
@@ -391,7 +399,7 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const condJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cval, thn: condThenLbl, els: condElseLbl };
       const endJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: condEndLbl };
 
-      pushStmtsToLastBlock(blocks, nextValAssign, ...lstmts, nextYieldAssign, ...cstmts, condJmp);
+      pushStmtsToLastBlock(blocks, ...lstmts, nextYieldAssign, ...cstmts, condJmp);
       blocks.push({ a: e.a, label: condThenLbl, stmts: [{ tag: "expr", expr: callPrint }] });
       pushStmtsToLastBlock(blocks, endJmp);
       blocks.push({ a: e.a, label: condElseLbl, stmts: [] });
@@ -403,7 +411,7 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       return [
         [...objinits, ...cinits, ...linits, hasnextVal, nextVal, nextYield],
         [],
-        { tag: "value", value: lval }
+        lval
       ]
   }
 }

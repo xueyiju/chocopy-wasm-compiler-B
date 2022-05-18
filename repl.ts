@@ -9,7 +9,7 @@ interface REPL {
   run(source : string) : Promise<any>;
 }
 
-const builtinClasses : string = `
+export const builtinClasses : string = `
 class Range(object):
   cur : int = 0
   min : int = 0

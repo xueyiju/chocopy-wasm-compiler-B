@@ -328,7 +328,6 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: resultName } }
       ];
     case "comprehension":
-      // (lhsexpr for item in iterableexpr if condexpr)
       // obtain the iterable obj
       const [objinits, objstmts, objval] = flattenExprToVal(e.iterable, env);
       var objTyp = e.iterable.a[0];
@@ -368,23 +367,8 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       }
       const nextVal : IR.VarInit<[Type, SourceLocation]> = { name: nextValName, type: e.a[0].type, value: { tag: "none" } };
       const nextValAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextValName, value: callNext };
-      const next : IR.Value<[Type, SourceLocation]> = { a: e.a, tag: "id", name: nextValName };
 
-      // // if condition
-      // const condThenLbl = generateName("$then");
-      // const condEndLbl = generateName("$end");
-      // const condElseLbl = generateName("$else");
-      // var cinits : IR.VarInit<[Type, SourceLocation]>[] = []
-      // var cstmts : IR.Stmt<[Type, SourceLocation]>[] = []
-      // var cval;
-      // [cinits, cstmts, cval] = flattenExprToVal(e.ifcond, env);
-
-      // const condJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cval, thn: condThenLbl, els: condElseLbl };
-      // const endJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: condEndLbl };
-
-      // pushStmtsToLastBlock(blocks, ...cstmts, condJmp);
-      // blocks.push({ a: e.a, label: condThenLbl, stmts: [] });
-
+      // TODO: assign-destructure
       // evaluate lhs
       const [linits, lstmts, lval] = flattenExprToVal(e.lhs, env);
       const nextYieldName = generateName("nextYield");
@@ -392,19 +376,32 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const nextYieldAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextYieldName, value: { tag: "value", value: lval } };
       // for this milestone, we just print out the values
       const callPrint : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: "print_num", arguments: [{ a: e.a, tag: "id", name: nextYieldName }] };
-      pushStmtsToLastBlock(blocks, checkObj, nextValAssign, ...lstmts, nextYieldAssign, { tag: "expr", expr: callPrint });
 
-      // pushStmtsToLastBlock(blocks, endJmp);
-      // blocks.push({ a: e.a, label: condElseLbl, stmts: [] });
-      // pushStmtsToLastBlock(blocks, endJmp);
-      // blocks.push({ a: e.a, label: endLbl, stmts: [] });
+      // if condition
+      const condThenLbl = generateName("$then");
+      const condEndLbl = generateName("$end");
+      const condElseLbl = generateName("$else");
+      var cinits : IR.VarInit<[Type, SourceLocation]>[] = []
+      var cstmts : IR.Stmt<[Type, SourceLocation]>[] = []
+      var cval : IR.Value<[Type, SourceLocation]> = { tag: "bool", value: true };
+      if (e.ifcond != undefined) {
+        [cinits, cstmts, cval] = flattenExprToVal(e.ifcond, env);
+      }
 
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
+      const condJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cval, thn: condThenLbl, els: condElseLbl };
+      const endJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: condEndLbl };
+
+      pushStmtsToLastBlock(blocks, nextValAssign, ...lstmts, nextYieldAssign, ...cstmts, condJmp);
+      blocks.push({ a: e.a, label: condThenLbl, stmts: [{ tag: "expr", expr: callPrint }] });
+      pushStmtsToLastBlock(blocks, endJmp);
+      blocks.push({ a: e.a, label: condElseLbl, stmts: [] });
+      pushStmtsToLastBlock(blocks, endJmp);
+      blocks.push({ a: e.a, label: condEndLbl, stmts: [{ tag: "jmp", lbl: whileStartLbl }] });
 
       blocks.push({  a: e.a, label: whileEndLbl, stmts: [] })
 
       return [
-        [...objinits, ...linits, hasnextVal, nextVal, nextYield],
+        [...objinits, ...cinits, ...linits, hasnextVal, nextVal, nextYield],
         [],
         { tag: "value", value: lval }
       ]

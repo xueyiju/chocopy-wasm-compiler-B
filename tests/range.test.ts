@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { parse } from "../parser";
-import { assert, assertPrint, assertTC, assertFail } from "./asserts.test";
+import { assert, assertPrint, assertTC, assertFail, assertTCFail } from "./asserts.test";
 import { NUM, BOOL, NONE, CLASS, typeCheck } from "./helpers.test";
 import { TypeCheckError } from '../error_reporting'
 import { PyInt, PyBool, PyNone, PyObj } from '../utils';
@@ -156,81 +156,8 @@ describe("Basic range functionalities", () => {
 
     assertTCFail('break statements outside loop', `
         i : int = 0
-        for i in range(10, 20, 1, 1):
+        for i in range(10, 20, 1):
             print(i)
         break
             `);   
 });
-
-
-
-// Helpers
-
-/**
- * Given a test case name, source program, and expected Program output, test if the
- * given Program can successfully be parsed.
- */
-function assertParse(name: string, source: string) {
-  it(name, () => {
-    expect(() => parse(source)).to.not.throw();
-  });
-}
-/**
- * Ensures that when parsing source, the parser throws an exception.
- */
-function assertParseFail(name: string, source: string) {
-  it(name, () => expect(() => parse(source)).to.throw(Error));
-}
-
-/**
- * Ensure during typechecking, a TypeError is thrown.
- */
-function assertTCFail(name: string, source: string) {
-  it(name, async () => {
-    expect(() => typeCheck(source)).to.throw(TypeCheckError);
-  });
-}
-
-// import { PyInt, PyBool, PyNone, PyObj } from '../utils';
-// import { assert, asserts, assertPrint } from "./utils.test";
-
-// // We write end-to-end tests here to make sure the compiler works as expected.
-// // You should write enough end-to-end tests until you are confident the compiler
-// // runs as expected. 
-describe('run', () => {
-
-//   runWasm('i64 return value', '(module (func (export "exported_func") (result i64) (i64.const 234)))', BigInt(234));
-
-  assert('range: one parameter', `
-i: int = 0
-sum: int = 0
-for i in range(10):
-    sum = sum + i
-sum
-`, PyInt(45));
-
-assert('range: two parameters', `
-i: int = 0
-sum: int = 0
-for i in range(5,10):
-    sum = sum + i
-sum
-`, PyInt(35));
-
-assert('range: three parameters', `
-i: int = 0
-sum: int = 0
-for i in range(0,10,2):
-    sum = sum + i
-sum
-`, PyInt(20));
-
-assert('range: negative step', `
-i: int = 0
-sum: int = 0
-for i in range(0,-10,-1):
-    sum = sum + i
-sum
-`, PyInt(-45));
-});
-

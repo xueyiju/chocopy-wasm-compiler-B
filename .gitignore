@@ -7,4 +7,3 @@ cli
 mochawesome-report
 *lock*
 .vscode
-debugstart.ts

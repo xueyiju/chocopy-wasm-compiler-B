@@ -56,7 +56,7 @@ export function equalType(t1: Type, t2: Type): boolean {
   return (
     t1 === t2 ||
     (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
-    (t1.tag === "list" && t2.tag === "list" && equalType(t1.type, t2.type))
+    (t1.tag === "list" && t2.tag === "list" && (equalType(t1.type, t2.type) || t1.type === NONE))
   );
 }
 
@@ -325,10 +325,8 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
 
     case "listliteral":
       if(expr.elements.length == 0) {
-        //TODO: figure out how to represent the type for empty listliteral
-        //making it num by default for now
         const elements: Expr<[Type, SourceLocation]>[] = [];
-        return {...expr, elements, a: [{tag: "list", type: NUM}, expr.a]};
+        return {...expr, elements, a: [{tag: "list", type: NONE}, expr.a]};
       }
 
       const elementsWithTypes: Array<Expr<[Type, SourceLocation]>> = [];

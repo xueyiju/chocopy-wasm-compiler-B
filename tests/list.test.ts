@@ -25,10 +25,10 @@ describe("List tests", () => {
     a[4]`);
 
     // 5    
-    // assertFail("negative-index", `
-    // a: [int] = None
-    // a = [1, 2, 3]
-    // a[-1]`);
+    assertFail("negative-index", `
+    a: [int] = None
+    a = [1, 2, 3]
+    a[-1]`);
 
     // 6
     assertPrint("expr-elements", `

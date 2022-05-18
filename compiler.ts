@@ -121,7 +121,19 @@ function codeGenStmt(stmt: Stmt<[Type, SourceLocation]>, env: GlobalEnv): Array<
           )
           (else)
         )
-        `]
+        `, // TODO: Code under here will be changed if we implement negative indexing
+        ...getIndex, 
+        `(i32.const 0)
+        (i32.lt_s)
+        (if
+          (then
+            ${getIndex}
+            (call $list_index_oob)
+          )
+          (else)
+        )
+        `,
+      ]
 
     case "ifjmp":
       const thnIdx = env.labels.findIndex(e => e === stmt.thn);

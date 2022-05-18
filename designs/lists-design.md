@@ -2,7 +2,7 @@
 
 *Update 5/15/22: This program now produces an error message that says `Error: RUNTIME ERROR: cannot perform operation on none`. This error message is just a placeholder for now to get any (index >= length of list) to throw a runtime error. Bad memory modification is no longer allowed.*
 
-*Update 5/17/22: The error message now says `Index ${index} out of bounds`.*
+*Update 5/17/22: The error message now says `Index ${index} out of bounds`. We also fixed the negative index test to pass, but we are considering adding functional negative indexing in the future.*
 
 # Week 7 Update (5/13/22)
 
@@ -52,6 +52,8 @@ a = []
 *Output:* `Error: TYPE ERROR: Non-assignable types`
 
 This shouldn't have any errors, as an empty list should be assignable as a list of booleans. We are still trying to figure out what type to respresent the empty list as, maybe as a list of some sort of "any" type that another group will come up with.
+
+*Update 5/17/22: We fixed this by setting the empty list to a list of type none, and checking this case specially.*
 
 ---
 

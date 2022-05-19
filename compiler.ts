@@ -107,34 +107,6 @@ function codeGenStmt(stmt: Stmt<[Type, SourceLocation]>, env: GlobalEnv): Array<
     case "pass":
       return []
 
-    case "check-index":
-      const getIndex = codeGenValue(stmt.index, env);
-      const getAddress = codeGenValue(stmt.address, env);
-      return [...getIndex, ...getAddress, 
-        `(i32.const 0)
-        (call $load)
-        (i32.ge_s)
-        (if
-          (then
-            ${getIndex}
-            (call $list_index_oob)
-          )
-          (else)
-        )
-        `, // TODO: Code under here will be changed if we implement negative indexing
-        ...getIndex, 
-        `(i32.const 0)
-        (i32.lt_s)
-        (if
-          (then
-            ${getIndex}
-            (call $list_index_oob)
-          )
-          (else)
-        )
-        `,
-      ]
-
     case "ifjmp":
       const thnIdx = env.labels.findIndex(e => e === stmt.thn);
       const elsIdx = env.labels.findIndex(e => e === stmt.els);

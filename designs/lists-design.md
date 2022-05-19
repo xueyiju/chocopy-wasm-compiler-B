@@ -4,6 +4,8 @@
 
 *Update 5/17/22: The error message now says `Index ${index} out of bounds`. We also fixed the negative index test to pass, but we are considering adding functional negative indexing in the future.*
 
+*Update 5/18/22: Move check-index from being implemented in ir to purely in lower.ts*
+
 # Week 7 Update (5/13/22)
 
 We were not able to get all 10 of our test cases from last week to pass. Tests 1, 2, 3, 6, 7, 8, 9, and 10 pass, but tests 4 and 5 do not yet behave as we eventually intend them to.
@@ -121,7 +123,7 @@ a[4]
 ```
 *Output:*
 ```
-RUNTIME ERROR: Index 4 out of bounds
+Error: RUNTIME ERROR: Index 4 out of bounds
 ```
 ---
 
@@ -134,7 +136,7 @@ a[-1]
 ```
 *Output:*
 ```
-RUNTIME ERROR: Index -1 out of bounds
+Error: RUNTIME ERROR: Index -1 out of bounds
 ```
 ---
 

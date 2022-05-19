@@ -145,12 +145,8 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
 
-      //index out of bounds check
-      const checkIndex: IR.Stmt<[Type, SourceLocation]> = {tag: "check-index", address: oval, index: ival};
-      istmts.push(checkIndex);
-
       //get offset, since it's actually i+1
-      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(ival, iinits, istmts);
+      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
       
       if (s.obj.a[0].tag === "list") {
         pushStmtsToLastBlock(blocks,
@@ -293,12 +289,8 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
 
-      //index out of bounds check
-      const checkIndex: IR.Stmt<[Type, SourceLocation]> = {tag: "check-index", address: oval, index: ival};
-      istmts.push(checkIndex);
-
       //get offset, since it's actually i+1
-      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(ival, iinits, istmts);
+      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
 
       if (e.obj.a[0].tag === "list") { 
         return [[...oinits, ...iinits], [...ostmts, ...istmts], {
@@ -343,14 +335,14 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         value: { a: [{tag: "number"}, e.a[1]], tag: "num", value: BigInt(e.elements.length) }
       }
       const assignsList : IR.Stmt<[Type, SourceLocation]>[] = e.elements.map((e, i) => {
-        const [init, stmt, vale] = flattenExprToVal(e, env);
+        const [init, stmt, val] = flattenExprToVal(e, env);
         inits = [...inits, ...init];
         stmts = [...stmts, ...stmt];
         return {
           tag: "store",
           start: { tag: "id", name: newListName },
           offset: { tag: "wasmint", value: i+1 },
-          value: vale
+          value: val
         }
       })
       return [
@@ -388,8 +380,25 @@ function flattenExprToVal(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv)
   }
 }
 
-function listIndexOffsets(ival: IR.Value<[AST.Type, AST.SourceLocation]>, iinits: IR.VarInit<[AST.Type, AST.SourceLocation]>[],
-        istmts: IR.Stmt<[AST.Type, AST.SourceLocation]>[]) : IR.Value<[AST.Type, AST.SourceLocation]> {
+
+function listIndexOffsets(iinits: IR.VarInit<[AST.Type, AST.SourceLocation]>[], istmts: IR.Stmt<[AST.Type, AST.SourceLocation]>[], ival: IR.Value<[AST.Type, AST.SourceLocation]>, oval: IR.Value<[AST.Type, AST.SourceLocation]>) : IR.Value<[AST.Type, AST.SourceLocation]> {
+  // Check index is in bounds
+  var listLength = generateName("listlength");
+  var setLength : IR.Stmt<[Type, SourceLocation]> = {
+    tag: "assign",
+    a: ival.a,
+    name: listLength,
+    value: {
+      tag: "load",
+      start: oval,
+      offset: { tag: "wasmint", value: 0 }} 
+  };
+  iinits.push({ a: ival.a, name: listLength, type: {tag: "number"}, value: { tag: "none" } })
+  istmts.push(setLength);
+  const checkIndex: IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `list_index_oob`, arguments: [{tag: "id", name: listLength, a: ival.a}, ival]}}
+  istmts.push(checkIndex);
+
+  // Get rest of index offsets
   const value1: IR.Value<[Type, SourceLocation]> = { a: ival.a, tag: "wasmint", value: 1 };
   const indexAdd1Expr: IR.Expr<[Type, SourceLocation]> = {  a: ival.a, tag: "binop", op: AST.BinOp.Plus, left: ival, right: value1};
   const offsetName = generateName("offsetname");

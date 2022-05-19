@@ -8,6 +8,8 @@ export type Type =
   | {tag: "class", name: string}
   | {tag: "either", left: Type, right: Type }
 
+export type SourceLocation = { line: number }
+
 export type Parameter<A> = { name: string, type: Type }
 
 export type Program<A> = { a?: A, funs: Array<FunDef<A>>, inits: Array<VarInit<A>>, classes: Array<Class<A>>, stmts: Array<Stmt<A>> }
@@ -20,6 +22,7 @@ export type FunDef<A> = { a?: A, name: string, parameters: Array<Parameter<A>>, 
 
 export type Stmt<A> =
   | {  a?: A, tag: "assign", name: string, value: Expr<A> }
+  | {  a?: A, tag: "assign-destr", destr: DestructureLHS<A>[], rhs:Expr<A>[] }
   | {  a?: A, tag: "return", value: Expr<A> }
   | {  a?: A, tag: "expr", expr: Expr<A> }
   | {  a?: A, tag: "pass" }
@@ -40,6 +43,7 @@ export type Expr<A> =
   | {  a?: A, tag: "index", obj: Expr<A>, index: Expr<A> }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
   | {  a?: A, tag: "construct", name: string }
+  | {  a?: A, tag: "tuple", expr: Expr<A>[]}
 
 export type Literal = 
     { tag: "num", value: number }
@@ -54,3 +58,9 @@ export enum UniOp { Neg, Not };
 export type Value =
     Literal
   | { tag: "object", name: string, address: number}
+
+export type DestructureLHS<A> = { a?: A, lhs: AssignTarget<A>, isStarred : boolean, isIgnore : boolean}
+
+export type AssignTarget<A> = 
+| {  a?: A,  tag : "id", name : string}
+| {  a?: A,  tag : "lookup", obj: Expr<A>, field: string }

@@ -352,7 +352,15 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
             throw new TypeError("Function call type mismatch: " + expr.name);
            }
       } else if (expr.name === "set") {
-        throw new Error("Set constructor not implemented yet");
+        if (expr.arguments.length > 1){
+          throw new Error("Set constructor can only contain element with length 1");
+        }
+        if (expr.arguments[0].tag !== "bracket"){
+          throw new Error("Set constructor can only accept bracket variable");
+        }
+        var initial_value = tcExpr(env, locals, expr.arguments[0]);
+        console.log("hello", {...expr, a: initial_value.a, arguments: [initial_value]})
+        return {...expr, a: initial_value.a, arguments: [initial_value]};
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }

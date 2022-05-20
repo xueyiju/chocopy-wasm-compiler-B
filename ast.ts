@@ -22,7 +22,7 @@ export type FunDef<A> = { a?: A, name: string, parameters: Array<Parameter<A>>, 
 
 export type Stmt<A> =
   | {  a?: A, tag: "assign", name: string, value: Expr<A> }
-  | {  a?: A, tag: "assign-destr", destr: DestructureLHS<A>[], rhs:Expr<A>[] }
+  | {  a?: A, tag: "assign-destr", destr: DestructureLHS<A>[], rhs:Expr<A> }
   | {  a?: A, tag: "return", value: Expr<A> }
   | {  a?: A, tag: "expr", expr: Expr<A> }
   | {  a?: A, tag: "pass" }
@@ -43,6 +43,8 @@ export type Expr<A> =
   | {  a?: A, tag: "index", obj: Expr<A>, index: Expr<A> }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
   | {  a?: A, tag: "construct", name: string }
+  | {  a?: A, tag: "non-paren-vals", values: Array<Expr<A>> }
+
 
 export type Literal = 
     { tag: "num", value: number }

@@ -242,7 +242,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       // Parse AssignOp
       c.nextSibling();
       // Parse RHS
-      const rhsargs = [];
+      const rhsargs:Expr<SourceLocation>[] = [];
       do{
         if(c.name === "AssignOp") 
           break;
@@ -281,7 +281,8 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
           a : location,
           tag : "assign-destr", 
           destr : target, 
-          rhs : rhsargs};
+          rhs : { tag:"non-paren-vals", values:rhsargs }
+        };
       }
       
       

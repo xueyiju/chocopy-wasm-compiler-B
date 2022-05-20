@@ -133,34 +133,6 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
         lhs_index++;
       }
       return allinits
-      // var rhs = s.rhs.map(a => flattenExprToExpr(a, env));
-      // var rhsinits = rhs.map(r => r[0]).flat();
-      // var rhsStmts = rhs.map(r => r[1]).flat();
-      // var rhsvals = rhs.map(r => r[2]).flat();
-      // //TODO Handle starred and ignore cases
-      // //Have to run and check if working right! Just adding intuition code for now
-      // var lhs = s.destr.map(a => {
-      //   switch(a.lhs.tag){
-      //     case "lookup":
-      //       flattenExprToExpr(a.lhs, env)
-      //       break;
-      //     default:
-      //       flattenExprToVal(a.lhs, env)
-      //   }
-      // })
-
-      // var lhsinits = lhs.map(r => r[0]).flat();
-      // var lhsStmts = lhs.map(r => r[1]).flat();
-      // var lhsvals = lhs.map(r => r[2]).flat();
-      // blocks[blocks.length - 1].stmts.push(...rhsStmts, ...lhsStmts)
-      // for (let i = 0; i < lhsvals.length; i++) {
-      //   let l = lhsvals[i];
-      //   if(l.tag==="id" && l.name!=="_"){
-      //     blocks[blocks.length - 1].stmts.push({a:l.a, tag:"assign", name: l.name, value:rhsvals[i]})
-      //   }
-      // }
-
-      // return rhsinits
     case "return":
     var [valinits, valstmts, val] = flattenExprToVal(s.value, env);
     blocks[blocks.length - 1].stmts.push(

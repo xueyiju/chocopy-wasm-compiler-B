@@ -119,3 +119,69 @@ in line 10: c34()
 RUNTIME ERROR: division by zero in line 14 at column 14
 
  */
+
+/*
+RUNTIME ERROR: 
+
+def a():
+    b()
+def b():
+    c()
+def c():
+    d()
+def d():
+    e()
+def e():
+    f()
+def f():
+    g()
+def g():
+    h()
+def h():
+    i()
+def i():
+    j()
+def j():
+    k()
+def k():
+    1//0
+a()
+
+Output:
+Error: Traceback (most recent call last): 
+in line 23: a() 
+in line 2: b() 
+in line 4: c() 
+in line 6: d() 
+in line 8: e() 
+in line 10: f() 
+in line 12: g() 
+in line 14: h() 
+in line 16: i() 
+in line 18: j() 
+in line 20: k() 
+
+RUNTIME ERROR: division by zero in line 22 at column 8
+1//0
+
+*/
+
+/*
+RUNTIME ERROR: recursion error
+
+def f():
+    f()
+f()
+
+Output:
+Error: Traceback (most recent call last): 
+in line 3: f() 
+in line 2: f() 
+in line 2: f() 
+in line 2: f() 
+in line 2: f() 
+ [Previous line repeated 995 more times] 
+ RUNTIME ERROR: maximum recursion depth exceeded in line 2
+f()
+
+*/

@@ -13,8 +13,9 @@ function getSourceLocation(c : TreeCursor, s : string) : SourceLocation {
   var previousLines = lines.slice(0,line-1).join("\n").length;
   var srcCode =  source_lines[line-1]  
   var column = s.substring(previousLines+1, c.to).length;  
-  if (line === 1)
-    column = column + 1
+  if (line === 1) {
+    column = column + 1;
+  }
   return { line, column, srcCode }
 }
 

@@ -298,8 +298,8 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
 function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, env : GlobalEnv) : [Array<IR.VarInit<[Type, SourceLocation]>>, Array<IR.Stmt<[Type, SourceLocation]>>, IR.Expr<[Type, SourceLocation]>] {
   switch(e.tag) {
     case "ternary":
-      var [tinits, tstmts, tval] = flattenExprToVal(e.exprIfTrue, env);
-      var [finits, fstmts, fval] = flattenExprToVal(e.exprIfFalse, env);
+      var [tinits, tstmts, tval] = flattenExprToExpr(e.exprIfTrue, blocks, env);
+      var [finits, fstmts, fval] = flattenExprToExpr(e.exprIfFalse, blocks, env);
       var [condinits, condstmts, condval] = flattenExprToVal(e.ifcond, env);
 
       const resultName = generateName("resultVal");
@@ -308,12 +308,12 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       var thenLbl = generateName("$ternaryThen");
       var elseLbl = generateName("$ternaryElse");
       var endLbl = generateName("$tenerayEnd");
-
+      
       const condjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: condval, thn: thenLbl, els: elseLbl };
       const endjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: endLbl };
 
-      const assignTrue : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: tval } };
-      const assignFalse : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: { tag: "value", value: fval } };
+      const assignTrue : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: tval };
+      const assignFalse : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", name: resultName, value: fval };
 
       // in case of a lonely ternary expression in the program
       if (blocks.length == 0) {
@@ -406,7 +406,7 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       pushStmtsToLastBlock(blocks, endJmp);
       blocks.push({ a: e.a, label: condEndLbl, stmts: [{ tag: "jmp", lbl: whileStartLbl }] });
 
-      blocks.push({  a: e.a, label: whileEndLbl, stmts: [] })
+      blocks.push({  a: e.a, label: whileEndLbl, stmts: [] });
 
       return [
         [...objinits, ...cinits, ...linits, hasnextVal, nextVal, nextYield],

@@ -5,6 +5,29 @@ import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
 
+const compvars : Map<string, [string, number]> = new Map();
+function generateCompvar(base : string) : string {
+  const compbase = `compvar$${base}`;
+  if (compvars.has(compbase)) {
+    var cur = compvars.get(compbase)[1];
+    const newName = compbase + (cur + 1)
+    compvars.set(compbase, [newName, cur + 1]);
+    return newName;
+  } else {
+    const newName = compbase + 1
+    compvars.set(compbase, [newName, 1]);
+    return newName;
+  }
+}
+function retrieveCompvar(base : string) : string {
+  const compbase = `compvar$${base}`;
+  if (compvars.has(compbase)) {
+    return compvars.get(compbase)[0];
+  } else {
+    return undefined;
+  }
+}
+
 export type GlobalTypeEnv = {
   globals: Map<string, Type>,
   functions: Map<string, [Array<Type>, Type]>,
@@ -313,6 +336,11 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           else { throw new TypeCheckError("Type mismatch for op" + expr.op);}
       }
     case "id":
+      // check if id is used for comprehension
+      const compvarName = retrieveCompvar(expr.name);
+      if (env.globals.has(compvarName)) {
+        return {...expr, a: [env.globals.get(compvarName), expr.a], name: compvarName};
+      }
       if (locals.vars.has(expr.name)) {
         return {...expr, a: [locals.vars.get(expr.name), expr.a]};
       } else if (env.globals.has(expr.name)) {
@@ -437,11 +465,9 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       if (!isIterable) {
         throw new TypeCheckError(`Type ${tIterable.a[0]} is not iterable`);
       }
-      if (locals.vars.has(expr.item)) {
-        throw new TypeCheckError(`id ${expr.item} already exists locally`);
-      } else {
-        locals.vars.set(expr.item, itemTyp);
-      }
+      // shadow item name always globally
+      const newItemName = generateCompvar(expr.item);
+      env.globals.set(newItemName, itemTyp);
       var tCompIfCond = undefined;
       if (expr.ifcond) {
         tCompIfCond = tcExpr(env, locals, expr.ifcond);
@@ -457,7 +483,9 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       ) {
         expr.type = { ...(expr.type), type: itemTyp };
       }
-      return { ...expr, a: [expr.type, expr.a], lhs: tLhs, iterable: tIterable, ifcond: tCompIfCond };
+      // delete comp var name from globals
+      env.globals.delete(newItemName);
+      return { ...expr, a: [expr.type, expr.a], lhs: tLhs, item: newItemName, iterable: tIterable, ifcond: tCompIfCond };
     default: throw new TypeCheckError(`unimplemented type checking for expr: ${expr}`);
   }
 }

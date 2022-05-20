@@ -460,6 +460,9 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeCheckError("method calls require an object");
       }
+    case "non-paren-vals":
+        const nonParenVals = expr.values.map((val) => tcExpr(env, locals, val));
+        return { ...expr, a: [NONE, expr.a], values: nonParenVals };
     default: throw new TypeCheckError(`unimplemented type checking for expr: ${expr}`);
   }
 }

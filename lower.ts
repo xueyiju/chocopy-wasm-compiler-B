@@ -100,37 +100,46 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       //   { a: s.a, tag: "assign", name: s.name, value: vale}
       // ]];
     case "assign-destr":
-      let lhs_index = 0
-      let rhs_index = 0
       var allinits = []
-      while (lhs_index < s.destr.length && rhs_index < s.rhs.length) {
-        let l = s.destr[lhs_index].lhs
-        let r = s.rhs[rhs_index]
-        if(l.tag === "lookup"){
-          var [oinits, ostmts, oval] = flattenExprToVal(l.obj, env);
-          var [ninits, nstmts, nval] = flattenExprToVal(r, env);
-          if(l.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
-          const classdata = env.classes.get(l.obj.a[0].name);
-          const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(l.field)[0] };
-          pushStmtsToLastBlock(blocks,
-            ...ostmts, ...nstmts, {
-              tag: "store",
-              a: s.a,
-              start: oval,
-              offset: offset,
-              value: nval
-            });
-          allinits.push(...oinits, ...ninits);
-        }
-        else if(l.tag === "id" && l.name!=="_"){
-          var [valinits, valstmts, vale] = flattenExprToExpr(r, env);
-          //@ts-ignore
-          //name always in id cases
-          blocks[blocks.length - 1].stmts.push(...valstmts, { a: s.a, tag: "assign", name: l.name, value: vale});
-          allinits.push(...valinits);
-        }
-        rhs_index++;
-        lhs_index++;
+      switch(s.rhs.tag){
+        case "call":
+          break;
+        case "non-paren-vals":
+          let lhs_index = 0
+          let rhs_index = 0
+          while (lhs_index < s.destr.length && rhs_index < s.rhs.values.length) {
+            let l = s.destr[lhs_index].lhs
+            let r = s.rhs.values[rhs_index]
+            if(l.tag === "lookup"){
+              var [oinits, ostmts, oval] = flattenExprToVal(l.obj, env);
+              var [ninits, nstmts, nval] = flattenExprToVal(r, env);
+              if(l.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
+              const classdata = env.classes.get(l.obj.a[0].name);
+              const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(l.field)[0] };
+              pushStmtsToLastBlock(blocks,
+                ...ostmts, ...nstmts, {
+                  tag: "store",
+                  a: s.a,
+                  start: oval,
+                  offset: offset,
+                  value: nval
+                });
+              allinits.push(...oinits, ...ninits);
+            }
+            else if(l.tag === "id" && l.name!=="_"){
+              var [valinits, valstmts, vale] = flattenExprToExpr(r, env);
+              //@ts-ignore
+              //name always in id cases
+              blocks[blocks.length - 1].stmts.push(...valstmts, { a: s.a, tag: "assign", name: l.name, value: vale});
+              allinits.push(...valinits);
+            }
+            rhs_index++;
+            lhs_index++;
+          }
+          break;
+          default:
+            throw new Error("Not supported rhs for destructuring!")
+
       }
       return allinits
     case "return":

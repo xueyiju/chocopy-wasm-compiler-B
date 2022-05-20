@@ -161,4 +161,17 @@ print(x)
 print(y)
 print(z)`)
 
+assertPrint("destr-fnCallValidParam", `
+def f(a:int):
+    x : int = 0
+    y : int = 0
+    z : int = 0
+
+    x, y, z = a + 20 , a, -20
+    print(x)
+    print(y)
+    print(z)
+
+f(5)` , ["25", "5", "-20"]);
+
 });

@@ -39,19 +39,25 @@
         <div class="wathon-content-wrapper">
             <div class="wathon-content-border">
                 <div class="dynamic-content-border">
-                    <div class="absolute-content-border">
+                    <div class="absolute-content-border" id = "background">
                         <div>
                             <textarea class="user-code" id="user-code"></textarea>
                         </div>
                     </div>
-                    <div id="dragbar" style="font-size: 1em;"></div>  
+                    <div id="dragbar" class= "dragbar" style="font-size: 1em;"></div>  
                     <div class="interection-content-border">
-                        <div class="interactions">
+                        <div class="interactions" id="interactions">
                             <div class="output" id="output">
                             </div>
-                            <div id="repl-entry">
+                            <div id="repl-entry" class="console-prompt">
                                 <span class="prompt"><code>»</code></span>
-                                <textarea type="text" id="next-code" class="repl-code"></textarea>
+                                <span class="prompt-text"></span>
+                                <span class="prompt-cursor" style="color: transparent; display: inline; z-index: 0; position: absolute;">&nbsp;</span>
+                                <span style="position: relative;"></span>
+                                <div id="promt-textcode" style="position: absulote; overflow:hidden;">
+                                    <textarea type="text" id="next-code" class="repl-code" wrap="off" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" style="position: absolute; width: 2px;"></textarea>
+                                    <!-- <textarea type="text" id="next-code" class="repl-code"></textarea> -->
+                                </div>
                             </div>
                         </div>
                     </div>   

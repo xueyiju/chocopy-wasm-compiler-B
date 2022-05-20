@@ -6,7 +6,8 @@
 }
 
 html{
-    background-color: rgb(248, 246, 221);;
+    background-color: rgb(248, 246, 221);
+    overflow: hidden;
 }
 
 .wathon-playground{
@@ -111,15 +112,20 @@ html{
     min-width: 0;
     height: 100%;
     min-height: 0;
+    display: flex;
 }
 
 .absolute-content-border{
-    position: absolute;
+    // float: left;
+    // position: absolute;
     width: 50%;
+    // width: 83vh;
     min-width: 0;
     height: 100%;
     min-height: 0;
     background: #fff;
+    flex: 1 1 auto;
+    // overflow: scroll;
 }
 
 .user-code {
@@ -133,13 +139,29 @@ html{
     border: none;
 }
 
+.dragbar{
+    width: 9px;
+    cursor: col-resize;
+    background-color: #ddd;
+    background-image: url(https://trinket.io/cache-prefix-89107359/img/resizex.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    border-left: 1px solid #b4b4b4;
+    border-right: 1px solid #b4b4b4;
+    // float: left;
+    flex: 0 0 auto;
+}
+
 .interection-content-border{
-    float: right;
-    width: 50%;
-    min-width: 0;
+    // float: left;
+    // margin-left: 50%;
+    // position:relative;
+    width: auto;
+    // min-width: 0;
     height: 100%;
     min-height: 0;
-    background: #fff;
+    flex: 1 1 auto;
+    // background: #fff;
 }
 
 .interactions {
@@ -148,7 +170,24 @@ html{
     padding: 0;
     height: 100%;
     border: none;
+    overflow: scroll;
 }
+
+.output{
+    margin-top: 1em;
+    font-family: monospace;
+    line-height: 1.2em;
+    font-size: 1.2em;
+    margin-right: 1.5em;
+}
+
+.console-prompt{
+    color: #008AFF;
+    font-family: monospace;
+    line-height: 1.2em;
+    font-size: 1.2em;
+}
+
 .repl-code {
     height: 2em;
     width: 30em;
@@ -183,8 +222,12 @@ html{
 .CodeMirror {
     /* Set height, width, borders, and global font properties here */
     font-family: monospace;
-    height: 400px;
-    padding:5px;
-    margin:10px;
+    width: 100%;
+    min-width: 0;
+    height: 85.4vh;
+    min-height:auto;
+    // height: 400px;
+    // padding:5px;
+    // margin:10px;
     border-radius: 2%;
   }

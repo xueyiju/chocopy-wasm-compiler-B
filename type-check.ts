@@ -28,6 +28,7 @@ defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 export const defaultTypeEnv = {
   globals: new Map(),
   functions: defaultGlobalFunctions,
+  classes: new Map(),
 };
 
 export function emptyGlobalTypeEnv() : GlobalTypeEnv {

@@ -176,21 +176,28 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
         throw new TypeCheckError("Non-assignable types");
       return {a: [NONE, stmt.a], tag: stmt.tag, name: stmt.name, value: tValExpr};
     case "assign-destr":
-      var tRhs = stmt.rhs.map(r => tcExpr(env, locals, r));
       var tDestr = stmt.destr.map(r => tcDestructure(env, locals, r));
+      var tRhs = tcExpr(env, locals, stmt.rhs);
 
       var hasStarred = false;
-      tDestr.forEach(r => {
-        hasStarred = hasStarred || r.isStarred
+          tDestr.forEach(r => {
+            hasStarred = hasStarred || r.isStarred
       })
-      //Code only when RHS is of type literals
-      if(tDestr.length === tRhs.length || 
-        (hasStarred && tDestr.length < tRhs.length)||
-        (hasStarred && tDestr.length-1 === tRhs.length)){
-          tcAssignTargets(env, locals, tDestr, tRhs, hasStarred)
-          return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
-        }
-      else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
+
+      switch(tRhs.tag) {
+        case "non-paren-vals":
+          //Code only when RHS is of type literals
+          if(tDestr.length === tRhs.values.length || 
+            (hasStarred && tDestr.length < tRhs.values.length)||
+            (hasStarred && tDestr.length-1 === tRhs.values.length)){
+              tcAssignTargets(env, locals, tDestr, tRhs.values, hasStarred)
+              return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
+            }
+          else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
+        default:
+          throw new Error("not supported expr type for destructuring")
+      }
+     
     case "expr":
       const tExpr = tcExpr(env, locals, stmt.expr);
       return {a: tExpr.a, tag: stmt.tag, expr: tExpr};

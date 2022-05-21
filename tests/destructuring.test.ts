@@ -161,4 +161,37 @@ print(x)
 print(y)
 print(z)`)
 
+const rangeDef =`
+class Range(object):
+  current : int = 0
+  start : int = 0
+  end : int = 0
+  def new(self:Range, start:int, end:int)->Range:
+    self.start = start
+    self.current = start
+    self.end = end
+    return self
+  def next(self:Range)->int:
+    c : int = 0
+    c = self.current
+    self.current = self.current + 1
+    return c
+  def hasNext(self:Range)->bool:
+    return self.current < self.end
+def range(s: int, e: int)->Range:
+  r: Range = None
+  r = Range().new(s,e)
+  return r
+`
+
+assertPrint("range-test", `
+${rangeDef}
+a:int = 5
+b:int = 3
+a, b = range(1, 3)
+print(a)
+print(b)
+`, ["1", "2"]
+)
+
 });

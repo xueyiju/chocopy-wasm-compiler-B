@@ -187,10 +187,20 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
 
       switch(tRhs.tag) {
         case "non-paren-vals":
+          //TODO logic has to change - when all iterables are introduced
+          var isIterablePresent = false;
+          tRhs.values.forEach(r => {
+            //@ts-ignore
+            if(r.a[0].tag==="class" && r.a[0].name === "Range"){
+              isIterablePresent = true;
+            }
+          })
+
           //Code only when RHS is of type literals
           if(tDestr.length === tRhs.values.length || 
             (hasStarred && tDestr.length < tRhs.values.length)||
-            (hasStarred && tDestr.length-1 === tRhs.values.length)){
+            (hasStarred && tDestr.length-1 === tRhs.values.length) || 
+            isIterablePresent){
               tcAssignTargets(env, locals, tDestr, tRhs.values, hasStarred)
               return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
             }
@@ -271,13 +281,28 @@ function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: Destr
       lhs_index++
       rhs_index++
     } else {
-      if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
-        throw new TypeCheckError("Type Mismatch while destructuring assignment")
-      } else {
+      //@ts-ignore
+      if(tRhs[rhs_index].a[0].tag==="class" && tRhs[rhs_index].a[0].name === "Range"){
+        //FUTURE: support range class added by iterators team, currently support range class added from code
+        var expectedRhsType:Type = env.classes.get('Range')[1].get('next')[1];
+        //checking type of lhs with type of return of range
+        //Length mismatch from iterables will be RUNTIME ERRORS
+        if(!isAssignable(env, tDestr[lhs_index].lhs.a[0], expectedRhsType)) {
+          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+        } else {
+          lhs_index++
+          rhs_index++
+        }
+      } 
+      else if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
+          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+        } 
+      else {
         lhs_index++
         rhs_index++
       }
     }
+  
   }
 
   // Only doing this reverse operation in case of starred

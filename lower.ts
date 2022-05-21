@@ -102,39 +102,40 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
     case "assign-destr":
       var allinits = []
       switch(s.rhs.tag){
-        case "call":
-          break;
         case "non-paren-vals":
           let lhs_index = 0
           let rhs_index = 0
           while (lhs_index < s.destr.length && rhs_index < s.rhs.values.length) {
             let l = s.destr[lhs_index].lhs
             let r = s.rhs.values[rhs_index]
-            if(l.tag === "lookup"){
-              var [oinits, ostmts, oval] = flattenExprToVal(l.obj, env);
-              var [ninits, nstmts, nval] = flattenExprToVal(r, env);
-              if(l.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
-              const classdata = env.classes.get(l.obj.a[0].name);
-              const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(l.field)[0] };
-              pushStmtsToLastBlock(blocks,
-                ...ostmts, ...nstmts, {
-                  tag: "store",
-                  a: s.a,
-                  start: oval,
-                  offset: offset,
-                  value: nval
-                });
-              allinits.push(...oinits, ...ninits);
-            }
-            else if(l.tag === "id" && l.name!=="_"){
-              var [valinits, valstmts, vale] = flattenExprToExpr(r, env);
-              //@ts-ignore
-              //name always in id cases
-              blocks[blocks.length - 1].stmts.push(...valstmts, { a: s.a, tag: "assign", name: l.name, value: vale});
+            if(r.a[0].tag==="class" && r.a[0].name==="Range"){
+              var [valinits, valstmts, va] = flattenExprToVal(r, env);
               allinits.push(...valinits);
+              pushStmtsToLastBlock(blocks, ...valstmts);
+              if(va.tag==="id"){
+                var dummyNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `Range$next`, arguments: [va] , a:[{ tag: "none" }, null]}
+                var dummyHasNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `Range$hasNext`, arguments: [va] , a:[{ tag: "none" }, null]}
+              
+                //will probably fail for cases like 'a,b,c = range(1,3),5
+                while(lhs_index < s.destr.length){
+                  l = s.destr[lhs_index].lhs
+                  var [inits, stmts, val] = flattenExprToVal(dummyHasNext, env);
+                  pushStmtsToLastBlock(blocks, ...stmts);
+                  allinits.push(...inits);
+                  lowerDestructAssignment(blocks, l, dummyNext, env, allinits);
+                  lhs_index++;
+                }
+                rhs_index++;
+              }
+
             }
-            rhs_index++;
-            lhs_index++;
+            if(lhs_index < s.destr.length && rhs_index < s.rhs.values.length){
+              l = s.destr[lhs_index].lhs
+              r = s.rhs.values[rhs_index]
+              lowerDestructAssignment(blocks, l, r, env, allinits);
+              rhs_index++;
+              lhs_index++;
+            }else break;
           }
           break;
           default:
@@ -235,6 +236,60 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       blocks.push({  a: s.a, label: whileEndLbl, stmts: [] })
 
       return [...cinits, ...bodyinits]
+  }
+}
+
+function lowerDestructAssignment(blocks: {
+  a?: [AST.Type, AST.SourceLocation]; label: string;
+  //   return [name, {tag: "label", a: a, name: name}];
+  // }
+  stmts: IR.Stmt<[AST.Type, AST.SourceLocation]>[];
+}[], l: AST.AssignTarget<[AST.Type, AST.SourceLocation]>, r: AST.Expr<[AST.Type, AST.SourceLocation]>, env: GlobalEnv, allinits:IR.VarInit<[AST.Type, AST.SourceLocation]>[]) {
+
+  if(l.tag === "lookup"){
+    var [oinits, ostmts, oval] = flattenExprToVal(l.obj, env);
+    var [ninits, nstmts, nval] = flattenExprToVal(r, env);
+    if(l.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
+    const classdata = env.classes.get(l.obj.a[0].name);
+    const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(l.field)[0] };
+    pushStmtsToLastBlock(blocks,
+      ...ostmts, ...nstmts, {
+        tag: "store",
+        a: l.a,
+        start: oval,
+        offset: offset,
+        value: nval
+      });
+    allinits.push(...oinits, ...ninits);
+  }
+  else if(l.tag === "id" && l.name!=="_"){
+    var [valinits, valstmts, vale] = flattenExprToExpr(r, env);
+    //@ts-ignore
+    //name always in id cases
+    blocks[blocks.length - 1].stmts.push(...valstmts, { a: l.a, tag: "assign", name: l.name, value: vale});
+    allinits.push(...valinits);
+  }
+}
+
+function flattenIrExprToVal(e : IR.Expr<[AST.Type, AST.SourceLocation]>, env : GlobalEnv) : [Array<IR.VarInit<[AST.Type, AST.SourceLocation]>>, Array<IR.Stmt<[AST.Type, AST.SourceLocation]>>, IR.Value<[AST.Type, AST.SourceLocation]>] {
+  if(e.tag === "value") {
+    return [[], [], e.value];
+  }
+  else {
+    var newName = generateName("valname");
+    var setNewName : IR.Stmt<[AST.Type, AST.SourceLocation]> = {
+      tag: "assign",
+      a: e.a,
+      name: newName,
+      value: e 
+    };
+    // TODO: we have to add a new var init for the new variable we're creating here.
+    // but what should the default value be?
+    return [
+      [{ a: e.a, name: newName, type: e.a[0], value: { tag: "none" } }],
+      [setNewName],  
+      {tag: "id", name: newName, a: e.a}
+    ];
   }
 }
 

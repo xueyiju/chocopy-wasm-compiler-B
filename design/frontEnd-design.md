@@ -73,7 +73,7 @@ This week, we took a deep dive into the existing implementation and learned the 
 - Fixed existing front-end bugs, refactored some render codes, and created an outputrender.ts to display the results of repl.
 - Tested to make sure the frontend can display all kinds of error and correct results properly.
 - Significantly refined the layout, making the buttons more intuitive and the interaction mode more beautiful.
-- Implemented code highlighting and line number display through the CodeMirror library. Also implement simple auto complete function with ctrl pressing.
+- Implemented code highlighting and line number display through the CodeMirror library. Also implemented simple auto complete function with ctrl pressing.
 - Introduced new design, save and load functions that allow users to run and save scripts locally.
 - Implemented heap tracking and printing all current object and its fields, showing with the accordion effect.
 

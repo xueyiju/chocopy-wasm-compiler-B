@@ -92,3 +92,12 @@ c
 
 - Print current heap status. In our code, the heap value can already be read as console.log, however, it is necessary to discuss with the memory management team to further determine the best solution for displaying the heap.
 - Introduce Cypress to automate front-end testing.
+
+
+## Week 8 Design
+
+### 1. Add clear button
+Once users press the button, all the content in repl object will be removed and the console and code area will be cleaned.
+
+### 2. print the global variable
+

@@ -248,5 +248,15 @@ function promptTextArea(){
 
 }
 
+function printGlobalVariable(repl: BasicREPL){
+  const globalVariable = repl.currentEnv.globals;
+  globalVariable.forEach((value: boolean, key: string)=>{
+    repl.run(key).then(r =>{
+      var objectTrackList = repl.trackObject(r, repl.trackHeap());
+      //Find a way to display variable
+    })
+  })
+}
+
 webStart();
 

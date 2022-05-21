@@ -100,4 +100,27 @@ c
 Once users press the button, all the content in repl object will be removed and the console and code area will be cleaned.
 
 ### 2. print the global variable
+We think the debug model is important for users getting to know what is going on in the program, so we find a way to print out all the global varaibles.
+
+### 3. Change a way to represent the object
+In order to represent all the global varialbles, we might need to write a new function to show the object.
+
+### 4. Drag bar between the code field and Console
+To add more flexibility, we add the drag bar to make adjustment of the size of the code field and console. So the users can focus on a specific mode they are instereted in.
+
+### 5. Beautify the console
+The console right now is consist of textareas and the textarea will be mess if they have different size. So we want to implement a console without textarea and will show the active line.
+
+### 6. Configuration
+Change the theme of editing field.
+
+### 7. Support other object like list, string
+
+### 8. highlight the error area.
+shown in the picture below, CodeMirror is able to underline the error error
+![underline error](./Screen%20Shot%202022-05-20%20at%2023.59.27.png)
+
+
+The overall front page will looks like below:
+![final front end](./Screen%20Shot%202022-05-21%20at%2000.09.37.png)
 

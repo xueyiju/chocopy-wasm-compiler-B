@@ -15,6 +15,7 @@ import "codemirror/addon/fold/brace-fold";
 import "codemirror/addon/fold/comment-fold";
 import "./style.scss";
 import { log } from 'console';
+import { sources } from 'webpack';
 
 function assert_not_none(arg: any) : any {
   if (arg === 0)
@@ -183,14 +184,7 @@ function dragbarFunction(){
 function setupRepl(repl: BasicREPL) {
   document.getElementById("output").innerHTML = "";
   const replCodeElement = document.getElementById("next-code") as HTMLTextAreaElement;
-  replCodeElement.addEventListener("keydown", (e)=>{
-    console.log(e);
-  })
   replCodeElement.addEventListener("keypress", (e) => {
-
-    console.log(e);
-    console.log(replCodeElement.selectionStart);
-    console.log(replCodeElement.selectionEnd);
 
     if (e.shiftKey && e.key === "Enter") {
     } else if (e.key === "Enter") {
@@ -226,16 +220,26 @@ function setupRepl(repl: BasicREPL) {
 }
 
 function promptTextArea(){
+  var nextCode = document.getElementById("next-code") as HTMLTextAreaElement;
   document.getElementById("interactions").addEventListener("click", (e)=>{
-    document.getElementById("next-code").focus();
+    nextCode.focus();
   });
 
-  document.getElementById("next-code").addEventListener("focus", (e)=>{
-    document.addEventListener("keypress", (e)=>{
-      console.log(e);
-      var nextCode = document.getElementById("next-code") as HTMLTextAreaElement;
-      nextCode.selectionStart
+  nextCode.addEventListener("focus", (e)=>{
+    var source = ""
+    nextCode.addEventListener("keyup", (e)=>{
+      // console.log(e);
+      // var interactions = document.querySelector('.interection-content-border') as HTMLElement;
+      // interactions.style.flexGrow = '0'
+      source = nextCode.value;
+      console.log(source);
+    var before = document.querySelector(".prompt-text") as HTMLSpanElement;
+    before.innerHTML = source.substring(0, nextCode.selectionStart);
+    console.log(source.substring(0, nextCode.selectionStart))
+    var after = document.getElementById("prompt-text-after") as HTMLSpanElement;
+    after.innerHTML = source.substring(nextCode.selectionStart);
     })
+    
   });
 
 

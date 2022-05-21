@@ -167,7 +167,7 @@ html{
 }
 
 .interactions {
-    // width: 100%;
+    width: 100%;
     // margin-left: 1em;
     // position:absolute;
     padding: 1em;
@@ -197,13 +197,38 @@ html{
 }
 
 .repl-code {
-    height: 2em;
-    width: 30em;
     text-align: left;
     font-family: monospace;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: transparent;
+
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    caret-color: transparent;
+    resize: none;
 }
+
+.repl-code:focus{
+    text-align: left;
+    outline: none;
+    background: transparent;
+    border: none;
+    caret-color: transparent;
+
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+
+    resize: none;
+}
+
 .prompt {
-    vertical-align: middle;
+    // vertical-align: middle;
+    // display: flex;
+
 }
 .output pre {
     max-width: 100%;
@@ -211,6 +236,17 @@ html{
     margin: 0;
     word-wrap: break-word;
     white-space: break-spaces;
+}
+
+.prompt-cursor{
+    display: block;
+    background-color: rgb(102, 102, 102);
+    white-space: pre-wrap;
+}
+
+.prompt-text{
+    display: inline;
+    white-space: pre-wrap;
 }
 
 .arrow {

@@ -6,7 +6,7 @@
 }
 
 html{
-    background-color: rgb(248, 246, 221);
+    // background-color: rgb(248, 246, 221);
     overflow: hidden;
 }
 
@@ -19,12 +19,18 @@ html{
 
 .wathon-header{
     list-style-type: none;
-    padding: 1.25em 0;
+    padding-top: 2em;
+    padding-bottom: 1.25em;
+    // padding: 1.25em 0;
     overflow: hidden;
 }
 
 .left{
     float: left;
+}
+
+.right{
+    float: right;
 }
 
 .label-title-left{
@@ -36,7 +42,7 @@ html{
 }
 
 .label-title-margin{
-    margin-left: 0.5em;
+    margin-right: 0.5em;
 }
 
 .left-button-margin{
@@ -58,6 +64,12 @@ html{
     color: white;
     border-right: 1px solid #5d7290;
     margin-right: 0.5em;
+    cursor: pointer;
+}
+
+.config-symbol{
+    display: block;
+    fill: currentcolor;
 }
 
 .left-run-symbol{
@@ -81,6 +93,7 @@ html{
     text-decoration: none;
     text-transform: uppercase;
     background-color: white;
+    cursor: pointer;
     border-right: 1px solid #dedede;
 }
 
@@ -118,7 +131,7 @@ html{
 .absolute-content-border{
     // float: left;
     // position: absolute;
-    width: 50%;
+    width: 40%;
     // width: 83vh;
     min-width: 0;
     height: 100%;

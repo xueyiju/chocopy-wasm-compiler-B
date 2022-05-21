@@ -53,11 +53,60 @@ function webStart() {
     };
     var repl = new BasicREPL(importObject);
 
-    setupRepl(repl);
+    function setupRepl() {
+      document.getElementById("output").innerHTML = "";
+      const replCodeElement = document.getElementById("next-code") as HTMLTextAreaElement;
+      replCodeElement.addEventListener("keypress", (e) => {
+    
+        if (e.shiftKey && e.key === "Enter") {
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          const source = replCodeElement.value;
+    
+          const output = document.createElement("div");
+          const prompt = document.createElement("span");
+          prompt.innerText = "» " + source;
+          output.appendChild(prompt);
+          // const elt = document.createElement("textarea");
+          // // elt.type = "text";
+          // elt.disabled = true;
+          // elt.className = "repl-code";
+          // output.appendChild(elt);
+          document.getElementById("output").appendChild(output);
+          
+          // elt.value = source;
+          replCodeElement.value = "";
+    
+          if(source === ""){
+            return false;
+          }
+          repl.run(source).then((r) => {
+            console.log(r);
+            var objectTrackList = repl.trackObject(r, repl.trackHeap());
+            renderResult(r, objectTrackList);
+            console.log("run finished");
+          })
+            .catch((e) => { renderError(e); console.log("run failed", e) });;
+        }
+      });
+    }
+    
+    setupRepl();
 
     function resetRepl() {
       document.getElementById("output").innerHTML = "";
     }
+
+    document.getElementById("clear").addEventListener("click", (e)=>{
+      resetRepl();
+      //resets environment
+      repl = new BasicREPL(importObject);
+      //clear editor
+      var element = document.querySelector(".CodeMirror") as any;
+      var editor = element.CodeMirror;
+      editor.setValue("");
+      editor.clearHistory();
+    })
 
     document.getElementById("run").addEventListener("click", function (e) {
       repl = new BasicREPL(importObject);
@@ -181,43 +230,6 @@ function dragbarFunction(){
   });
 }
 
-function setupRepl(repl: BasicREPL) {
-  document.getElementById("output").innerHTML = "";
-  const replCodeElement = document.getElementById("next-code") as HTMLTextAreaElement;
-  replCodeElement.addEventListener("keypress", (e) => {
-
-    if (e.shiftKey && e.key === "Enter") {
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const source = replCodeElement.value;
-
-      const output = document.createElement("div");
-      const prompt = document.createElement("span");
-      prompt.innerText = "» " + source;
-      output.appendChild(prompt);
-      // const elt = document.createElement("textarea");
-      // // elt.type = "text";
-      // elt.disabled = true;
-      // elt.className = "repl-code";
-      // output.appendChild(elt);
-      document.getElementById("output").appendChild(output);
-      
-      // elt.value = source;
-      replCodeElement.value = "";
-
-      if(source === ""){
-        return false;
-      }
-      repl.run(source).then((r) => {
-        console.log(r);
-        var objectTrackList = repl.trackObject(r, repl.trackHeap());
-        renderResult(r, objectTrackList);
-        console.log("run finished");
-      })
-        .catch((e) => { renderError(e); console.log("run failed", e) });;
-    }
-  });
-}
 
 function promptTextArea(){
   var nextCode = document.getElementById("next-code") as HTMLTextAreaElement;
@@ -228,23 +240,14 @@ function promptTextArea(){
   nextCode.addEventListener("focus", (e)=>{
     var source = ""
     nextCode.addEventListener("keyup", (e)=>{
-      // console.log(e);
-      // var interactions = document.querySelector('.interection-content-border') as HTMLElement;
-      // interactions.style.flexGrow = '0'
       source = nextCode.value;
-      console.log(source);
-    var before = document.querySelector(".prompt-text") as HTMLSpanElement;
-    before.innerHTML = source.substring(0, nextCode.selectionStart);
-    console.log(source.substring(0, nextCode.selectionStart))
-    var after = document.getElementById("prompt-text-after") as HTMLSpanElement;
-    after.innerHTML = source.substring(nextCode.selectionStart);
-    })
-    
+      var before = document.querySelector(".prompt-text") as HTMLSpanElement;
+      before.innerHTML = source.substring(0, nextCode.selectionStart);
+      var after = document.getElementById("prompt-text-after") as HTMLSpanElement;
+      after.innerHTML = source.substring(nextCode.selectionStart);
+    })   
   });
 
-
-
-  
 }
 
 webStart();

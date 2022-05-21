@@ -13,14 +13,12 @@
 
 <body>
     <div class="wathon-playground">
-        <nav id="menu" class="wathon-header">
-            <section class="left label-title-margin">
-                <div class="label-title-left">Python Compiler</div>
-            </section>
-            <section class="left left-button-margin">
+        <div id="menu" class="wathon-header">
+            <div class="left left-button-margin">
+                <img class = "left" src="https://www.python.org/static/community_logos/python-logo-master-v3-TM.png" width="20%", height="20%">
                 <div class="left left-button-shadow">
-                    <div class="left label-left-run">
-                        <div class="left" id="run"> Run</div>
+                    <div class="left label-left-run" id="run">
+                        <div class="left"> Run</div>
                         <div class="left run-symbol-margin">
                             <svg class="left-run-symbol" height="14" viewBox="8 4 10 16" width="12"
                                 xmlns="http://www.w3.org/2000/svg">
@@ -31,10 +29,18 @@
                     <a class="left label-left" id="save">Save</a>
                     <a class="left label-left" id="import">Load</a>
                     <input style="display: none;" type="file" id="choose_file" accept=".txt,.py">
-                    <a class="left label-left" id="share">Share</a>
+                    <a class="left label-left" id="share">Share</a> 
                 </div>
-            </section>
-        </nav>
+                <div class="right">
+                    <select class="right label-left left-button-shadow" id="config">
+                        <option value="blackboard">Theme</option>
+                    </select>
+                </div> 
+                <div class="right label-title-margin left-button-shadow">
+                    <a class="right label-left" id="clear">Clear</a>
+                </div>  
+            </div>   
+        </div>
 
         <div class="wathon-content-wrapper">
             <div class="wathon-content-border">

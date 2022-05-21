@@ -144,6 +144,7 @@ function dragbarFunction(){
   console.log(bar);
   var wrapper = bar.closest('.dynamic-content-border') as HTMLElement;
   var codeEditor = wrapper.querySelector('.absolute-content-border') as HTMLElement;
+  var interactions = wrapper.querySelector('.interection-content-border') as HTMLElement;
   var isDragging = false;
 
   document.addEventListener('mousedown', function(e){
@@ -160,9 +161,17 @@ function dragbarFunction(){
     var containerOffsetLeft = wrapper.offsetLeft;
     var pointerRelativeXpos = e.clientX - containerOffsetLeft;
     var editorMinWidth = 60;
+    var editorWidth = (Math.max(editorMinWidth, pointerRelativeXpos - 8))
 
-    codeEditor.style.width = (Math.max(editorMinWidth, pointerRelativeXpos - 8)) + 'px';
+    var containerOffsetWidth = wrapper.offsetWidth;
+    var barWidth = bar.offsetWidth;
+
+
+    codeEditor.style.width = editorWidth + 'px';
     codeEditor.style.flexGrow = '0';
+
+    interactions.style.width = containerOffsetWidth-editorWidth-barWidth + 'px';
+    interactions.style.flexGrow = '0'
 
   });
 

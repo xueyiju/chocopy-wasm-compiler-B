@@ -125,7 +125,7 @@ html{
     min-height: 0;
     background: #fff;
     flex: 1 1 auto;
-    // overflow: scroll;
+    overflow: scroll;
 }
 
 .user-code {
@@ -156,36 +156,44 @@ html{
     // float: left;
     // margin-left: 50%;
     // position:relative;
-    width: auto;
+    // width: auto;
     // min-width: 0;
     height: 100%;
     min-height: 0;
     flex: 1 1 auto;
+    box-sizing: border-box;
+    // overflow: auto;
     // background: #fff;
 }
 
 .interactions {
-    width: 100%;
-    margin-left: 1em;
-    padding: 0;
+    // width: 100%;
+    // margin-left: 1em;
+    // position:absolute;
+    padding: 1em;
     height: 100%;
     border: none;
     overflow: scroll;
-}
-
-.output{
-    margin-top: 1em;
     font-family: monospace;
     line-height: 1.2em;
     font-size: 1.2em;
-    margin-right: 1.5em;
+    min-height: 100%;
+}
+
+.output{
+    // margin-top: 1em;
+    // font-family: monospace;
+    // line-height: 1.2em;
+    // font-size: 1.2em;
+    // margin-right: 1.5em;
+    
 }
 
 .console-prompt{
     color: #008AFF;
-    font-family: monospace;
-    line-height: 1.2em;
-    font-size: 1.2em;
+    // font-family: monospace;
+    // line-height: 1.2em;
+    // font-size: 1.2em;
 }
 
 .repl-code {
@@ -199,9 +207,12 @@ html{
 }
 .output pre {
     max-width: 100%;
-    white-space: break-spaces;
     line-break: anywhere;
+    margin: 0;
+    word-wrap: break-word;
+    white-space: break-spaces;
 }
+
 .arrow {
     border: solid brown;
     border-width: 0 3px 3px 0;

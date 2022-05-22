@@ -119,7 +119,7 @@ function renderNewLine(result: Value, elt: HTMLElement){
 }
 
 export function renderResult(result : Value, objectTrackList: Array<ObjectField>) : void {
-  if(result === undefined) { console.log("skip"); return; }
+  if(result === undefined) { return; }
   const elt = document.createElement("pre");
   document.getElementById("output").appendChild(elt);
   renderNewLine(result, elt);
@@ -132,7 +132,7 @@ export function renderResult(result : Value, objectTrackList: Array<ObjectField>
 }
 
 export function renderPrint(typ: Type, arg : number) : any {
-  console.log("Logging from WASM: ", arg);
+  // console.log("Logging from WASM: ", arg);
   const elt = document.createElement("pre");
   document.getElementById("output").appendChild(elt);
   elt.innerText = stringify(typ, arg);

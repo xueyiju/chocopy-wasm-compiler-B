@@ -5,6 +5,8 @@ import { NUM, BOOL, NONE } from './utils';
 // import CodeMirror from "codemirror";
 import { renderResult, renderError, renderPrint } from "./ouputrender";
 
+
+// console.log('this is normoal')
 import CodeMirror from "codemirror";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/mode/python/python";
@@ -28,7 +30,6 @@ function webStart() {
   document.addEventListener("DOMContentLoaded", async function() {
 
     // https://github.com/mdn/webassembly-examples/issues/5
-
     const memory = new WebAssembly.Memory({ initial: 10, maximum: 100 });
     const memoryModule = await fetch('memory.wasm').then(response =>
       response.arrayBuffer()
@@ -81,7 +82,7 @@ function webStart() {
             return false;
           }
           repl.run(source).then((r) => {
-            console.log(r);
+            // console.log(r);
             var objectTrackList = repl.trackObject(r, repl.trackHeap());
             renderResult(r, objectTrackList);
             console.log("run finished");
@@ -110,11 +111,7 @@ function webStart() {
       repl = new BasicREPL(importObject);
       const source = document.getElementById("user-code") as HTMLTextAreaElement;
       resetRepl();
-      console.log(source);
       repl.run(source.value).then((r) => {
-        console.log(r);
-        console.log(repl.trackHeap());
-        console.log(repl.trackObject(r, repl.trackHeap()));
         var objectTrackList = repl.trackObject(r, repl.trackHeap());
         renderResult(r, objectTrackList);
         console.log("run finished")

@@ -128,7 +128,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
       if(s.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
       const classdata = env.classes.get(s.obj.a[0].name);
-      const offset : IR.Value<[Type, SourceLocation]> = { a:s.a, tag: "wasmint", value: classdata.get(s.field)[0] };
+      const offset : IR.Value<[Type, SourceLocation]> = { a: s.a, tag: "wasmint", value: classdata.get(s.field)[0] };
       pushStmtsToLastBlock(blocks,
         ...ostmts, ...nstmts, {
           tag: "store",
@@ -151,9 +151,9 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var thenLbl = generateName("$then")
       var elseLbl = generateName("$else")
       var endLbl = generateName("$end")
-      var endjmp : IR.Stmt<[Type, SourceLocation]> = { a:s.a, tag: "jmp", lbl: endLbl };
+      var endjmp : IR.Stmt<[Type, SourceLocation]> = { a: s.a, tag: "jmp", lbl: endLbl };
       var [cinits, cstmts, cexpr] = flattenExprToVal(s.cond, env);
-      var condjmp : IR.Stmt<[Type, SourceLocation]> = { a:s.a, tag: "ifjmp", cond: cexpr, thn: thenLbl, els: elseLbl };
+      var condjmp : IR.Stmt<[Type, SourceLocation]> = { a: s.a, tag: "ifjmp", cond: cexpr, thn: thenLbl, els: elseLbl };
       pushStmtsToLastBlock(blocks, ...cstmts, condjmp);
       blocks.push({  a: s.a, label: thenLbl, stmts: [] })
       var theninits = flattenStmts(s.thn, blocks, env);
@@ -188,7 +188,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
 
       blocks.push({  a: s.a, label: whilebodyLbl, stmts: [] })
       var bodyinits = flattenStmts(s.body, blocks, env);
-      pushStmtsToLastBlock(blocks, { a:s.a, tag: "jmp", lbl: whileStartLbl });
+      pushStmtsToLastBlock(blocks, { a: s.a, tag: "jmp", lbl: whileStartLbl });
 
       blocks.push({  a: s.a, label: whileEndLbl, stmts: [] })
 
@@ -246,7 +246,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       }
       const className = objTyp.name;
       const checkObj : IR.Stmt<[Type, SourceLocation]> = { a: e.a, tag: "expr", expr: { a: e.a, tag: "call", name: `assert_not_none`, arguments: [objval]}}
-      const callMethod : IR.Expr<[Type, SourceLocation]> = { a:e.a, tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
+      const callMethod : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
       return [
         [...objinits, ...arginits],
         [...objstmts, checkObj, ...argstmts],
@@ -262,26 +262,26 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
         a: e.a,
         tag: "load",
         start: oval,
-        offset: { tag: "wasmint", value: offset }}];
+        offset: { a: e.a, tag: "wasmint", value: offset }}];
     }
     case "construct":
       const classdata = env.classes.get(e.name);
       const fields = [...classdata.entries()];
       const newName = generateName("newObj");
-      const alloc : IR.Expr<[Type, SourceLocation]> = { a:e.a, tag: "alloc", amount: { a:e.a, tag: "wasmint", value: fields.length } };
+      const alloc : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "alloc", amount: { a: e.a, tag: "wasmint", value: fields.length } };
       const assigns : IR.Stmt<[Type, SourceLocation]>[] = fields.map(f => {
         const [_, [index, value]] = f;
         return {
           a: e.a,
           tag: "store",
-          start: { tag: "id", name: newName },
-          offset: { tag: "wasmint", value: index },
+          start: { a: e.a, tag: "id", name: newName },
+          offset: { a: e.a, tag: "wasmint", value: index },
           value: value
         }
       });
 
       return [
-        [ { name: newName, type: e.a[0], value: { a: e.a, tag: "none" } }],
+        [ { a: e.a, name: newName, type: e.a[0], value: { a: e.a, tag: "none" } }],
         [ { a: e.a, tag: "assign", name: newName, value: alloc }, ...assigns,
           { a: e.a, tag: "expr", expr: { a: e.a, tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }] } }
         ],

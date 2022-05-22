@@ -1,4 +1,321 @@
 <h1> Project Milestone 2 : Merges and Planning (Compiler B) </h1>
+
+<h2> Bignums </h2>
+
+This team's current implementation includes many of the merged changes from our feature, including the SourceLocation type in the AST, and the changes including the SourceLocation in the parser and type-checker.
+
+The following is an an example of a program that showcases our feature and theirs without interacting:
+
+```
+x: int = 4
+if (x == 4)::
+	print(x)
+```
+
+Current Output:
+> Error: PARSE ERROR: Could not parse stmt at 25 26: :at line 3
+
+Our team has updated the error reporting format, that will be automatically reflected without any extra or specific implementation to make them together. There is little to no interaction with bignums.
+
+But we noticed a few of the files that need changes as follows :
+
+1. webstart.ts
+
+There is an error thrown in the `webstart.ts` that should be modified to reuse our interface like the `ParseError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw Error("unknown comparison operator")
+
+to
+
+> throw ParseError("unknown comparison operator", \<SourceLocation/>);
+
+Note: I think this parse error should be placed in the `parser.ts`. I can't think of a case when this could be reachable.
+
+<h2> Built-in libraries/Modules/FFI </h2>
+
+<h3>Places where our features overlap and will need more implementation to make them work together</h3>
+
+A few of the files that need changes are as follows :
+
+1. builtinlib.ts
+
+All the errors thrown in the `builtinlib.ts` should be modified to reuse the `RunTimeError()` interface provided in `error_reporting.ts`
+
+The function definition should also include line number as `line: number` and column number as `col: number.` The error message should be constructed as
+
+> stackTrace() + "\nRUNTIME ERROR: \<message\>" + line.toString() + " at column " + col.toString() + "\n" + splitString()[line-1].trim()
+
+For example, the following function should be modified to reflect the above changes :
+
+```
+function randint(x:number, y:number):number{
+	if(y<x)
+		throw new RunTimeError("randint range error, upperBound less than lowerBound");
+return Math.floor(Math.random()*(y-x+1) + x);
+}
+```
+
+Please check `runtime_error.ts` file for reference.
+
+2. compiler.ts
+
+All the errors thrown in the `compiler.ts` should be modified to reuse the `RunTimeError()` interface provided in `error_reporting.ts`
+
+The function definition should also include line number as `line: number` and column number as `col: number.` The error message should be constructed as
+
+> stackTrace() + "\nRUNTIME ERROR: \<message\>" + line.toString() + " at column " + col.toString() + "\n" + splitString()[line-1].trim()
+
+For example, the following line should be modified to reflect the above changes :
+
+```
+throw new RunTimeError("not implemented object print")
+```
+
+Please check `runtime_error.ts` file for reference.
+
+3. lower.ts
+
+The returned IR in the `lower.ts` should include the annotation of the type `SourceLocation` instead of just `line` property to avoid unintended test failures.
+
+For example, the following statement should be modified from
+
+> return { ...lit, value: BigInt(lit.value), a:[NUM, {line:0}] }
+
+to
+
+> return { ...lit, value: BigInt(lit.value), a:[NUM, \<SourceLocation\>}
+
+Note: This part of annotation might never be reached and is not required but we recommend adding it to avoid unintended failures and for consistency.
+
+4. type-check.ts
+
+All the errors thrown in the `type-check.ts` should be modified to reuse the `TypeCheckError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new TypeCheckError("print needs at least 1 argument");
+
+to
+
+> throw new TypeCheckError("print needs at least 1 argument", \<SourceLocation\>);
+
+<h3> Representative test case </h3>
+
+Currently, the error messages do not include line number and column number. Usage of our error reporting interfaces will include more information like line number, column number, and the source string where the error occurs.
+
+```
+a : int = 0
+b : int = 5
+print(randint(b,a))
+```
+
+Current output :
+
+> randint range error, upperBound less than lowerBound
+
+Expected output :
+
+> Error: Traceback (most recent call last):
+
+> RUNTIME ERROR: randint range error, upperBound less than lowerBound in line 3 at column 19  
+> print(randint(b,a))
+
+Currently, the test file do not include test where the program would generate error messages. While including such test cases, the interface provided in the `tests/error_reporting.test.ts` can be used.
+ 
+<h2> Closures/first class/anonymous functions </h2>
+
+<h3>Places where our features overlap and will need more implementation to make them work together</h3>
+
+A few of the files that need changes are as follows :
+
+1. parser.ts
+
+All the errors thrown in the `parser.ts` should be modified to reuse the `ParseError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new Error("unimplemented");
+
+to
+
+>throw new ParseError("unimplemented", \<SourceLocation\>);
+
+2. type-check.ts
+
+All the errors thrown in the `type-check.ts` should be modified to reuse the `TypeCheckError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new TypeCheckError("${expr.name} is not callable");
+
+to
+
+>throw new TypeCheckError("${expr.name} is not callable", \<SourceLocation\>);
+
+3. closure.ts
+
+All the errors thrown in the `type-check.ts` should be modified to reuse the `TypeCheckError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new TypeCheckError("unknown variable ${id}");
+
+to
+
+>throw new TypeCheckError("unknown variable ${id}", \<SourceLocation\>);
+
+<h3> Representative test case </h3>
+
+Currently, the error messages do not include line number and column number. Usage of our error reporting interfaces will include more information like line number, column number, and the source string where the error occurs.
+
+```
+def getAdder(a:int) -> Callable[[int], int]:
+	def adder(b: int) -> int:
+		return a + b
+	return x
+	
+x: int = 5
+f: Callable[[int], int] = None
+f = getAdder(1)
+print(f(2))
+```
+
+Current output :
+
+> Error: TYPE ERROR: x is not callable
+
+Expected output :
+
+> Error: TYPE ERROR: x is not callable in line 9 at column 11  
+> print(f(2))
+
+While including tests where the program would generate error messages, the interface provided in the `tests/error_reporting.test.ts` can be used.  
+
+<h2> Comprehensions </h2>
+
+<h3>Places where our features overlap and will need more implementation to make them work together</h3>
+
+A few of the files that need changes are as follows :
+
+1. parser.ts
+
+All the errors thrown in the `parser.ts` should be modified to reuse the `ParseError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new ParseError("Comprehension start and end mismatch");
+
+to  
+
+>throw new ParseError("Comprehension start and end mismatch", \<SourceLocation\>);
+
+2. type-check.ts  
+
+All the errors thrown in the `type-check.ts` should be modified to reuse the `TypeCheckError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new TypeCheckError("if condition must be a bool");
+
+to
+
+>throw new TypeCheckError("if condition must be a bool", \<SourceLocation\>);
+
+3. lower.ts
+
+The returned IR in the `lower.ts` should include the annotation to avoid intended test failures.
+
+For example, the following statement should be modified from
+
+> const resultInit : IR.VarInit<[Type, SourceLocation]> = { name: resultName, type: e.a[0], value: { tag: "none" } };
+
+to
+
+> const resultInit : IR.VarInit<[Type, SourceLocation]> = { a:e.a, name: resultName, type: e.a[0], value: { a: e.a, tag: "none" } };
+
+<h3> Representative test case </h3>
+
+Currently, the error messages do not include line number and column number. Usage of our error reporting interfaces will include more information like line number, column number, and the source string where the error occurs.
+
+```
+print([3 for _ in range(5)))
+```
+
+Current output :
+
+> Error: PARSE ERROR: Comprehension start and end mismatch
+
+Expected output :
+
+> Error: PARSE ERROR: Comprehension start and end mismatch in line 1 at column 27  
+> print([3 for _ in range(5)))
+
+Currently, the test file do not include tests where the program would generate error messages. While including such test cases, the interface provided in the `tests/error_reporting.test.ts` can be used.  
+
+<h2> Destructuring assignment </h2>
+
+<h3>Places where our features overlap and will need more implementation to make them work together</h3>
+
+A few of the files that need changes are as follows :
+
+1. parser.ts
+
+All the errors thrown in the `parser.ts` should be modified to reuse the `ParseError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new ParseError("Unknown target while parsing assignment", location.line);
+
+to
+
+>throw new ParseError("Unknown target while parsing assignment", \<SourceLocation\>);
+
+2. type-check.ts
+
+All the errors thrown in the `type-check.ts` should be modified to reuse the `TypeCheckError()` interface provided in `error_reporting.ts`
+
+For example, the following statement should be modified from
+
+> throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
+
+to
+
+>throw new TypeCheckError("length mismatch left and right hand side of assignment expression.", \<SourceLocation\>);
+
+3. lower.ts
+
+The returned IR in the `lower.ts` should include the annotation to avoid intended test failures.
+
+For example, the following statement should be modified from
+
+> const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(l.field)[0] };
+
+to
+
+> const offset : IR.Value<[Type, SourceLocation]> = { a: s.a, tag: "wasmint", value: classdata.get(l.field)[0] };
+
+<h3> Representative test case </h3>
+
+Currently, the error messages do not include line number and column number. Usage of our error reporting interfaces will include more information like line number, column number, and the source string where the error occurs.
+
+```
+a,b = 5,6
+```
+
+Current output :
+
+> Error: TYPE ERROR : Unbound id: a
+
+Expected output :
+
+> Error: TYPE ERROR: Unbound id: a in line 1 at column 1
+
+a,b = 5,6
+
+While including tests where the program would generate error messages, the interface provided in the `tests/error_reporting.test.ts` can be used.
+
  <h2> Fancy calling conventions </h2>
 <h3>Places where our features overlap and will need more implementation to make them work together</h3>
 A few of the files that need changes are as follows :

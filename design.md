@@ -191,4 +191,228 @@ x//0
 x: int = 100
 x%0
 ```
-> "Error: RUNTIME ERROR: division by zero in line 2 at column 3"
+> "Error: RUNTIME ERROR: division by zero in line 2 at column 3"  
+  
+
+## **Project Milestone 2: Week 8**
+
+### **Remaining Features**
+
+1. We are in the process of implementing Python's Traceback feature - the report of the active stack frames at a certain point in time during the execution of a program. It basically traces the function calls to get to the root of the error.
+
+The format for the above feature is expected to be as below: 
+
+> Error: Traceback (most recent call last):   
+> in line \<line_number\>: \<function_call\>  
+>   
+> RUNTIME ERROR: \<Error_message\>
+
+2. We also plan to collaborate with other teams to add more errors for their respective features.
+
+3. We also plan to collaborate with the front-end team to try to beautify the error messages further. For example highlighting the source code in the error message.  
+
+### **Test Cases**
+
+1. Basic-traceback
+```
+def a() -> int:
+    i: int = 0
+    j: int = 0
+    j = b(i)
+    return j
+
+def b(z: int) -> int:
+    k: int = 5
+    if z == 0:
+        c34()
+    return k + z
+
+def c34():
+    print(1//0)
+
+a()
+```
+
+> Error: Traceback (most recent call last):   
+> in line 16: a()   
+> in line 4: j = b(i)   
+> in line 10: c34()  
+>  
+> RUNTIME ERROR: division by zero in line 14 at column 14
+
+2. Basic-traceback-popping-non-error-path
+
+``` 
+def c():
+ print(1//0)
+
+def b():
+ pass
+
+def a():
+   b()
+   c()
+
+a()
+```
+
+> Error: Traceback (most recent call last):   
+> in line 11: a()    
+> in line 9: c()   
+>   
+> RUNTIME ERROR: division by zero in line 2 at column 11  
+> print(1//0)  
+
+3. Basic-traceback-popping-non-error-path-2
+```
+def b():
+ pass
+
+def a():
+   b()
+   print(1//0)
+
+a()
+```
+
+> Error: Traceback (most recent call last):   
+> in line 8: a()   
+> in line 5: b()   
+>   
+> RUNTIME ERROR: division by zero in line 6 at column 13  
+> print(1//0)
+
+4. Traceback-recursion-error
+```
+def f():
+    f()
+f()
+```
+
+> Error: Traceback (most recent call last):   
+> in line 3: f()   
+> in line 2: f()   
+> in line 2: f()   
+> in line 2: f()   
+> in line 2: f()   
+>  [Previous line repeated 995 more times]   
+>  RUNTIME ERROR: maximum recursion depth exceeded in line 2  
+> f()  
+
+5. Non-recursion-traceback
+```
+def a():
+    b()
+def b():
+    c()
+def c():
+    d()
+def d():
+    e()
+def e():
+    f()
+def f():
+    g()
+def g():
+    h()
+def h():
+    i()
+def i():
+    j()
+def j():
+    k()
+def k():
+    1//0
+a()
+```
+
+> Error: Traceback (most recent call last):   
+> in line 23: a()   
+> in line 2: b()   
+> in line 4: c()   
+> in line 6: d()   
+> in line 8: e()   
+> in line 10: f()   
+> in line 12: g()   
+> in line 14: h()   
+> in line 16: i()   
+> in line 18: j()   
+> in line 20: k()   
+>    
+> RUNTIME ERROR: division by zero in line 22 at column 8  
+> 1//0
+
+6. Index-error-strings
+```
+s:str = "asdf"
+print(s[5])
+```
+> Error: Traceback (most recent call last):    
+>   
+> RUNTIME ERROR: index not in range in line 2 at column 11   
+> print(s[5])
+
+7. Value-range-error
+```
+r : range = None
+r = range(0, 10)
+print(r.index(10))
+```
+
+> Error: Traceback (most recent call last):    
+> in line 3: print(r.index(10))  
+>     
+> RUNTIME ERROR: ValueError: 10 is not in range in line 3 at column 18    
+> print(r.index(10))
+
+8. I/O-operation-error
+```
+f : File = None
+f = open('test', 'rb')
+f.close()
+f.read()
+```
+
+> Error: Traceback (most recent call last):  
+> f.read()  
+>
+> RUNTIME ERROR: ValueError: I/O operation on closed file. in line 4 at column 8  
+> f.read()
+
+9. Bounds-range-error
+```
+a : int = 0
+b : int = 5
+print(randint(b,a))
+```
+
+> Error: Traceback (most recent call last):
+
+> RUNTIME ERROR: randint range error, upperBound less than lowerBound in line 3 at column 19  
+> print(randint(b,a))
+
+10. Index-error-lists
+```
+a: [int] = None
+a = [2, 4, 6, 8]
+a[4]
+```
+
+> Error: Traceback (most recent call last):    
+> in line 3: a[4]  
+> RUNTIME ERROR: Index 4 out of bounds in line 3 at column 4   
+> a[4]
+
+11. Key-error-sets
+```
+set_1 : set[int] = None
+set_1 = {1,2}
+set_1.remove(3)
+```
+
+> Error: Traceback (most recent call last):  
+> in line 3: set_1.remove(3)  
+>    
+> RUNTIME ERROR: Key Error in line 3 at column 15  
+> set_1.remove(3)
+

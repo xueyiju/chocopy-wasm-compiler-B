@@ -194,4 +194,13 @@ print(b)
 `, ["1", "2"]
 )
 
+assertPrint("range-test", `
+${rangeDef}
+a:int = 5
+b:int = 3
+a, b = 2, range(1, 2)
+print(a)
+print(b)
+`, ["2", "1"]
+)
 });

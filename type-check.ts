@@ -191,7 +191,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
           var isIterablePresent = false;
           tRhs.values.forEach(r => {
             //@ts-ignore
-            if(r.a[0].tag==="class" && r.a[0].name === "Range"){
+            if(r.a[0].tag==="class" && r.a[0].name === "Range"){ //just supporting range now, extend it to all iterables
               isIterablePresent = true;
             }
           })

@@ -108,13 +108,14 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
           while (lhs_index < s.destr.length && rhs_index < s.rhs.values.length) {
             let l = s.destr[lhs_index].lhs
             let r = s.rhs.values[rhs_index]
-            if(r.a[0].tag==="class" && r.a[0].name==="Range"){
+            if(r.a[0].tag==="class"){ //for all iterable classes
               var [valinits, valstmts, va] = flattenExprToVal(r, env);
               allinits.push(...valinits);
               pushStmtsToLastBlock(blocks, ...valstmts);
+              const iterClassName = r.a[0].name;
               if(va.tag==="id"){
-                var dummyNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `Range$next`, arguments: [va] , a:[{ tag: "none" }, null]}
-                var dummyHasNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `Range$hasNext`, arguments: [va] , a:[{ tag: "none" }, null]}
+                var dummyNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `${iterClassName}$next`, arguments: [va] , a:[{ tag: "none" }, null]}
+                var dummyHasNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `${iterClassName}$hasNext`, arguments: [va] , a:[{ tag: "none" }, null]}
               
                 //will probably fail for cases like 'a,b,c = range(1,3),5
                 while(lhs_index < s.destr.length){

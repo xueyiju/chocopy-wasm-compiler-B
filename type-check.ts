@@ -230,7 +230,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
 
 export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<SourceLocation>) : Expr<[Type, SourceLocation]> {
   switch(expr.tag) {
-    case "bracket":
+    case "set":
       let tc_val = expr.values.map((e) => tcExpr(env, locals, e));
       let tc_type = tc_val.map((e) => e.a[0]);
       let set_type = new Set<Type>();

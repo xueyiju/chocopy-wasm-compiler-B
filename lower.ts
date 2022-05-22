@@ -321,29 +321,17 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       return [[], [], {tag: "value", value: { ...e }} ];
     case "literal":
       return [[], [], {tag: "value", value: literalToVal(e.value) } ];
-    case "bracket":
+    case "set":
       const newSetName = generateName("newSet");
       // 10 buckets for now
       const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
       //const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: e.contents.length}};
       var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
       var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
-      // var storeLength : IR.Stmt<[Type, SourceLocation]> = {
-      //   tag: "store",
-      //   start: { tag: "id", name: newSetName },
-      //   offset: { tag: "wasmint", value: 0 },
-      //   value: { a: [null, null], tag: "num", value: BigInt(e.contents.length) }
-      // }
       const assignsSet : IR.Stmt<[Type, SourceLocation]>[] = e.values.map((e, _) => {
         const [init, stmt, value] = flattenExprToVal(e, env);
         inits = [...inits, ...init];
         stmts = [...stmts, ...stmt];
-        // return {
-        //   tag: "store",
-        //   start: { tag: "id", name: newListName },
-        //   offset: { tag: "wasmint", value: i+1 },
-        //   value: vale
-        // }
         return {
           tag: "expr",
           expr: { tag: "call", name: `set$add`, arguments: [{ tag: "id", name: newSetName}, value]}

@@ -1,7 +1,7 @@
 # For Loops and Iterators #
 ## Test Cases ##
 
-We shall join the following code at the start of each input:
+We shall concatenate the following code at the start of each input:
 
 ```
 class __range__(object):
@@ -97,7 +97,7 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(10):
+for i in range(0,10,1):
     print(i)
     break
 ```
@@ -110,8 +110,8 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(10):
-    If i\>5:
+for i in range(0,10,1):
+    If i>5:
         break
     else: 
         print(i)
@@ -131,7 +131,7 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(5):
+for i in range(0,5,1):
     print(i*100)
     continue
     print(i)
@@ -150,7 +150,7 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(10):
+for i in range(0,10,1):
     if i%2==0:
         continue
     else:
@@ -635,73 +635,67 @@ TypeCheckError: Not an iterable
 
 ## Changes required in AST, IR and builtin libraries ##
  
-* The following changes will be required in ast.ts:
+## AST changes ##
  
-    * In type Stmt\<A\>:
-        * { a?: Type, tag: "for", vars: Expr\<A\>, iterable: Expr\<A\>, body: Array\<Stmt\<A\>\>, elseBody?: Stmt\<A\>}
-        * { a?: Type, tag: "break", loopDepth: [string, number] }
-        * { a?: Type, tag: "continue", loopDepth: [string, number]  }
-        * { a?: A, tag: "construct", name: string, arguments?: Array<Expr<A>> } : we added an optional parameter here called arguments to make a parameterized constructor call work
+* The following changes will be required in `ast.ts` to `type Stmt<A>`:
+```        
+{ a?: Type, tag: "for", vars: Expr\<A\>, iterable: Expr\<A\>, body: Array\<Stmt\<A\>\>, elseBody?: Stmt\<A\>}
+{ a?: Type, tag: "break", loopDepth?: [string, number] }
+{ a?: Type, tag: "continue", loopDepth?: [string, number]  }
+ ```    
+`vars` can be a variable or a tuple expression. Once we merge the changes from the destructuring group, we will support tuple assignment for the loop variables (as well as relevant typechecking).
+`iterable` can be any inbuilt/user-defined class object with a `next` and a `hasnext` function.
+`loopDepth` is an optional argument in the AST because we populate these values in the type-checker.
 
+## Parser changes ##
+We add functionalities for `for`, `break` and `continue` statements.
 
-* We shall not need any changes in ir.ts, since for, break and continue are control flow statements, and ifjmp and jmp in ir.ts cover the behavior that we need to implement these.
- 
-* We shall need changes in the builtin libraries. We will need to add all the built-in methods described below, we shall do that in a new file called range.wat in the stdlib folder, similar to memory.wat
+## range class ##
+For the first milestone, we implement an inbuilt `range(0, 5, 1)` as a function which returns a `__range__` class object. This object is an iterable with an inbuilt `new`, `next` and `hasnext` function. The range class is written in Python and will be compiled in `runner.ts` to produce a `.wasm` file in the later stages.
+```
+def range(start: int, stop: int, step: int) -> __range__:
+    return __range__().new(start, stop, step)
+```
+Note that users can create a custom `range` iterator as well.
 
-* Type checking for statement: the iterable must have their class name as one of the six sequence types in python (https://techvidvan.com/tutorials/python-sequences/#:~:text=In%20Python%20programming%2C%20sequences%20are,byte%20arrays%2C%20and%20range%20objects)
+## Type-check changes ##
+We will add a "built-in" class in the global typechecking environment (`defaultGlobalClasses`) called `__range__` with the following specifications:
 
-
-* Since, we are implementing the for statement for the range object this week, we shall typecheck that the iterable must be a range object. Given this arrangement we shall check that vars must be a single variable of type int.
-
-## Adding new functions, datatypes, or files to the codebase ##
-
-### Changes to type-check.ts ###
-We will add a "built-in" class in the global typechecking environment called range with the following specifications:
-
-defaultGlobalClasses:
-
-class name: range
-fields: 
-```start: int
+**Fields**: 
+```
+start: int
 stop: int
 step: int
 hasnext: bool
 currvalue: int
 ```
-methods: 
-```__init__(self, param1, param2, param3) -> range object
-index(self, param) -> int
+**Methods**: 
+```
+__init__(self, param1, param2, param3)
+new(self, param) -> int
 __hasnext__(self) -> bool
 __next__(self) -> int
 ```
- 
-Further, we added the following to the LocalTypeEnv to correctly use break and continue statements:
-* forCount (number): to keep a count of the for loops used
-* whileCount (number): to keep a count of the while loops used
-* currLoop (Array<[string, number]>): a stack which stores the loop type (for or while) and its respective count
+There is also the aforementioned `range` function added in `defaultGlobalFunctions`. Our current implementation doesn't require adding this inbuilt class and function to the  global type-checking environment. But it will be required once we generate a `range.wasm` file from the  Python implementation.
 
-### Changes to webstart.ts and import-object.test.ts ###
-Added the following to the importObject:
-* imports: check_range_error : this is for typechecking the third argument to prevent infinite loops
-* imports: check_range_index : this is for the inbuilt range.index() function
-* rangelib: to import the entire range module from range.wasm (created from range.wat)
+We add `forCount`, `whileCount` and  `currLoop` to the `LocalTypeEnv`.  `forCount`, `whileCount` store the global for and while loop counters. `currLoop` behaves as a stack and populates `loopDepth` for break and continue statements. 
 
-### Changes to runner.ts ###
-Added the imports of the inbuilt range functions from the rangelib as well as the check_range_error function
+```
+locals.currLoop.push(["for",locals.forCount]);
+var tForBody = tcBlock(env, locals, stmt.body);
+locals.currLoop.pop();
+```
 
-### Changes to parser.ts and lower.ts ###
+## Lower changes ##
+We implement a generalizable for loop which can take any iterable and uses the `next` and `hasnext` function to go over the each element. We generate a new `rangeObject` which initializes the iterable class object. We call the `hasnext` function in `forstart` body, assign the loop variables to `next` function in start of `forbody`. There is an additional block of `forelse` which we jump to when there are no breaks encountered in the body statements.  
 
-We added the functionalities for for, break and continue statements.
+We  use `loopDepth` to label `break` and `continue` statements with a unique loop index. Accordingly, we jump to `forend` and `forstart` blocks of the specific loop index for break and contine respectively. 
+
+## IR changes ##
+We don't need any changes in ir.ts, since for, break and continue are control flow statements, and ifjmp and jmp in ir.ts cover the behavior that we need to implement these.
+
+## Code Gen changes ##
+No changes in the code generation are required for our interface,
 
 ### New file range.test.ts
-
 This contains all the tests shown above.
-
-For new files: We will need to add all the built-in methods described below, we shall do that in a new file called range.wat in the stdlib folder, similar to memory.wat
- 
-## Description of the value representation and memory layout for any new runtime values added ##
- 
-The following represents the memory layout for adding a "range value" whenever a call to range is made. Each block is 4 bytes.
- 
-|    start    |     stop    |     step    |   hasnext  |   currvalue   |
-| ----------- | ----------- | ----------- | ----------- | ----------------- |

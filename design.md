@@ -244,14 +244,14 @@ a()
 
 ``` 
 def c():
- print(1//0)
+    print(1//0)
 
 def b():
- pass
+    pass
 
 def a():
-   b()
-   c()
+    b()
+    c()
 
 a()
 ```
@@ -260,17 +260,17 @@ a()
 > in line 11: a()    
 > in line 9: c()   
 >   
-> RUNTIME ERROR: division by zero in line 2 at column 11  
+> RUNTIME ERROR: division by zero in line 2 at column 14  
 > print(1//0)  
 
 3. Basic-traceback-popping-non-error-path-2
 ```
 def b():
- pass
+    pass
 
 def a():
-   b()
-   print(1//0)
+    b()
+    print(1//0)
 
 a()
 ```
@@ -279,7 +279,7 @@ a()
 > in line 8: a()   
 > in line 5: b()   
 >   
-> RUNTIME ERROR: division by zero in line 6 at column 13  
+> RUNTIME ERROR: division by zero in line 6 at column 14  
 > print(1//0)
 
 4. Traceback-recursion-error
@@ -296,7 +296,7 @@ f()
 > in line 2: f()   
 > in line 2: f()   
 >  [Previous line repeated 995 more times]   
->  RUNTIME ERROR: maximum recursion depth exceeded in line 2  
+>  RUNTIME ERROR: maximum recursion depth exceeded in line 2   
 > f()  
 
 5. Non-recursion-traceback
@@ -349,7 +349,7 @@ print(s[5])
 ```
 > Error: Traceback (most recent call last):    
 >   
-> RUNTIME ERROR: index not in range in line 2 at column 11   
+> RUNTIME ERROR: index not in range in line 2 at column 9   
 > print(s[5])
 
 7. Value-range-error
@@ -362,7 +362,7 @@ print(r.index(10))
 > Error: Traceback (most recent call last):    
 > in line 3: print(r.index(10))  
 >     
-> RUNTIME ERROR: ValueError: 10 is not in range in line 3 at column 18    
+> RUNTIME ERROR: ValueError: 10 is not in range in line 3 at column 16    
 > print(r.index(10))
 
 8. I/O-operation-error
@@ -376,7 +376,7 @@ f.read()
 > Error: Traceback (most recent call last):  
 > f.read()  
 >
-> RUNTIME ERROR: ValueError: I/O operation on closed file. in line 4 at column 8  
+> RUNTIME ERROR: ValueError: I/O operation on closed file. in line 4    
 > f.read()
 
 9. Bounds-range-error
@@ -388,7 +388,7 @@ print(randint(b,a))
 
 > Error: Traceback (most recent call last):
 
-> RUNTIME ERROR: randint range error, upperBound less than lowerBound in line 3 at column 19  
+> RUNTIME ERROR: randint range error, upperBound less than lowerBound in line 3 at column 15  
 > print(randint(b,a))
 
 10. Index-error-lists
@@ -400,7 +400,7 @@ a[4]
 
 > Error: Traceback (most recent call last):    
 > in line 3: a[4]  
-> RUNTIME ERROR: Index 4 out of bounds in line 3 at column 4   
+> RUNTIME ERROR: Index 4 out of bounds in line 3 at column 3   
 > a[4]
 
 11. Key-error-sets
@@ -413,6 +413,6 @@ set_1.remove(3)
 > Error: Traceback (most recent call last):  
 > in line 3: set_1.remove(3)  
 >    
-> RUNTIME ERROR: Key Error in line 3 at column 15  
+> RUNTIME ERROR: Key Error in line 3 at column 14  
 > set_1.remove(3)
 

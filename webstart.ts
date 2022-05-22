@@ -3,8 +3,9 @@ import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
 // import CodeMirror from "codemirror";
-import { renderResult, renderError, renderPrint } from "./ouputrender";
-
+import { renderResult, renderError, renderPrint } from "./outputrender";
+import { log } from 'console';
+import { sources } from 'webpack';
 
 // console.log('this is normoal')
 import CodeMirror from "codemirror";
@@ -16,8 +17,7 @@ import "codemirror/addon/fold/foldgutter";
 import "codemirror/addon/fold/brace-fold";
 import "codemirror/addon/fold/comment-fold";
 import "./style.scss";
-import { log } from 'console';
-import { sources } from 'webpack';
+
 
 function assert_not_none(arg: any) : any {
   if (arg === 0)

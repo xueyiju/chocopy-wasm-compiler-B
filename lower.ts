@@ -23,19 +23,7 @@ function generateName(base : string) : string {
 //   return [name, {tag: "label", a: a, name: name}];
 // }
 
-export function addBuiltinClasses(env : GlobalEnv) : GlobalEnv {
-  const rangeFields = new Map<string, [number, IR.Value<[Type, SourceLocation]>]>();
-  rangeFields.set("start", [0, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 0 }]);
-  rangeFields.set("stop", [1, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 0 }]);
-  rangeFields.set("step", [2, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 1 }]);
-  rangeFields.set("hasnext", [3, { a: [{tag: "number"}, { line: 0 }], tag: "bool", value: false }]);
-  rangeFields.set("currvalue", [2, { a: [{tag: "number"}, { line: 0 }], tag: "wasmint", value: 0 }]);
-  env.classes.set("range", rangeFields);
-  return env;
-}
-
 export function lowerProgram(p : AST.Program<[Type, SourceLocation]>, env : GlobalEnv) : IR.Program<[Type, SourceLocation]> {
-  env = addBuiltinClasses(env);
   resetLoopLabels();
   var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
   var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
@@ -215,48 +203,28 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var forElseLbl = generateName("$forelse")
       var forEndLbl = generateName("$forend");
       var rangeObject = generateName("$rangeobject")
-
-      // initialize
-      switch(s.vars.tag) {
-        case "id":
-          //@ts-ignore - assuming that it's a range class for now 
-          let rangeConstruct: AST.Expr<[AST.Type, SourceLocation]> = { a:s.iterable.a, tag: "construct", name: s.iterable.name, arguments: s.iterable.arguments}
-          var [in_inits, in_stmts,in_expr] = flattenExprToExpr(rangeConstruct, env);
-          pushStmtsToLastBlock(blocks, ...in_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: rangeObject, value: in_expr} );
-          break
-        default:
-          throw new Error("Tuple assignment not supported yet")
-      }
+      //@ts-ignore
+      var [in_inits, in_stmts, in_expr] = flattenExprToExpr(s.iterable, env);
+      pushStmtsToLastBlock(blocks, ...in_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: rangeObject, value: in_expr} );
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
-      // generate the condition
-      let condExpr:AST.Expr<[AST.Type, SourceLocation]>  = { a:[BOOL, s.a[1]],tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__hasnext__", arguments: []}
 
+      let condExpr:AST.Expr<[AST.Type, SourceLocation]>  = { a:[BOOL, s.a[1]],tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "hasnext", arguments: []}
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
-      
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forElseLbl });
-      
       blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
 
-      switch(s.vars.tag) {
-        case "id":
-          const iterVal: AST.Expr<[AST.Type, SourceLocation]> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "__next__", arguments: []}
-          var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
-          pushStmtsToLastBlock(blocks, ...s_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: s.vars.name, value: s_expr } );
-          break
-        default:
-          throw new Error("Tuple assignment not supported")
-      }
+      const iterVal: AST.Expr<[AST.Type, SourceLocation]> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "next", arguments: []}
+      var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
+      //@ts-ignore
+      pushStmtsToLastBlock(blocks, ...s_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: s.vars.name, value: s_expr } );
+      
       var bodyinits = flattenStmts(s.body, blocks, env);
-    
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl });
-
       blocks.push({  a: s.a, label: forElseLbl, stmts: [] })
 
       var elsebodyinits = flattenStmts(s.elseBody, blocks, env);
-
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forEndLbl });
-
       blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
 
       return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a: s.iterable.a, name: rangeObject, type: s.iterable.a[0], value: { tag: "none" } }]
@@ -265,13 +233,11 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
       // var currentloop = nameCounters.get("$"+currLoop+"body")
-      nameCounters;
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
+       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
       return []
     case "continue":
       var currLoop = s.loopDepth[0];
       var depth = s.loopDepth[1];
-      nameCounters;
       // var currentloop = nameCounters.get("$"+currLoop+"body");
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + depth});
       return []
@@ -360,20 +326,6 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
           value: value
         }
       });
-      if(e.arguments !== undefined) {
-        const argpairs = e.arguments.map(a => flattenExprToVal(a, env));
-        const arginits = argpairs.map(cp => cp[0]).flat();
-        const argstmts = argpairs.map(cp => cp[1]).flat();
-        const argvals = argpairs.map(cp => cp[2]).flat();
-        return [
-          [ { name: newName, type: e.a[0], value: { tag: "none" } }, ...arginits],
-          [ { tag: "assign", name: newName, value: alloc }, ...assigns, ...argstmts,
-            { tag: "expr", expr: { tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }, ...argvals] } }
-          ],
-          { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newName } }
-        ];
-      }
-
       return [
         [ { name: newName, type: e.a[0], value: { tag: "none" } }],
         [ { tag: "assign", name: newName, value: alloc }, ...assigns,

@@ -26,6 +26,7 @@ defaultGlobalFunctions.set("max", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
+defaultGlobalFunctions.set("range", [[NUM, NUM, NUM], CLASS("__range__")]);
 
 const defaultGlobalClasses = new Map();
 const rangeFields = new Map<string, Type>();
@@ -34,23 +35,13 @@ rangeFields.set("stop", NUM);
 rangeFields.set("step", NUM);
 rangeFields.set("hasnext", NUM);
 rangeFields.set("currvalue",  NUM);
-// const rangeMethods = new Map();
 
-// func.set(funname , [ [] , []   ])
-// rangeMethods.set("__init__", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}, {tag: "number"}, {tag: "class", name: "range"}]) // we shall convert range(10) to range(0, 10, 1)
-// rangeMethods.set("__hasnext__", [{tag: "class", name: "range"}, {tag: "bool"}])
-// rangeMethods.set("__next__", [{tag: "class", name: "range"}, {tag: "number"}])
-// rangeMethods.set("index", [{tag: "class", name: "range"}, {tag: "number"}, {tag: "number"}])
-// defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
 const rangeMethods = new Map();
-rangeMethods.set("__init__", [[CLASS("range"), NUM, NUM, NUM], CLASS("range")]) // we shall convert range(10) to range(0, 10, 1)
-//rangeMethods.set("__hasnext__", [[{tag: "class", name: "range"}], [{tag: "bool"}]])
-//rangeMethods.set("__next__", [[{tag: "class", name: "range"}], [{tag: "number"}]])
-rangeMethods.set("__hasnext__", [[CLASS("range")], BOOL])
-rangeMethods.set("__next__", [[CLASS("range")], NUM])
-
-rangeMethods.set("index", [[CLASS("range"), NUM], NUM])
-defaultGlobalClasses.set("range", [rangeFields, rangeMethods]);
+rangeMethods.set("__init__", [[CLASS("__range__")], NONE]);
+rangeMethods.set("new", [[CLASS("__range__"), NUM, NUM, NUM], CLASS("__range__")]);
+rangeMethods.set("hasnext", [[CLASS("__range__")], BOOL]);
+rangeMethods.set("next", [[CLASS("__range__")], NUM]);
+defaultGlobalClasses.set("__range__", [rangeFields, rangeMethods]);
 
 export const defaultTypeEnv = {
   globals: new Map(),
@@ -103,6 +94,15 @@ export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolea
 
 export function join(env : GlobalTypeEnv, t1 : Type, t2 : Type) : Type {
   return NONE
+}
+
+export function isIterable(env : GlobalTypeEnv, t1 : Type) : boolean {
+  if(t1.tag !== "class")
+    return false;
+  var classMethods = env.classes.get(t1.name)[1];
+  if(!(classMethods.has("next") && classMethods.has("hasnext")))
+    return false;
+  return true;
 }
 
 export function augmentTEnv(env : GlobalTypeEnv, program : Program<SourceLocation>) : GlobalTypeEnv {
@@ -245,10 +245,11 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       locals.currLoop.push(["for",locals.forCount]);
       var tForBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
-      if(!equalType(tVars.a[0], NUM))
-        throw new TypeCheckError("Expected type `int`, got type `" + tVars.a[0].tag + "`");
-      if(tIterable.a[0].tag !== "class" || tIterable.a[0].name !== "range")
-        throw new TypeCheckError("Not an iterable");
+      if(tIterable.a[0].tag !== "class" || !isIterable(env, tIterable.a[0]))
+        throw new TypeCheckError("Not an iterable: " + tIterable.a[0]);
+      let tIterableRet = env.classes.get(tIterable.a[0].name)[1].get("next")[1];
+      if(!equalType(tVars.a[0], tIterableRet))
+        throw new TypeCheckError("Expected type `"+ tIterableRet.tag +"`, got type `" + tVars.a[0].tag + "`");
       if(stmt.elseBody !== undefined) {
         const tElseBody = tcBlock(env, locals, stmt.elseBody);
         return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
@@ -369,61 +370,31 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor
-        if(defaultGlobalClasses.has(expr.name)) {
-          // this is a builtin class, for now this is a range
-          // builtin classes may have inits as parameterized constructors
-          const [_, methods] = env.classes.get(expr.name);
-          if(expr.name === "range") {
-            const [initArgs, initRet] = methods.get("__init__");
-            switch(expr.arguments.length) {
-              case 0: throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");
-              case 1: 
-                expr.arguments = [ {tag: "literal", value: {tag: "num", value: 0}}, expr.arguments[0], {tag: "literal", value: { tag: "num", value: 1 }}];
-                break;
-              case 2:
-                expr.arguments = [expr.arguments[0], expr.arguments[1], {tag: "literal", value: { tag: "num", value: 1}}];
-                break;
-              case 3: break;
-              default:
-                throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");  
-            }
-            const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
-          console.log(tArgs)
-          console.log(initArgs)
-            if(tArgs.every((tArg, i) => equalType(tArg.a[0], initArgs[i + 1]))) 
-                return  {a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name, arguments: tArgs };
-           else 
-              throw new TypeError("Function call type mismatch: " + expr.name);
-          } 
-        }
-        else {
-          const tConstruct : Expr<[Type, SourceLocation]> = { a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name };
-          const [_, methods] = env.classes.get(expr.name);
-          if (methods.has("__init__")) {
-            const [initArgs, initRet] = methods.get("__init__");
-            if (expr.arguments.length !== initArgs.length - 1)
-              throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");
-            if (initRet !== NONE)
-              throw new TypeCheckError("__init__  must have a void return type");
-            return tConstruct;
-          } else {
-            return tConstruct;
-          }
+        const tConstruct : Expr<[Type, SourceLocation]> = { a: [CLASS(expr.name), expr.a], tag: "construct", name: expr.name };
+        const [_, methods] = env.classes.get(expr.name);
+        if (methods.has("__init__")) {
+          const [initArgs, initRet] = methods.get("__init__");
+          if (expr.arguments.length !== initArgs.length - 1)
+            throw new TypeCheckError("__init__ didn't receive the correct number of arguments from the constructor");
+          if (initRet !== NONE) 
+            throw new TypeCheckError("__init__  must have a void return type");
+          return tConstruct;
+        } else {
+          return tConstruct;
         }
       } else if(env.functions.has(expr.name)) {
         const [argTypes, retType] = env.functions.get(expr.name);
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
 
         if(argTypes.length === expr.arguments.length &&
-           tArgs.every((tArg, i) => tArg.a[0] === argTypes[i])) {
-             return {...expr, a: [retType, expr.a], arguments: tArgs};
-           } else {
+            tArgs.every((tArg, i) => tArg.a[0] === argTypes[i])) {
+              return {...expr, a: [retType, expr.a], arguments: tArgs};
+            } else {
             throw new TypeError("Function call type mismatch: " + expr.name);
-           }
+            }
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }
-      throw new TypeError("Undefined function: " + expr.name);
     case "lookup":
       var tObj = tcExpr(env, locals, expr.obj);
       if (tObj.a[0].tag === "class") {

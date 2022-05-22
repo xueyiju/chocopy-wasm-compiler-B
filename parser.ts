@@ -600,4 +600,3 @@ export function parse(source : string) : Program<SourceLocation> {
   return traverse(t.cursor(), source);
 }
 
-

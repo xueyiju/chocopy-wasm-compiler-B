@@ -16,7 +16,7 @@ A potential conflict may occur in the interface part of such lib in `webstart.ts
 The closure team represented a closure with a class, where each non-local variable is a field in the class. The class will have a method called `__call__`,
 which will have the original closure body. One of the typical examples is:
 
-```
+```python
 def getAdder(a:int) -> Callable[[int], int]:
     def adder(b: int) -> int:
         return a + b

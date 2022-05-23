@@ -370,7 +370,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         if(argTypes.length === expr.arguments.length &&
            tArgs.every((tArg, i) => tArg.a[0] === argTypes[i])) {
              return {...expr, a: [retType, expr.a], arguments: tArgs};
-            } else {
+           } else {
             throw new TypeError("Function call type mismatch: " + expr.name);
            }
       } else {

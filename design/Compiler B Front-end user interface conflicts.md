@@ -62,7 +62,7 @@ a, b = 5, getNum()
 print(b)
 ```
 And they changes files mainly in the process of parsing, type checking, or lowering, so front-end does not have much overlap with fancy calling.
-Some minor conflicts may occur when we print class object with default value and we can just make small modification to incorporate default value printing.
+Some minor conflicts may occur when we print class object with default values and we can just make small modifications to print default values in a more fancy way.
 ## 8. for loops/iterators
 
 ## 9. Generics and polymorphism

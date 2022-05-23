@@ -333,15 +333,7 @@ async function debug(optAst: boolean = false, optIR: boolean = false) {
   var source = 
 `
 g: int = 0
-def f(a: int, b: int) -> int:
-  i: int = 0
-  x: int = 1
-  ret: int = 0
-  x = g
-  while i < b:
-    ret = ret * a
-    i = i + 1
-  return ret + x
+g = 1 + 2
 `
   const parsed = parse(source);
   // console.log(JSON.stringify(parsed, null, 2));

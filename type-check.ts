@@ -177,21 +177,38 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
         throw new TypeCheckError("Non-assignable types");
       return {a: [NONE, stmt.a], tag: stmt.tag, name: stmt.name, value: tValExpr};
     case "assign-destr":
-      var tRhs = stmt.rhs.map(r => tcExpr(env, locals, r));
       var tDestr = stmt.destr.map(r => tcDestructure(env, locals, r));
+      var tRhs = tcExpr(env, locals, stmt.rhs);
 
       var hasStarred = false;
-      tDestr.forEach(r => {
-        hasStarred = hasStarred || r.isStarred
+          tDestr.forEach(r => {
+            hasStarred = hasStarred || r.isStarred
       })
-      //Code only when RHS is of type literals
-      if(tDestr.length === tRhs.length || 
-        (hasStarred && tDestr.length < tRhs.length)||
-        (hasStarred && tDestr.length-1 === tRhs.length)){
-          tcAssignTargets(env, locals, tDestr, tRhs, hasStarred)
-          return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
-        }
-      else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
+
+      switch(tRhs.tag) {
+        case "non-paren-vals":
+          //TODO logic has to change - when all iterables are introduced
+          var isIterablePresent = false;
+          tRhs.values.forEach(r => {
+            //@ts-ignore
+            if(r.a[0].tag==="class" && r.a[0].name === "Range"){ //just supporting range now, extend it to all iterables
+              isIterablePresent = true;
+            }
+          })
+
+          //Code only when RHS is of type literals
+          if(tDestr.length === tRhs.values.length || 
+            (hasStarred && tDestr.length < tRhs.values.length)||
+            (hasStarred && tDestr.length-1 === tRhs.values.length) || 
+            isIterablePresent){
+              tcAssignTargets(env, locals, tDestr, tRhs.values, hasStarred)
+              return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
+            }
+          else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
+        default:
+          throw new Error("not supported expr type for destructuring")
+      }
+     
     case "expr":
       const tExpr = tcExpr(env, locals, stmt.expr);
       return {a: tExpr.a, tag: stmt.tag, expr: tExpr};
@@ -264,13 +281,28 @@ function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: Destr
       lhs_index++
       rhs_index++
     } else {
-      if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
-        throw new TypeCheckError("Type Mismatch while destructuring assignment")
-      } else {
+      //@ts-ignore
+      if(tRhs[rhs_index].a[0].tag==="class" && tRhs[rhs_index].a[0].name === "Range"){
+        //FUTURE: support range class added by iterators team, currently support range class added from code
+        var expectedRhsType:Type = env.classes.get('Range')[1].get('next')[1];
+        //checking type of lhs with type of return of range
+        //Length mismatch from iterables will be RUNTIME ERRORS
+        if(!isAssignable(env, tDestr[lhs_index].lhs.a[0], expectedRhsType)) {
+          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+        } else {
+          lhs_index++
+          rhs_index++
+        }
+      } 
+      else if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
+          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+        } 
+      else {
         lhs_index++
         rhs_index++
       }
     }
+  
   }
 
   // Only doing this reverse operation in case of starred
@@ -453,6 +485,9 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeCheckError("method calls require an object");
       }
+    case "non-paren-vals":
+        const nonParenVals = expr.values.map((val) => tcExpr(env, locals, val));
+        return { ...expr, a: [NONE, expr.a], values: nonParenVals };
     default: throw new TypeCheckError(`unimplemented type checking for expr: ${expr}`);
   }
 }

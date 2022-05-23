@@ -222,9 +222,9 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       };
     // comprehensions
     case "ComprehensionExpression":
-    //case "ArrayComprehensionExpression":
+    case "ArrayComprehensionExpression":
     //case "DictionaryComprehensionExpression":
-    //case "SetComprehensionExpression":
+    case "SetComprehensionExpression":
       c.firstChild(); // Focus on ()/[]/{}
       var compTyp : Type = NONE;
       const symbol = s.substring(c.from, c.to);
@@ -232,12 +232,12 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         case "(":
           compTyp = { tag: "generator", type: NONE };
           break;
-        // case "[":
-        //   compTyp = { tag: "list", type: NONE };
-        //   break;
-        // case "{":
-        //   compTyp = { tag: "set", type: NONE }; // or Dict -- Milestone 2
-        //   break;
+        case "[":
+          compTyp = { tag: "list", type: NONE };
+          break;
+        case "{":
+          compTyp = { tag: "set", valueType: NONE }; // need to add dictionary case in the future
+          break;
         default:
           throw new ParseError("Could not parse comprehension");
       }

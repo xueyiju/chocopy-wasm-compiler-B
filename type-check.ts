@@ -103,22 +103,29 @@ export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolea
   return isSubtype(env, t1, t2);
 }
 
-export function isIterableType(t: Type) : [Boolean, Type] {
+export function isIterable(env: GlobalTypeEnv, t1: Type) : [Boolean, Type] {
   // check if t is an iterable type
   // if true, also return type of each item in the iterable
-  switch (t.tag) {
+  switch (t1.tag) {
     case "either":
-      return isIterableType(t.left) || isIterableType(t.right);
+      return isIterable(env, t1.left) || isIterable(env, t1.right);
     case "class":
-      return [t.name === "Range", NUM]; // for MS1, Range object is considered as iterable
-    case "generator":
+      // check if class has next and hasnext method
+      // need to talk to for-loop group
+      var classMethods = env.classes.get(t1.name)[1];
+      if(!(classMethods.has("next") && classMethods.has("hasnext"))) {
+        return [false, undefined];
+      }
+      return [true, classMethods.get("next")[1]];
     // assume more iterable types will be implemented by other groups
-    // case "list":
-    // case "string":
+    case "generator":
+    case "list":
+      return [true, t1.type];
     // case "tuple":
-    // case "set":
     // case "dictionary":
-      return [true, t.type]; // assume other iterable types also have a field "type" (of each item)
+    case "set":
+      return [true, t1.valueType];
+    // case "string": // string group makes string a literal rather than a type
     default:
       return [false, undefined];
   }
@@ -461,8 +468,8 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       return { ...expr, a: [eitherTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
     case "comprehension":
       const tIterable = tcExpr(env, locals, expr.iterable);
-      const [isIterable, itemTyp] = isIterableType(tIterable.a[0])
-      if (!isIterable) {
+      const [iterable, itemTyp] = isIterable(env, tIterable.a[0])
+      if (!iterable) {
         throw new TypeCheckError(`Type ${tIterable.a[0]} is not iterable`);
       }
       // shadow item name always globally
@@ -476,12 +483,16 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         }
       }
       const tLhs = tcExpr(env, locals, expr.lhs);
+      // TODO: need to talk to the other groups
       if (expr.type.tag == "generator" 
-        // || expr.type.tag == "list"
-        // || expr.type.tag == "set"
-        // || expr.type.tag == "dictionary"
+        || expr.type.tag == "list"
       ) {
         expr.type = { ...(expr.type), type: itemTyp };
+      }
+      if (expr.type.tag == "set"
+        // || expr.type.tag == "dictionary"
+      ) {
+        expr.type = { ...(expr.type), valueType: itemTyp };
       }
       // delete comp var name from globals
       env.globals.delete(newItemName);

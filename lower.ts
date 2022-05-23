@@ -2,6 +2,7 @@ import * as AST from './ast';
 import * as IR from './ir';
 import { Type, SourceLocation } from './ast';
 import { GlobalEnv } from './compiler';
+import { NUM, BOOL, NONE, CLASS } from "./utils";
 
 const nameCounters : Map<string, number> = new Map();
 function generateName(base : string) : string {
@@ -246,7 +247,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       }
       const className = objTyp.name;
       const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}}
-      const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
+      const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", a: e.a, name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
       return [
         [...objinits, ...arginits],
         [...objstmts, checkObj, ...argstmts],
@@ -286,9 +287,9 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newName } }
       ];
     case "id":
-      return [[], [], {tag: "value", value: { ...e }} ];
+      return [[], [], {tag: "value", a: e.a, value: { ...e }} ];
     case "literal":
-      return [[], [], {tag: "value", value: literalToVal(e.value) } ];
+      return [[], [], {tag: "value", a: e.a, value: literalToVal(e.value) } ];
     case "ternary":
     case "comprehension":
       return flattenExprToExprWithBlocks(e, blocks, env);
@@ -363,14 +364,23 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       // body: call next and print result
       blocks.push({  a: e.a, label: whilebodyLbl, stmts: [] })
       const nextValName = e.item;
-      if (e.a[0].tag !== "generator"
-        // || e.a[0].tag !== "list"
-        // || e.a[0].tag !== "set"
-        // || e.a[0].tag !== "dictionary"
-      ) {
-        throw new Error("Iterable is cursed, go home!");
+      var nextValType = undefined;
+      switch (e.a[0].tag) {
+        case "generator":
+        case "list":
+          nextValType = e.a[0].type;
+          break;
+        case "set":
+        // case "dictionary":
+          nextValType = e.a[0].valueType;
+          break;
+        case "class":
+          nextValType = NONE; // any way to access type info here?
+          break;
+        default:
+          throw new Error("Iterable is cursed, go home!");
       }
-      const nextVal : IR.VarInit<[Type, SourceLocation]> = { name: nextValName, type: e.a[0].type, value: { tag: "none" } };
+      const nextVal : IR.VarInit<[Type, SourceLocation]> = { name: nextValName, type: nextValType, value: { tag: "none" } };
       const nextValAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextValName, value: callNext };
 
       // push call to next to blocks before lhs statements get pushed on the next line
@@ -380,10 +390,10 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       // evaluate lhs
       const [linits, lstmts, lval] = flattenExprToExpr(e.lhs, blocks, env); // careful with ternary case
       const nextYieldName = generateName("nextYield");
-      const nextYield : IR.VarInit<[Type, SourceLocation]> = { name: nextYieldName, type: e.a[0].type, value: { tag: "none" } };
+      const nextYield : IR.VarInit<[Type, SourceLocation]> = { name: nextYieldName, type: lval.a[0], value: { tag: "none" } };
       const nextYieldAssign : IR.Stmt<[Type, SourceLocation]> =  { tag: "assign", name: nextYieldName, value: lval };
       // for this milestone, we just print out the values
-      const callPrint : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: "print_num", arguments: [{ a: e.a, tag: "id", name: nextYieldName }] };
+      const callPrint : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: "print_num", arguments: [{ a: e.a, tag: "id", name: nextYieldName }] } };
 
       // if condition
       const condThenLbl = generateName("$then");
@@ -399,8 +409,8 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       const condJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cval, thn: condThenLbl, els: condElseLbl };
       const endJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: condEndLbl };
 
-      pushStmtsToLastBlock(blocks, ...lstmts, nextYieldAssign, ...cstmts, condJmp);
-      blocks.push({ a: e.a, label: condThenLbl, stmts: [{ tag: "expr", expr: callPrint }] });
+      pushStmtsToLastBlock(blocks, ...lstmts, ...cstmts, condJmp);
+      blocks.push({ a: e.a, label: condThenLbl, stmts: [nextYieldAssign] });
       pushStmtsToLastBlock(blocks, endJmp);
       blocks.push({ a: e.a, label: condElseLbl, stmts: [] });
       pushStmtsToLastBlock(blocks, endJmp);
@@ -411,7 +421,7 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
       return [
         [...objinits, ...cinits, ...linits, hasnextVal, nextVal, nextYield],
         [],
-        lval
+        { tag: "value", value: {tag: "bool", value: false} } // what should I return here?
       ]
   }
 }

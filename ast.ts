@@ -8,6 +8,9 @@ export type Type =
   | {tag: "class", name: string}
   | {tag: "either", left: Type, right: Type }
   | {tag: "generator", type: Type } // generator type
+  | {tag: "set", valueType: Type }
+  | {tag: "list", type: Type }
+
 
 export type SourceLocation = { line: number }
 

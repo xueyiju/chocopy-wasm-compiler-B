@@ -4,6 +4,7 @@ import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Clas
 import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
+import { IgnorePlugin } from 'webpack';
 
 export type GlobalTypeEnv = {
   globals: Map<string, Type>,
@@ -84,6 +85,8 @@ export function isIterable(env : GlobalTypeEnv, t1 : Type) : boolean {
     return false;
   var classMethods = env.classes.get(t1.name)[1];
   if(!(classMethods.has("next") && classMethods.has("hasnext")))
+    return false;
+  if(equalType(classMethods.get("next")[1], NONE) || !equalType(classMethods.get("hasnext")[1], BOOL))
     return false;
   return true;
 }

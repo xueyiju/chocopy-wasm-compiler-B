@@ -1,3 +1,4 @@
+
 import { table } from 'console';
 import { Stmt, Expr, Type, UniOp, BinOp, Literal, Program, FunDef, VarInit, Class, SourceLocation } from './ast';
 import { NUM, BOOL, NONE, CLASS } from './utils';
@@ -367,11 +368,11 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
 
         if(argTypes.length === expr.arguments.length &&
-          tArgs.every((tArg, i) => tArg.a[0] === argTypes[i])) {
-            return {...expr, a: [retType, expr.a], arguments: tArgs};
-          } else {
+           tArgs.every((tArg, i) => tArg.a[0] === argTypes[i])) {
+             return {...expr, a: [retType, expr.a], arguments: tArgs};
+            } else {
             throw new TypeError("Function call type mismatch: " + expr.name);
-          }
+           }
       } else {
         throw new TypeError("Undefined function: " + expr.name);
       }

@@ -13,6 +13,21 @@ A potential conflict may occur in the interface part of such lib in `webstart.ts
 
 ## 3. Closures/first class/anonymous functions
 
+The closure team represented a closure with a class, where each non-local variable is a field in the class. The class will have a method called `__call__`,
+which will have the original closure body. One of the typical examples is:
+
+```
+def getAdder(a:int) -> Callable[[int], int]:
+    def adder(b: int) -> int:
+        return a + b
+    return adder
+f: Callable[[int], int] = None
+f = getAdder(1)
+f(2)
+```
+
+As we can see, there is no obvious interaction between the front end and closure. However, if we want to print the closure and its details on the front end, we may need to modify our `outputrender.ts` file to support that feature.
+
 ## 4. comprehensions
 
 In `repl.ts`, they appended the source code of buildin classes to the original source code,

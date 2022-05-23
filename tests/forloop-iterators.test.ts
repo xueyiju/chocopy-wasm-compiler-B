@@ -386,6 +386,20 @@ i: int = 0
 for i in BoolIterable():
   print(i)
   `); 
+
+  assertTCFail('range: type checking for break outside loop', rangeStr + `
+i: int = 0
+for i in range(0,5,10):
+    print(i)
+break
+`);
+
+assertTCFail('range: type checking for continue outside loop', rangeStr + `
+i: int = 0
+for i in range(0,5,10):
+    print(i)
+continue
+`);
 });
 
 /**

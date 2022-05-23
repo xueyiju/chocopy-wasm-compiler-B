@@ -7,6 +7,9 @@ The confict might exist when we want to demonstrate the int fields of an object 
 
 ## 2. Built-in libraries/Modules/FFI
 
+The built-in team integrated built-in libs into `builtinlib.ts`, accordingly they changed the interface of lib such as `max` in `webstart.ts`.
+
+A potential conflict may occur in the interface part of such lib in `webstart.ts`. To resolve the conflict, we just need to simply apply their modifications in `webstart.ts`.
 
 ## 3. Closures/first class/anonymous functions
 

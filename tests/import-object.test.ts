@@ -25,7 +25,7 @@ function assert_not_none(arg: any) : any {
   return arg;
 }
 
-function list_index_oob(length: any, index: any): any {
+function index_out_of_bounds(length: any, index: any): any {
   if (index < 0 || index >= length)
     throw new Error(`RUNTIME ERROR: Index ${index} out of bounds`);
   return index;
@@ -48,7 +48,7 @@ export const importObject : any = {
     //  We can then examine output to see what would have been printed in the
     //  console.
     assert_not_none: (arg: any) => assert_not_none(arg),
-    list_index_oob: (length: any, index: any) => list_index_oob(length, index),
+    index_out_of_bounds: (length: any, index: any) => index_out_of_bounds(length, index),
     print: (arg: any) => print(Type.Num, arg),
     print_num: (arg: number) => print(Type.Num, arg),
     print_bool: (arg: number) => print(Type.Bool, arg),

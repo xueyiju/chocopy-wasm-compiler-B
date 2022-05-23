@@ -395,7 +395,7 @@ function listIndexOffsets(iinits: IR.VarInit<[AST.Type, AST.SourceLocation]>[], 
   };
   iinits.push({ a: ival.a, name: listLength, type: {tag: "number"}, value: { tag: "none" } })
   istmts.push(setLength);
-  const checkIndex: IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `list_index_oob`, arguments: [{tag: "id", name: listLength, a: ival.a}, ival]}}
+  const checkIndex: IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `index_out_of_bounds`, arguments: [{tag: "id", name: listLength, a: ival.a}, ival]}}
   istmts.push(checkIndex);
 
   // Get rest of index offsets

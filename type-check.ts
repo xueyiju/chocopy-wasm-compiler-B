@@ -25,7 +25,6 @@ defaultGlobalFunctions.set("max", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("min", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
-defaultGlobalFunctions.set("range", [[NUM, NUM, NUM], CLASS("__range__")]);
 
 export const defaultTypeEnv = {
   globals: new Map(),

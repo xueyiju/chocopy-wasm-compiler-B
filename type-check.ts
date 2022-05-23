@@ -27,25 +27,10 @@ defaultGlobalFunctions.set("pow", [[NUM, NUM], NUM]);
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 defaultGlobalFunctions.set("range", [[NUM, NUM, NUM], CLASS("__range__")]);
 
-const defaultGlobalClasses = new Map();
-const rangeFields = new Map<string, Type>();
-rangeFields.set("start", NUM);
-rangeFields.set("stop", NUM);
-rangeFields.set("step", NUM);
-rangeFields.set("hasnext", NUM);
-rangeFields.set("currvalue",  NUM);
-
-const rangeMethods = new Map();
-rangeMethods.set("__init__", [[CLASS("__range__")], NONE]);
-rangeMethods.set("new", [[CLASS("__range__"), NUM, NUM, NUM], CLASS("__range__")]);
-rangeMethods.set("hasnext", [[CLASS("__range__")], BOOL]);
-rangeMethods.set("next", [[CLASS("__range__")], NUM]);
-defaultGlobalClasses.set("__range__", [rangeFields, rangeMethods]);
-
 export const defaultTypeEnv = {
   globals: new Map(),
   functions: defaultGlobalFunctions,
-  classes: defaultGlobalClasses
+  classes: new Map()
 };
 
 export function emptyGlobalTypeEnv() : GlobalTypeEnv {

@@ -3,7 +3,7 @@
 ## 1. Bignums
 For the bignums, they change every number fields in ast and ir to bigint. 
 
-The confict might exist when we want to demonstrate the int fields of an object, we need to use the function `reconstructBigint` to get the number of that fields.
+The confict might exist when we want to demonstrate the int fields of an object because we are not sure weather the int is wasm int or the bigint. We need to use the function `reconstructBigint` to get the number of that fields.
 
 ## 2. Built-in libraries/Modules/FFI
 

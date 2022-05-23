@@ -144,7 +144,6 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
 
-      //get offset, since it's actually i+1
       const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
       
       if (s.obj.a[0].tag === "list") {
@@ -288,17 +287,24 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
 
-      //get offset, since it's actually i+1
-      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
-
+      // if(equalType(e.a[0], CLASS("str"))){
+      //   return [[...oinits, ...iinits], [...ostmts, ...istmts], {tag: "call", name: "str$access", arguments: [oval, ival]} ]
+      // }
       if (e.obj.a[0].tag === "list") { 
+        const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
         return [[...oinits, ...iinits], [...ostmts, ...istmts], {
           tag: "load",
           start: oval,
           offset: offsetValue
         }];
       }
-      else { throw new Error("Compiler's cursed, go home"); }
+      // if(e.obj.a[0].tag === "dict")){
+      //   ...
+      // }
+      // if(e.obj.a[0].tag === "tuple")){
+      //   ...
+      // }
+      throw new Error("Compiler's cursed, go home");
 
     case "construct":
       const classdata = env.classes.get(e.name);

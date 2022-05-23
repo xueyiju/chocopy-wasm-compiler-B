@@ -221,28 +221,55 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       c.firstChild(); // Focus on object
       var objExpr = traverseExpr(c, s);
       c.nextSibling(); // Focus on . or [
-      if (s.substring(c.from, c.to) == "[") {
-        c.nextSibling(); // Focus on index expr
-        var idxExpr = traverseExpr(c, s);
+      var dotOrBracket = s.substring(c.from, c.to);
+      if( dotOrBracket === "[") {
+        var start_index: Expr<any>;
+        var stop_index: Expr<any>;
+        var step: Expr<any> = {
+          tag: "literal",
+          value: { tag: "num", value: 1 }
+        };
+
+        var indexItems = "";
+        c.nextSibling();
+        while (s.substring(c.from, c.to) != "]") {
+          indexItems += s.substring(c.from, c.to);
+          c.nextSibling();
+        }
+        c.parent();
+        c.firstChild(); // str object name
+        c.nextSibling(); // "[""
+        c.nextSibling(); // start index
+
+        if(indexItems.length === 0) {
+          throw new Error("Error: there should have at least one value inside the brackets");
+        }
+
+        var sliced_indices = indexItems.split(":");
+        if(sliced_indices.length > 3){
+          throw new Error("Too much indices, maximum is three");
+        }
+
+        start_index = traverseExpr(c, s)
+
         c.parent();
         return {
           a: location,
           tag: "index",
           obj: objExpr,
-          index: idxExpr
-        };
-      } else {
-        c.nextSibling(); // Focus on property
-        var propName = s.substring(c.from, c.to);
-        c.parent();
-        return {
-          a: location,
-          tag: "lookup",
-          obj: objExpr,
-          field: propName
+          index: start_index
         }
       }
-      
+
+      c.nextSibling(); // Focus on property
+      var propName = s.substring(c.from, c.to);
+      c.parent();
+      return {
+        a: location,
+        tag: "lookup",
+        obj: objExpr,
+        field: propName
+      }
     case "self":
       return {
         a: location,
@@ -306,6 +333,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
         }  
       } else if (target.tag === "index"){
         return {
+          a: location,
           tag: "index-assign",
           obj: target.obj,
           index: target.index,

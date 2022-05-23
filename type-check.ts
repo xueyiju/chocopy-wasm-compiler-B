@@ -210,7 +210,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       return {a: [NONE, stmt.a], tag: stmt.tag};
     case "field-assign":
       var tObj = tcExpr(env, locals, stmt.obj);
-      const tVal = tcExpr(env, locals, stmt.value);
+      var tVal = tcExpr(env, locals, stmt.value);
       if (tObj.a[0].tag !== "class") 
         throw new TypeCheckError("field assignments require an object");
       if (!env.classes.has(tObj.a[0].name)) 
@@ -222,19 +222,25 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
         throw new TypeCheckError(`could not assign value of type: ${tVal.a}; field ${stmt.field} expected type: ${fields.get(stmt.field)}`);
       return {...stmt, a: [NONE, stmt.a], obj: tObj, value: tVal};
     case "index-assign":
-      var typedObj = tcExpr(env, locals, stmt.obj);
-      const typedIndex = tcExpr(env, locals, stmt.index);
-      const typedVal = tcExpr(env, locals, stmt.value);
-      if (typedObj.a[0].tag !== "list") {
-        throw new TypeCheckError("Index assignments require a list"); //TODO: not really, strings could have an index assign
+      var tObj = tcExpr(env, locals, stmt.obj);
+      var tIndex = tcExpr(env, locals, stmt.index);
+      var tVal = tcExpr(env, locals, stmt.value);
+      if (tIndex.a[0].tag != "number") {
+        // if (tObj.a[0].tag === "dict") {
+        //   ...
+        // }
+        throw new TypeCheckError(`Index is of non-integer type \`${tIndex.a[0].tag}\``);
       }
-      if (typedIndex.a[0].tag !== "number") {
-        throw new TypeCheckError("Index needs to evaluate to a number");
+      if (tObj.a[0].tag === "list") {
+        if (!isAssignable(env, tVal.a[0], tObj.a[0].type)) {
+          throw new TypeCheckError(`Could not assign value of type: ${tVal.a[0].tag}; List expected type: ${tObj.a[0].type.tag}`);
+        }
+        return { ...stmt, a: [NONE, stmt.a], obj: tObj, index: tIndex, value: tVal };
       }
-      if (!isAssignable(env, typedVal.a[0], typedObj.a[0].type)) {
-        throw new TypeCheckError(`Could not assign value of type: ${typedVal.a[0].tag}; List expected type: ${typedObj.a[0].type.tag}`);
-      }
-      return { ...stmt, a: [NONE, stmt.a], obj: typedObj, index: typedIndex, value: typedVal };
+      // if (tObj.a[0].tag === "tuple") {
+      //   ...
+      // }
+      throw new TypeCheckError(`Type \`${tObj.a[0].tag}\` does not support item assignment`); // Can only index-assign list, dicts, and tuples
   }
 }
 
@@ -352,15 +358,24 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
 
       return {...expr, elements: elementsWithTypes, a: [{tag: "list", type: proposedType}, expr.a]};
     case "index":
-      const typedObj = tcExpr(env, locals, expr.obj);
-      const typedIndex = tcExpr(env, locals, expr.index);
-      if (typedObj.a[0].tag !== "list") {
-        throw new TypeCheckError("Index must be applied on List or Map");
+      var tObj: Expr<[Type, SourceLocation]> = tcExpr(env, locals, expr.obj);
+      var tIndex: Expr<[Type, SourceLocation]> = tcExpr(env, locals, expr.index);
+      if (tIndex.a[0].tag !== "number") {
+        // if (tObj.a[0].tag === "dict") {
+        //   ...
+        // }
+        throw new TypeCheckError(`Index is of non-integer type \`${tIndex.a[0].tag}\``);
       }
-      if (typedIndex.a[0].tag !== "number") {
-        throw new TypeCheckError("Index must have number type");
+      // if (equalType(tObj.a[0], CLASS("str"))) {
+      //   return { a: [{ tag: "class", name: "str" }, expr.a], tag: "index", obj: tObj, index: tIndex };
+      // }
+      if (tObj.a[0].tag === "list") {
+        return { ...expr, a: [tObj.a[0].type, expr.a], obj: tObj, index: tIndex }; 
       }
-      return { ...expr, a: [typedObj.a[0].type, expr.a], obj: typedObj, index: typedIndex }; 
+      // if (tObj.a[0].tag === "tuple") {
+      //   ...
+      // }
+      throw new TypeCheckError(`Cannot index into type \`${tObj.a[0].tag}\``); // Can only index into strings, list, dicts, and tuples
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor

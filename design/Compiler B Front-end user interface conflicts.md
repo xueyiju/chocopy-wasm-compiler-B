@@ -38,7 +38,7 @@ by using their modification.
 
 ## 5. Destructuring assignment
 Destructuring assignment team mainly changes files in the ast and type checker as well as parsing parts. Below is a typical exapmle of destructuring assignment.
-```
+```python
 def f(x:int)->int:
     return x
 
@@ -53,7 +53,16 @@ And the changes Destructuring Assignment team made in the Ast, Ir, Type Checker 
 ## 6. Error reporting
 
 ## 7. Fancy calling conventions
+Fancy calling conventions group mainly deals with arguments defined and passed into function or method calls. Typical example is as below:
+```python
+def getNum(x : int = 6) -> int:
+   return x
 
+a, b = 5, getNum()
+print(b)
+```
+And they changes files mainly in the process of parsing, type checking, or lowering, so front-end does not have much overlap with fancy calling.
+Some minor conflicts may occur when we print class object with default value and we can just make small modification to incorporate default value printing.
 ## 8. for loops/iterators
 
 ## 9. Generics and polymorphism

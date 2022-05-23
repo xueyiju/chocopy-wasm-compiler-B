@@ -190,6 +190,23 @@ ip = IntPrinterWrapper()
 ip.print_int(10)
 ```
 
+11. Multiple TypeVars
+```python
+T: TypeVar = TypeVar('T')
+U: TypeVar = TypeVar('U')
+
+class Printer(Generic[T, U]):
+   def print1(self: Printer, x: T):
+       print(x)
+   def print2(self: Printer, x: U):
+       print(x)
+
+p: Printer[int, bool] = None
+p = Printer[int, bool]()
+p.print1(10)
+p.print2(False)
+```
+
 # Planned additions to the AST
 We plan to add a new TypeVar type like so: 
 ```typescript

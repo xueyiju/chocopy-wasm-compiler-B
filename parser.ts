@@ -1,7 +1,7 @@
 import {parser} from "lezer-python";
 import { TreeCursor} from "lezer-tree";
 import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal, SourceLocation } from "./ast";
-import { NUM, BOOL, NONE, CLASS, TYPE_VAR, GENERIC_CLASS } from "./utils";
+import { NUM, BOOL, NONE, CLASS, TYPE_VAR } from "./utils";
 import { stringifyTree } from "./treeprinter";
 import { ParseError} from "./error_reporting";
 
@@ -395,7 +395,7 @@ export function traverseType(c : TreeCursor, s : string) : Type {
         const genericNamesStr = genericArgs.toString();
         const genericNames = genericNamesStr.substring(1, genericNamesStr.length - 1).split(',');
         const genericTypes = genericNames.map(gn => typeFromString(gn));
-        return GENERIC_CLASS(className, genericTypes);
+        return CLASS(className, genericTypes);
       } else {
         return CLASS(name);
       }
@@ -541,7 +541,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
     if(generics.length > 0) {
       const genericTypes = generics.map(g => CLASS(g));
       methods.push({ a: location, name: "__init__", parameters: 
-        [{ name: "self", type: GENERIC_CLASS(className, genericTypes) }], ret: NONE, inits: [], body: [] 
+        [{ name: "self", type: CLASS(className, genericTypes) }], ret: NONE, inits: [], body: [] 
       });
     } else {
       methods.push({ a: location, name: "__init__", parameters: [{ name: "self", type: CLASS(className) }], ret: NONE, inits: [], body: [] });

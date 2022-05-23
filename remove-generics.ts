@@ -93,25 +93,8 @@ function findTypeVarInits(inits: Array<VarInit<SourceLocation>>): Map<string, Li
 function programClassEnv(ast: Program<SourceLocation>): ClassEnv {
     let env = {genericArgs: new Map<string, Array<string>>()};
     ast.classes.forEach(c => {
-        const parentGenericArgs = flat(c.parents.map(p => {
-            if(p.tag == "class" && p.genericArgs) {
-                if(p.name != "Generic") {
-                    throw new Error("classes cannot inherit generic classes yet");
-                }
-
-                return p.genericArgs.filter(ga => ga.tag == "class").map(ga => {
-                    if(ga.tag == "class") {
-                        return ga.name;
-                    } else {
-                        return "";
-                    }
-                });
-            }
-            return [];
-        }))
-
-        if(parentGenericArgs.length > 0) {
-            env.genericArgs.set(c.name, parentGenericArgs);
+        if(c.generics != undefined && c.generics.length > 0) {
+            env.genericArgs.set(c.name, c.generics);
         }
     });
 
@@ -221,22 +204,11 @@ function addSpecializationsInClass(classDef: Class<SourceLocation>, genericsEnv:
 }
 
 function specializeClass(classDef: Class<SourceLocation>, genericsEnv: GenericEnv, classEnv: ClassEnv): Array<Class<SourceLocation>> {
-    const genericParent = classDef.parents.find(p => p.tag == "class" && p.name == "Generic" && p.genericArgs);
-    if(!genericParent) {
+    if(classDef.generics == undefined || classDef.generics.length == 0) {
         return [classDef];
     }
 
-    if(genericParent.tag != "class") {
-        return [classDef];
-    }
-
-    const typeVarNames = genericParent.genericArgs.map(ga => {
-        if(ga.tag == "class") {
-            return ga.name;
-        } else {
-            throw new Error("Expected TypeVar in Generic parent args");
-        }
-    });
+    const typeVarNames = classDef.generics;
 
     let allVariants = [new Map<string, Type>()];
     typeVarNames.forEach(name => {

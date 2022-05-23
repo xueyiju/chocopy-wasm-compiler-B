@@ -154,7 +154,7 @@ export function tcClass(env: GlobalTypeEnv, cls : Class<SourceLocation>) : Class
     init.ret !== NONE)
     throw new TypeCheckError("Cannot override __init__ type signature");
 
-  return {a: [NONE, cls.a], name: cls.name, parents: cls.parents, fields: tFields, methods: tMethods};
+  return {a: [NONE, cls.a], name: cls.name, generics: cls.generics, fields: tFields, methods: tMethods};
 }
 
 export function tcBlock(env : GlobalTypeEnv, locals : LocalTypeEnv, stmts : Array<Stmt<SourceLocation>>) : Array<Stmt<[Type, SourceLocation]>> {

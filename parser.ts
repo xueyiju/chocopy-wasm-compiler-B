@@ -490,20 +490,28 @@ export function traverseFunDef(c : TreeCursor, s : string) : FunDef<SourceLocati
   return { a: location, name, parameters, ret, inits, body }
 }
 
-function traverseTypeList(c: TreeCursor, s: string): Array<Type> {
-  let types: Array<Type> = [];
+function traverseGenerics(c: TreeCursor, s: string): Array<string> {
+  let typeVars: Array<string> = [];
 
   c.firstChild(); // focus on (
   c.nextSibling(); // focus on type
   while(c.type.name !== ")") {
     const type = traverseType(c, s);
-    types.push(type);
+    if(type.tag=="class" && type.name=="Generic" && type.genericArgs != undefined && type.genericArgs.length > 0) {
+      type.genericArgs.forEach(ga => {
+        if(ga.tag=="class") {
+          typeVars.push(ga.name);
+        } else {
+          throw new Error("Expected TypeVar in Generic[] args");
+        }
+      });
+    }
     c.nextSibling(); // focus on , or )
     c.nextSibling(); // focus on type
   }
 
   c.parent();       // Pop to ArgList
-  return types;
+  return typeVars;
 }
 
 export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation> {
@@ -514,7 +522,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
   c.nextSibling(); // Focus on class name
   const className = s.substring(c.from, c.to);
   c.nextSibling(); // Focus on arglist/superclass
-  const parents = traverseTypeList(c, s);
+  const generics = traverseGenerics(c, s);
   c.nextSibling(); // Focus on body
   c.firstChild();  // Focus colon
   while(c.nextSibling()) { // Focuses first field
@@ -530,11 +538,10 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
   c.parent();
 
   if (!methods.find(method => method.name === "__init__")) {
-    const genericParents = parents.filter(t => t.tag == "class" && t.name == "Generic" && t.genericArgs);
-    if(genericParents && genericParents.length > 0 && genericParents[0].tag == "class") {
-      const genericParent = genericParents[0];
+    if(generics.length > 0) {
+      const genericTypes = generics.map(g => CLASS(g));
       methods.push({ a: location, name: "__init__", parameters: 
-        [{ name: "self", type: GENERIC_CLASS(className, genericParent.genericArgs) }], ret: NONE, inits: [], body: [] 
+        [{ name: "self", type: GENERIC_CLASS(className, genericTypes) }], ret: NONE, inits: [], body: [] 
       });
     } else {
       methods.push({ a: location, name: "__init__", parameters: [{ name: "self", type: CLASS(className) }], ret: NONE, inits: [], body: [] });
@@ -543,7 +550,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
   return {
     a: location,
     name: className,
-    parents,
+    generics,
     fields,
     methods
   };

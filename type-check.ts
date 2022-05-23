@@ -258,6 +258,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
 
 export function tcDestructure(env : GlobalTypeEnv, locals : LocalTypeEnv, destr : DestructureLHS<SourceLocation>) : DestructureLHS<[Type, SourceLocation]> {
   
+  // If it is an Ignore variable, do an early return as we don't need
+  // to type-check
   if (destr.lhs.tag === "id" && destr.lhs.name === "_") {
     return {...destr, a:[NONE, destr.a], lhs : {...destr.lhs, a: [NONE, destr.lhs.a]}}
   }

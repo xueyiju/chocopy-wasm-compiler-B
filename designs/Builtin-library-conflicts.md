@@ -48,3 +48,50 @@ a, b = max(5,6), 10
 ```
 
 In here, the builtin function max just return a value like any other functions.
+
+## Front-end user interface
+There is no conflicts/interaction between UI and builtin libraries.
+
+## I/O, files
+
+I/O, files team implemented file manipulate functions in io.ts. So far we don't have any conflicts. 
+
+```python
+f : File = None
+f = open('test', 'rb')
+f.close()
+f.read()
+```
+The above builtin functions were written in io.ts by I/O team.
+
+## Generics and polymorphism
+
+We mainly worked on Math, time and sleep for this week. Hence, there is no direct conflicts so far. 
+
+## Inheritance
+
+There is no direct conflicts with inheritance and  builtin libs. Inheritance usually handles in case "call_indirect", and our main changes is in case "call".
+
+```python
+class List(object):
+    def sum(self : List) -> int:
+        return 1 
+class Empty(List):
+    def sum(self : Empty) -> int:
+        return 0
+class Link(List):
+    val : int = 0
+    next : List = None
+    def sum(self : Link) -> int:
+        return factorial(self.val) + factorial(self.next.sum())
+    def new(self : Link, val : int, next : List) -> Link:
+        self.val = val
+        self.next = next
+        return self
+
+l : List = None
+l = Link().new(3, Link().new(2, Empty()))
+print(l.sum())
+```
+
+Expected Output is 8. 

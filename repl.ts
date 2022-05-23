@@ -16,6 +16,12 @@ class Range(object):
   max : int = 0
   stp : int = 0
   def new(self : Range, min : int, max : int, stp : int)->Range:
+    if stp == 0:
+      return None
+    if min <= max and stp < 0:
+      stp = 1
+    if min >= max and stp > 0:
+      stp = -1
     self.min = min
     self.cur = min
     self.max = max
@@ -27,7 +33,7 @@ class Range(object):
     self.cur = self.cur + self.stp
     return c
   def hasnext(self : Range)->bool:
-    return self.cur < self.max
+    return self.cur < self.max if self.stp >=0 else self.cur > self.max
 
 class generator(object):
   size : int = 0

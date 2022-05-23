@@ -1,7 +1,9 @@
 # For Loops and Iterators #
+We implement for loops and iterators in the ChocoPy compiler B. We currently support the for loop functionality with break/continue,  inbuilt `range` iterator and ability to write custom iterators with a `next` and a `hasnext` function. In week 8, we plan to extend the iterator support to these five inbuilts types (lists, sets, tuples, dicts, strings). 
+
 ## Test Cases ##
 
-We shall concatenate the following code at the start of each input:
+We shall join the following code at the start of each input:
 
 ```
 class __range__(object):
@@ -97,7 +99,7 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(0,10,1):
+for i in range(10):
     print(i)
     break
 ```
@@ -110,8 +112,8 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(0,10,1):
-    If i>5:
+for i in range(10):
+    If i\>5:
         break
     else: 
         print(i)
@@ -131,7 +133,7 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(0,5,1):
+for i in range(5):
     print(i*100)
     continue
     print(i)
@@ -150,7 +152,7 @@ Output:
 Input:
 ```
 i : int = 0
-for i in range(0,10,1):
+for i in range(10):
     if i%2==0:
         continue
     else:
@@ -632,26 +634,23 @@ Output:
 ```
 TypeCheckError: Not an iterable
 ```
-
-## Changes required in AST, IR and builtin libraries ##
- 
 ## AST changes ##
  
 * The following changes will be required in `ast.ts` to `type Stmt<A>`:
 ```        
 { a?: Type, tag: "for", vars: Expr\<A\>, iterable: Expr\<A\>, body: Array\<Stmt\<A\>\>, elseBody?: Stmt\<A\>}
-{ a?: Type, tag: "break", loopDepth?: [string, number] }
-{ a?: Type, tag: "continue", loopDepth?: [string, number]  }
+{  a?: A, tag: "break", loopCounter?: number }
+{  a?: A, tag: "continue", loopCounter?: number }
  ```    
-`vars` can be a variable or a tuple expression. Once we merge the changes from the destructuring group, we will support tuple assignment for the loop variables (as well as relevant typechecking).
+`vars` can be a variable or a tuple expression. Once we merge the changes from the destructuring group, we will support tuple assignment for the loop variables.
 `iterable` can be any inbuilt/user-defined class object with a `next` and a `hasnext` function.
-`loopDepth` is an optional argument in the AST because we populate these values in the type-checker.
+`loopCounter` is an optional argument in the AST because we populate this values in the type-checker.  It stores unique loop index for each for and while loop.
 
 ## Parser changes ##
 We add functionalities for `for`, `break` and `continue` statements.
 
 ## range class ##
-For the first milestone, we implement an inbuilt `range(0, 5, 1)` as a function which returns a `__range__` class object. This object is an iterable with an inbuilt `new`, `next` and `hasnext` function. The range class is written in Python and will be compiled in `runner.ts` to produce a `.wasm` file in the later stages.
+For the first milestone, we implement an inbuilt `range(0, 5, 1)` as a function which returns a `__range__` class object. This object is an iterable with an inbuilt `new`, `next` and `hasnext` function.  The range class is written in Python and will be compiled in `runner.ts` to produce a `.wasm` file.
 ```
 def range(start: int, stop: int, step: int) -> __range__:
     return __range__().new(start, stop, step)
@@ -678,13 +677,21 @@ __next__(self) -> int
 ```
 There is also the aforementioned `range` function added in `defaultGlobalFunctions`. Our current implementation doesn't require adding this inbuilt class and function to the  global type-checking environment. But it will be required once we generate a `range.wasm` file from the  Python implementation.
 
-We add `forCount`, `whileCount` and  `currLoop` to the `LocalTypeEnv`.  `forCount`, `whileCount` store the global for and while loop counters. `currLoop` behaves as a stack and populates `loopDepth` for break and continue statements. 
-
+We add `loopCount` and  `currLoop` to the `LocalTypeEnv`. The first is an number while stores the global counter for any loop while `currLoop` behaves a stack and populates `loopCounter` for break and continue statements. 
 ```
-locals.currLoop.push(["for",locals.forCount]);
+locals.loopCount = locals.loopCount+1;
+locals.currLoop.push(locals.loopCount);
 var tForBody = tcBlock(env, locals, stmt.body);
 locals.currLoop.pop();
 ```
+`lower.ts` generate loop labels by appending a global counter to the end of a generated loop block name (such as whilestart and whilebody). This maintains consistency in break and continue when we utilize the `loopCounter` from the type-checker to identify the correct loop labels to jump to.
+
+### Definition of an iterable ###
+Any class object with a `next` and `hasnext` function is deemed to be an iterable. 
+
+We check whether the iterable expr satisfied our definition of. As we don't currently support destructuring assignment, we assume the loop variable to be a single variable whose type must match the `next` function return type of the iterable. We can easily extend it once we merge the changes from the destructuring group. 
+
+`break` and `continue` statements are also type-checked to ensure that they are defined within a loop. 
 
 ## Lower changes ##
 We implement a generalizable for loop which can take any iterable and uses the `next` and `hasnext` function to go over the each element. We generate a new `rangeObject` which initializes the iterable class object. We call the `hasnext` function in `forstart` body, assign the loop variables to `next` function in start of `forbody`. There is an additional block of `forelse` which we jump to when there are no breaks encountered in the body statements.  
@@ -699,3 +706,5 @@ No changes in the code generation are required for our interface,
 
 ### New file range.test.ts
 This contains all the tests shown above.
+
+We plan to implement these helper function for the five inbuilt type (lists, sets, tuples, dicts, strings) in Week 9. 

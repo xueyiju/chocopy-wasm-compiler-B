@@ -198,23 +198,23 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       return [...cinits, ...bodyinits]
     
     case "for":
-      var forStartLbl = generateName("$forstart");
-      var forbodyLbl = generateName("$forbody");
+      var forStartLbl = generateName("$whilestart");
+      var forbodyLbl = generateName("$whilebody");
       var forElseLbl = generateName("$forelse")
-      var forEndLbl = generateName("$forend");
-      var rangeObject = generateName("$rangeobject")
-      //@ts-ignore
+      var forEndLbl = generateName("$whileend");
+      var iterableObject = generateName("$iterableobject")
+      
       var [in_inits, in_stmts, in_expr] = flattenExprToExpr(s.iterable, env);
-      pushStmtsToLastBlock(blocks, ...in_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: rangeObject, value: in_expr} );
+      pushStmtsToLastBlock(blocks, ...in_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: iterableObject, value: in_expr} );
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
 
-      let condExpr:AST.Expr<[AST.Type, SourceLocation]>  = { a:[BOOL, s.a[1]],tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "hasnext", arguments: []}
+      let condExpr:AST.Expr<[AST.Type, SourceLocation]>  = { a:[BOOL, s.a[1]],tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: iterableObject} , method: "hasnext", arguments: []}
       var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forElseLbl });
       blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
 
-      const iterVal: AST.Expr<[AST.Type, SourceLocation]> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: rangeObject} , method: "next", arguments: []}
+      const iterVal: AST.Expr<[AST.Type, SourceLocation]> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: iterableObject} , method: "next", arguments: []}
       var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
       //@ts-ignore
       pushStmtsToLastBlock(blocks, ...s_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: s.vars.name, value: s_expr } );
@@ -227,19 +227,15 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forEndLbl });
       blocks.push({  a: s.a, label: forEndLbl, stmts: [] })
 
-      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a: s.iterable.a, name: rangeObject, type: s.iterable.a[0], value: { tag: "none" } }]
+      return [...in_inits, ...cinits, ...s_inits, ...bodyinits, ...elsebodyinits, { a: s.iterable.a, name: iterableObject, type: s.iterable.a[0], value: { tag: "none" } }]
     
     case "break":
-      var currLoop = s.loopDepth[0];
-      var depth = s.loopDepth[1];
-      // var currentloop = nameCounters.get("$"+currLoop+"body")
-       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"end"  + depth});
+      var counter = s.loopCounter;
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$whileend" + counter});
       return []
     case "continue":
-      var currLoop = s.loopDepth[0];
-      var depth = s.loopDepth[1];
-      // var currentloop = nameCounters.get("$"+currLoop+"body");
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$"+currLoop+"start"  + depth});
+      var counter = s.loopCounter;
+      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: "$whilestart" + counter});
       return []
   }
 }
@@ -368,7 +364,7 @@ function pushStmtsToLastBlock(blocks: Array<IR.BasicBlock<[Type, SourceLocation]
 }
 
 function resetLoopLabels() {
-  const labels = ["$whilestart", "$whilebody", "$whileend" ,"$forstart", "$forbody", "$forelse", "$forend"]
+  const labels = ["$whilestart", "$whilebody", "$whileend" ,"$forelse"]
  labels.forEach(label => {
    nameCounters.delete(label)
  });

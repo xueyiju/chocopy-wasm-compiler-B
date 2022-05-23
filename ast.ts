@@ -29,8 +29,8 @@ export type Stmt<A> =
   | {  a?: A, tag: "if", cond: Expr<A>, thn: Array<Stmt<A>>, els: Array<Stmt<A>> }
   | {  a?: A, tag: "while", cond: Expr<A>, body: Array<Stmt<A>> }
   | {  a?: A, tag: "for", vars: Expr<A>, iterable: Expr<A>, body: Array<Stmt<A>>, elseBody?: Array<Stmt<A>> }
-  | {  a?: A, tag: "break", loopDepth?: [string, number] }
-  | {  a?: A, tag: "continue", loopDepth?: [string, number] }
+  | {  a?: A, tag: "break", loopCounter?: number }
+  | {  a?: A, tag: "continue", loopCounter?: number }
 
 
 

@@ -15,9 +15,8 @@ export type LocalTypeEnv = {
   expectedRet: Type,
   actualRet: Type,
   topLevel: Boolean,
-  forCount: number,
-  whileCount: number,
-  currLoop: Array<[string, number]>
+  loopCount: number,
+  currLoop: Array<number>
 }
 
 const defaultGlobalFunctions = new Map();
@@ -63,8 +62,7 @@ export function emptyLocalTypeEnv() : LocalTypeEnv {
     expectedRet: NONE,
     actualRet: NONE,
     topLevel: true,
-    forCount: 0,
-    whileCount: 0,
+    loopCount: 0,
     currLoop: []
   };
 }
@@ -231,8 +229,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       return {a: tRet.a, tag: stmt.tag, value:tRet};
     case "while":
       var tCond = tcExpr(env, locals, stmt.cond);
-      locals.whileCount = locals.whileCount+1;
-      locals.currLoop.push(["while", locals.whileCount]);
+      locals.loopCount = locals.loopCount+1;
+      locals.currLoop.push(locals.loopCount);
       const tBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
       if (!equalType(tCond.a[0], BOOL)) 
@@ -241,8 +239,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
     case "for":
       var tVars = tcExpr(env, locals, stmt.vars);
       var tIterable = tcExpr(env, locals, stmt.iterable);
-      locals.forCount = locals.forCount+1;
-      locals.currLoop.push(["for",locals.forCount]);
+      locals.loopCount = locals.loopCount+1;
+      locals.currLoop.push(locals.loopCount);
       var tForBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
       if(tIterable.a[0].tag !== "class" || !isIterable(env, tIterable.a[0]))
@@ -258,13 +256,11 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
     case "break":
       if(locals.currLoop.length === 0)
         throw new TypeCheckError("break cannot exist outside a loop");
-      var currLoop = locals.currLoop[locals.currLoop.length-1];
-      return {a: [NONE, stmt.a], tag: stmt.tag, loopDepth: currLoop};
+      return {a: [NONE, stmt.a], tag: stmt.tag, loopCounter: locals.currLoop[locals.currLoop.length-1]};
     case "continue":
       if(locals.currLoop.length === 0)
         throw new TypeCheckError("continue cannot exist outside a loop");
-      var currLoop = locals.currLoop[locals.currLoop.length-1];
-      return {a: [NONE, stmt.a], tag: stmt.tag, loopDepth: currLoop};
+      return {a: [NONE, stmt.a], tag: stmt.tag, loopCounter: locals.currLoop[locals.currLoop.length-1]};
     case "pass":
       return {a: [NONE, stmt.a], tag: stmt.tag};
     case "field-assign":

@@ -2,8 +2,7 @@ import * as AST from './ast';
 import * as IR from './ir';
 import { Type, SourceLocation } from './ast';
 import { GlobalEnv } from './compiler';
-import { BOOL, CLASS, NONE } from './utils';
-import { deflate } from 'zlib';
+import { BOOL, NONE } from './utils';
 
 const nameCounters : Map<string, number> = new Map();
 function generateName(base : string) : string {
@@ -24,18 +23,18 @@ function generateName(base : string) : string {
 // }
 
 export function lowerProgram(p : AST.Program<[Type, SourceLocation]>, env : GlobalEnv) : IR.Program<[Type, SourceLocation]> {
-  resetLoopLabels();
-  var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
-  var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
-  blocks.push(firstBlock);
-  var inits = flattenStmts(p.stmts, blocks, env);
-  return {
-      a: p.a,
-      funs: lowerFunDefs(p.funs, env),
-      inits: [...inits, ...lowerVarInits(p.inits, env)],
-      classes: lowerClasses(p.classes, env),
-      body: blocks
-  }
+    resetLoopLabels();
+    var blocks : Array<IR.BasicBlock<[Type, SourceLocation]>> = [];
+    var firstBlock : IR.BasicBlock<[Type, SourceLocation]> = {  a: p.a, label: generateName("$startProg"), stmts: [] }
+    blocks.push(firstBlock);
+    var inits = flattenStmts(p.stmts, blocks, env);
+    return {
+        a: p.a,
+        funs: lowerFunDefs(p.funs, env),
+        inits: [...inits, ...lowerVarInits(p.inits, env)],
+        classes: lowerClasses(p.classes, env),
+        body: blocks
+    }
 }
 
 function lowerFunDefs(fs : Array<AST.FunDef<[Type, SourceLocation]>>, env : GlobalEnv) : Array<IR.FunDef<[Type, SourceLocation]>> {
@@ -179,7 +178,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       //   endlbl,
       // ]];
     
-    case "while": 
+    case "while":
       var whileStartLbl = generateName("$whilestart");
       var whilebodyLbl = generateName("$whilebody");
       var whileEndLbl = generateName("$whileend");
@@ -188,7 +187,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       blocks.push({  a: s.a, label: whileStartLbl, stmts: [] })
       var [cinits, cstmts, cexpr] = flattenExprToVal(s.cond, env);
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: whilebodyLbl, els: whileEndLbl });
-      
+
       blocks.push({  a: s.a, label: whilebodyLbl, stmts: [] })
       var bodyinits = flattenStmts(s.body, blocks, env);
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
@@ -284,12 +283,11 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       const arginits = argpairs.map(cp => cp[0]).flat();
       const argstmts = argpairs.map(cp => cp[1]).flat();
       const argvals = argpairs.map(cp => cp[2]).flat();
-      var objTyp = e.obj.a;
-     
-      if(objTyp[0].tag !== "class") { // I don't think this error can happen
-        throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp[0].tag);
+      var objTyp = e.obj.a[0];
+      if(objTyp.tag !== "class") { // I don't think this error can happen
+        throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
-      const className = objTyp[0].name;
+      const className = objTyp.name;
       const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}}
       const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
       return [
@@ -322,6 +320,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
           value: value
         }
       });
+
       return [
         [ { name: newName, type: e.a[0], value: { tag: "none" } }],
         [ { tag: "assign", name: newName, value: alloc }, ...assigns,

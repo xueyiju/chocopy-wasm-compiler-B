@@ -42,7 +42,7 @@ def range(start: int, stop: int, step: int) -> __range__:
 
 `
 
-describe("Basic range functionalities", () => {
+describe("Basic range and custom iteratable functionalities", () => {
     
     assertPrint('range: three parameters', rangeStr + `
 i: int = 0

@@ -38,9 +38,109 @@ To facilitate this, we may need additional information to indicate that fields i
 As this group stated in their design, their modification on `ast` will be mapped to current `ir` framework, which indicates that our optimization on `ir` will not be affected. We will not support optimization for comprehension at `ast` since the control-flow is more complex at that level. Besides, given that there are a lot of new features to come, our implementation may need significant changes acording to their development in the next milestone.
 
 ## Destructuring assignment
+
+When destructuring an assignment, the expression on the left hand side could be affected by constant folding implemented by us. For example,
+
+```python
+a, b, c = max(1, 2), min(2, 3), 2+3
+```
+
+could be optimized to
+
+```python
+a, b, c = 2, 2, 5
+```
+
+As a type of statement, destructing could show up in the body of if/while/for/function body, which interact with dead code elimination.
+
+For example, 
+
+```python
+def f():
+    return 100
+    a, b, c = 1, 2, 3
+
+if True:
+    pass
+    d, e = f(), f()
+    pass
+```
+
+Could be optimized as,
+
+```python
+def f():
+    return 100
+
+d, e = f(), f()
+```
+
+Despite overlapping, we don't think these features will cause any conflicts, since destructuring does not modify the definition of `expr` or `stmt` inside `ast.ts` and `ir.ts`, but rather adding new tags. To add optimization to destructuring, we only need to add the tags of destructuring assignment inside `optimizeStmt`. In the future, there might also be overlapping after we implemented constant propagation.
+
 ## Error reporting
+
+Error reporting team added `SourceLocation` to the `A` tag inside `ast.ts`. There is no overlapping since error reporting team change the code when an error is thrown and our team assume that all of the program to be optimized is totally correct. For example,
+
+```python
+a:int = True
+if True:
+    print(a)
+```
+
+This program will never made it to the optimization step, since it will be intercepted and throw an TypeError during type checking. 
+
+With that said, to support printing source code location when throwing an error, the code of our team has integrated the features of `SourceLocation` since last merge.
+
 ## Fancy calling conventions
+
+Constant folding could be overlapping with the default values of fancy calling conventions. For example,
+
+```python
+def f(x:int = 1 + 2):
+    return x
+```
+
+Could be optimized as,
+
+```python
+def f(x:int = 3):
+    return x
+```
+
+To support this feature, we need to call `optimizeExpr` to optimize the expression of default values. With that said, the features of this team will not cause conflicts with our implementations of optimization.
+
 ## for loops/iterators
+
+The `for` loop team did not modify the original definitions in `ast.ts` and `ir.ts` but rather adding new definitions, so there would be no conflict with our implementation. However, a few overlapping exists for optimization of `for` loops. With our current features, both constant folding and dead code elimination could be added to `for` loops:
+
+```python
+for i in range(0, 1+2, 1):
+    if True:
+        pass
+        break
+        print(i)
+```
+
+The code above could be optimized to
+
+```python
+# Constant folding and dead code elimination of if branch
+for i in range(0, 3, 1):
+    pass
+    break
+    print(i)
+```
+
+Then the code could be further optimized to
+
+```python
+# Dead code elimination for pass statement and statements after break statement
+for i in range(0, 3, 1):
+    break
+```
+
+Then the code could be completely removed since it does nothing. These features will require us to expand our optimization features, ideally adding a new function specially for `for` loops. There would be more overlapping after we implement constant propagation.
+
 ## Front-end user interface
 ## Generics and polymorphism
 ## I/O, files

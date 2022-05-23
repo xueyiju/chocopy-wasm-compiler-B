@@ -355,7 +355,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         if (expr.arguments.length > 1){
           throw new Error("Set constructor can only contain element with length 1");
         }
-        if (expr.arguments[0].tag !== "bracket"){
+        if (expr.arguments[0].tag !== "set"){
           throw new Error("Set constructor can only accept bracket variable");
         }
         var initial_value = tcExpr(env, locals, expr.arguments[0]);

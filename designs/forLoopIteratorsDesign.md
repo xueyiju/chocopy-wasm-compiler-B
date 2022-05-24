@@ -813,6 +813,24 @@ print(next(list_itr)
 2
 3
 ```
+**Test Case 4:**
+```Python
+a:[bool] = None
+i:int = 0
+a = [True, False, True, False, True, False]
+list_itr:ListIteratorBool = None
+list_itr = iter(a)
+print(next(list_itr))
+print(next(list_itr))
+print(next(list_itr))
+```
+**Expected Output**
+```
+True
+False
+True
+```
+
 **Test Case 5:**
 ```Python
 a:[int] = None
@@ -820,11 +838,14 @@ i:int = 0
 a = [1]
 list_itr:ListIteratorInt = None
 list_itr = iter(a)
-print(next(list_itr)
-print(next(list_itr)
+print(next(list_itr))
+print(next(list_itr))
+```
 **Expected Output**
+```
 1
 "RUNTIME ERROR: StopIteration"
+```
 
 **Test Case 6:**
 ```Python
@@ -835,9 +856,12 @@ list_itr:ListIteratorBool = None
 list_itr = iter(a)
 print(next(list_itr))
 print(next(list_itr))
+```
 **Expected Output**
+```
 False
 True
+```
 
 **Test Case 7:**
 ```Python
@@ -860,9 +884,12 @@ print(next(custom_iter))
 print(next(custom_iter))
 print(next(custom_iter))
 ```
+**Expected Output**
+```
 0
 2
 4
+```
 **Test Case 8:**
 ```Python
 a:[int] = None
@@ -878,9 +905,11 @@ for i, j in [a, b, c]:
     print(i + j)
 ```
 **Expected Output**
+```
 4
 4
 -8
+```
 **Test Case 9:**
 ```Python
 a:str = "abc"
@@ -892,10 +921,12 @@ for i, j in [[a, b], [b, a]]:
     print(j)
 ```
 **Expected Output**
+```
 abc
 bcd
 bcd
 abc
+```
 **Test Case 10:**
 ```Python
 a:[int] = None
@@ -904,7 +935,10 @@ a = [1,2,3]
 for i in a:
     print(i)
 ```
+**Expected Output**
+```
 This will throw a TypeError
+```
 **Test Case 11:**
 ```Python
 i:int = 0
@@ -913,7 +947,10 @@ for i, j in [[1, 2], [2, 4]]:
     print(i)
     print(j)
 ```
+**Expected Output**
+```
 This will throw a TypeError
+```
 
 
 # Week 8 and 9 features Roadmap #

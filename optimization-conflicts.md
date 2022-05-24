@@ -142,9 +142,55 @@ for i in range(0, 3, 1):
 Then the code could be completely removed since it does nothing. These features will require us to expand our optimization features, ideally adding a new function specially for `for` loops. There would be more overlapping after we implement constant propagation.
 
 ## Front-end user interface
+The user interface is implementd on the top of the compiler. It would mainly modify the stuff in webstart.ts which is used to construct the web page. And we implement the optimization process by modifying the ast and the ir, which would not conflict with the user interface. We notice that our group and front-end group both modified the repl.ts. However, there are no overlap of the content where we both have modified.
 ## Generics and polymorphism
+The Generics team has added a new tag `TypeVar` to Literal in ast.ts, which would cause compiliance error with in our optimize_ast.ts:
+```javascript
+case BinOp.Eq:
+    if(lhs.tag === "none" || rhs.tag === "none"){
+        return {tag: "bool", value: true};
+    }  
+    return {tag: "bool", value: lhs.value === rhs.value};
+case BinOp.Neq:
+    if(lhs.tag === "none" || rhs.tag === "none"){
+        return {tag: "bool", value: false};
+    }  
+    return {tag: "bool", value: lhs.value !== rhs.value};
+```
+And they have also modified the ast of `Class` and expression `call` by adding an optional generic type arguments to support generic feature. However, They have removed the generics in remove-generics.ts which replace each generic class with its specifications, which leaves the ir level unchanged. So there would be no conflict in our optimize_ir.ts. As we plan to implemente optimization mainly in ir level, we would not interact with generic team.
 ## I/O, files
+The I/O team mainly implemented their feature in javascript functions and import them to be called in the WASM code. Their work is to implement `File` class in python with methods as follows:
+```python
+class File(object):
+    def __init__(self : File):
+    def read(self : File) -> int:  
+    def write(self : File, s : int) -> int:
+    def tell(self : File) -> int:
+    def seek(self : File, pos : int):
+    def close(self : File):
+```
+And they have made no modifications on ast or ir. So we would optimize the File class's definition and method call with the same routine as other classes. 
 ## Inheritance
+The inheritance team have modified the ast as well as the ir to support the super class feature. They added a `supers` filed in `Class<A>` in both ast and ir and added a new expression `call_indirect` in ir to implement method override. We needn't to do extra adaptation in regard to their changes. We would just do optimization in classes with superclass and their overrided methods as normal classes. For example:
+```python
+class Person(object):
+   age:int = 0
+   def new(self:Person,age:int) -> Person:
+       self.age = age
+       return self
+       
+class Employee(Person):
+   def new(self:Employee,age:int) -> Person:
+       self.age = age
+       return self
+ 
+emp1: Person = None
+emp2: Person = None
+emp1 = Person().new(12+13)
+emp2 = Employee().new(11+12)
+```
+we would just focus in performing optimization on the methods `new`'s arguments.
+
 ## Lists
 ## Memory management
 ## Optimization

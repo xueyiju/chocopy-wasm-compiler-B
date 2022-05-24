@@ -117,7 +117,17 @@ In the list design, the length of list will be stored in the first location at t
 
 ## 13. Memory management
 
+Memory management team changed the files a lot. We disscused with them and we came to an agreement that we don't need the specific address for each obejct to display the current heap, as all addresses in memory are scattered. Noted that they added global_type and local_type in currentEnv in repl.ts as they changed the layout of an allocation. However, a change in the header of an object in memory does not mean a change in its fields layout, that is, the method for our objectTrack function to obtain all fields of an object has not changed. Therefore, memory management is invisible to the front-end and there are no conflicts.
 
+```python
+class C(object):
+    x:int = 0
+c:C = None
+c = C()
+c.x = 5
+```
+
+In the example above, the field of c in memory is still x=5. There is no change between before adding and after adding the memory management feature.
 
 ## 14. Optimization
 

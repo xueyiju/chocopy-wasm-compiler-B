@@ -21,7 +21,7 @@ export type LocalTypeEnv = {
 
 const defaultGlobalFunctions = new Map();
 BuiltinLib.forEach(x=>{
-  defaultGlobalFunctions.set(x.name, x.typeSign);
+  defaultGlobalFunctions.set(x.name, x.typeSig);
 })
 defaultGlobalFunctions.set("print", [[CLASS("object")], NUM]);
 

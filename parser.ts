@@ -582,6 +582,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       }
       c.parent()
       return {
+        a: location,
         tag: "for",
         vars: for_var,
         iterable: iterable,

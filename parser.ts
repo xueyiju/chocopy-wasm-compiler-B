@@ -239,7 +239,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
           compTyp = { tag: "set", valueType: NONE }; // need to add dictionary case in the future
           break;
         default:
-          throw new ParseError("Could not parse comprehension");
+          throw new ParseError("Could not parse comprehension", location.line);
       }
       c.nextSibling(); // Focus on lhs
       var lhs = traverseExpr(c, s);
@@ -260,7 +260,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       }
       const pair = symbol + nextSymbol;
       if (pair !== "()" && pair !== "[]" && pair !== "{}") {
-        throw new ParseError("Comprehension start and end mismatch");
+        throw new ParseError("Comprehension start and end mismatch", location.line);
       }
       c.parent();
       if (compIfCond == undefined) {

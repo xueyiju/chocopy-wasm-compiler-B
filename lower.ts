@@ -406,6 +406,29 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
         [cinits, cstmts, cval] = flattenExprToVal(e.ifcond, blocks, env);
       }
 
+      // store generated values on heap
+      if (e.a[0].tag === "generator") {
+        const newName = generateName("newGen");
+        // generator has two fields: size (number of elements generated), and addr (start address)
+        const size = 0; // TODO: how to know the number of elements generated at this level?
+        const startAddr = 0; // TODO: decide start address of generator, might need help from list data structure
+        const alloc : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: 2 } };
+        const assigns : IR.Stmt<[Type, SourceLocation]>[] = [
+          {
+            tag: "store",
+            start: { tag: "id", name: newName },
+            offset: { tag: "wasmint", value: 0 },
+            value: { tag: "wasmint", value: size }
+          },
+          {
+            tag: "store",
+            start: { tag: "id", name: newName },
+            offset: { tag: "wasmint", value: 1 },
+            value: { tag: "wasmint", value: startAddr }
+          }
+        ];
+      }
+
       const condJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cval, thn: condThenLbl, els: condElseLbl };
       const endJmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: condEndLbl };
 

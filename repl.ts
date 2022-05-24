@@ -22,7 +22,6 @@ export class BasicREPL {
   functions: string
   importObject: any
   memory: any
-
   constructor(importObject : any) {
     this.importObject = importObject;
     if(!importObject.js) {
@@ -41,8 +40,6 @@ export class BasicREPL {
     this.currentTypeEnv = defaultTypeEnv;
     this.functions = "";
   }
-
-
   async run(source : string) : Promise<Value> {
     const config : Config = {importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions};
     const [result, newEnv, newTypeEnv, newFunctions, instance] = await run(source, config);
@@ -100,7 +97,6 @@ export class BasicREPL {
     const heapView = new Int32Array(this.importObject.js.memory.buffer);
     return heapView;
   }
-
 
   tc(source: string): Type {
     const config: Config = { importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions };

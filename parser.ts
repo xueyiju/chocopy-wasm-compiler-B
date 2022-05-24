@@ -1,7 +1,7 @@
 import {parser} from "lezer-python";
 import { TreeCursor} from "lezer-tree";
 import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Class, Literal, SourceLocation } from "./ast";
-import { NUM, BOOL, NONE, CLASS } from "./utils";
+import { NUM, BOOL, NONE, CLASS, TYPE_VAR } from "./utils";
 import { stringifyTree } from "./treeprinter";
 import { ParseError} from "./error_reporting";
 
@@ -36,6 +36,14 @@ export function traverseLiteral(c : TreeCursor, s : string) : Literal {
       return {
         tag: "none"
       }
+    case "CallExpression":
+      const call_str = s.substring(c.from, c.to);
+      const call_name = call_str.split('(')[0];
+      if(call_name == "TypeVar") {
+        return {
+          tag: "TypeVar"
+        }
+      }
     default:
       throw new ParseError("Not literal", location)
   }
@@ -59,12 +67,27 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         name: s.substring(c.from, c.to)
       }
     case "CallExpression":
+      const callStr = s.substring(c.from, c.to);
+      const genericRegex = /\[[A-Za-z]*\]/g;
+      const genericArgs = callStr.match(genericRegex);
+
       c.firstChild();
-      const callExpr = traverseExpr(c, s);
+      let callExpr = traverseExpr(c, s);
       c.nextSibling(); // go to arglist
-      let args = traverseArguments(c, s);
+      const args = traverseArguments(c, s);
       c.parent(); // pop CallExpression
 
+      if(genericArgs) {
+        const genArgsStr = genericArgs.toString();
+        const commaSepArgs = genArgsStr.substring(1, genArgsStr.length - 1);
+        const genTypes = commaSepArgs.split(',').map(s => typeFromString(s));
+        return {
+          tag: "call",
+          name: callStr.split('[')[0],
+          arguments: args,
+          genericArgs: genTypes
+        };
+      } 
 
       if (callExpr.tag === "lookup") {
         return {
@@ -367,13 +390,35 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
   }
 }
 
+function typeFromString(s: string): Type {
+  switch(s) {
+    case "int": return NUM;
+    case "bool": return BOOL;
+    case "TypeVar": return TYPE_VAR;
+    default: return CLASS(s);
+  }
+}
+
 export function traverseType(c : TreeCursor, s : string) : Type {
   // For now, always a VariableName
   let name = s.substring(c.from, c.to);
   switch(name) {
     case "int": return NUM;
     case "bool": return BOOL;
-    default: return CLASS(name);
+    case "TypeVar": return TYPE_VAR;
+    default: {
+      const genericRegex = /\[[A-Za-z]*\]/g;
+      const genericArgs = name.match(genericRegex);
+      if(genericArgs) {
+        const className = name.split('[')[0];
+        const genericNamesStr = genericArgs.toString();
+        const genericNames = genericNamesStr.substring(1, genericNamesStr.length - 1).split(',');
+        const genericTypes = genericNames.map(gn => typeFromString(gn));
+        return CLASS(className, genericTypes);
+      } else {
+        return CLASS(name);
+      }
+    }
   }
 }
 
@@ -464,6 +509,30 @@ export function traverseFunDef(c : TreeCursor, s : string) : FunDef<SourceLocati
   return { a: location, name, parameters, ret, inits, body }
 }
 
+function traverseGenerics(c: TreeCursor, s: string): Array<string> {
+  let typeVars: Array<string> = [];
+
+  c.firstChild(); // focus on (
+  c.nextSibling(); // focus on type
+  while(c.type.name !== ")") {
+    const type = traverseType(c, s);
+    if(type.tag=="class" && type.name=="Generic" && type.genericArgs != undefined && type.genericArgs.length > 0) {
+      type.genericArgs.forEach(ga => {
+        if(ga.tag=="class") {
+          typeVars.push(ga.name);
+        } else {
+          throw new Error("Expected TypeVar in Generic[] args");
+        }
+      });
+    }
+    c.nextSibling(); // focus on , or )
+    c.nextSibling(); // focus on type
+  }
+
+  c.parent();       // Pop to ArgList
+  return typeVars;
+}
+
 export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation> {
   var location = getSourceLocation(c, s);
   const fields : Array<VarInit<SourceLocation>> = [];
@@ -472,6 +541,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
   c.nextSibling(); // Focus on class name
   const className = s.substring(c.from, c.to);
   c.nextSibling(); // Focus on arglist/superclass
+  const generics = traverseGenerics(c, s);
   c.nextSibling(); // Focus on body
   c.firstChild();  // Focus colon
   while(c.nextSibling()) { // Focuses first field
@@ -487,11 +557,19 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
   c.parent();
 
   if (!methods.find(method => method.name === "__init__")) {
-    methods.push({ a: location, name: "__init__", parameters: [{ name: "self", type: CLASS(className) }], ret: NONE, inits: [], body: [] });
+    if(generics.length > 0) {
+      const genericTypes = generics.map(g => CLASS(g));
+      methods.push({ a: location, name: "__init__", parameters: 
+        [{ name: "self", type: CLASS(className, genericTypes) }], ret: NONE, inits: [], body: [] 
+      });
+    } else {
+      methods.push({ a: location, name: "__init__", parameters: [{ name: "self", type: CLASS(className) }], ret: NONE, inits: [], body: [] });
+    }
   }
   return {
     a: location,
     name: className,
+    generics,
     fields,
     methods
   };

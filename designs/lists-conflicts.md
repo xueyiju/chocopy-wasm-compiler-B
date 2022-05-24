@@ -4,7 +4,19 @@
 
 ### Built-in libraries/Modules/FFI
 
-We may need to coordinate with the built-in libraries group to ensure that they are able to implement functions such as `len([1,2,3,4,5]) => 5` and `print([1,2,3])=> "[1,2,3]"`. This would require an understanding of how we have our lists laid out in memory. It does not seem like we will need to add or change anything about our implementation to make our features work together, but the other group will have to refer to our implementation to understand how to find the elements in the list and how to make a new list.
+*Input:*
+```python
+print(len([1,2,3,4,5]))
+print([1,2,3])
+```
+
+*Expected output:* 
+```
+5
+[1, 2, 3]
+```
+
+We may need to coordinate with the built-in libraries group to ensure that they are able to implement functions like `print` and `len` shown above. This would require an understanding of how we have our lists laid out in memory. It does not seem like we will need to add or change anything about our implementation to make our features work together, but the other group will have to refer to our implementation to understand how to find the elements in the list and how to make a new list.
 
 ### Closures/first class/anonymous functions
 
@@ -12,7 +24,17 @@ There is no conflict with this group because they are using classes to represent
 
 ### Comprehensions
 
-Our features would interact in a test case such as `[num * 2 for num in range(5)]`, which should evaluate to `[0, 2, 4, 6, 8]`. Similar to other groups that may be implementing something that involves lists, this group would need to understand the way we represent lists in memory so that they can create lists and modify to values of the elements in the list.
+*Input:*
+```python
+[num * 2 for num in range(5)]
+```
+
+*Expected output:* 
+```
+[0, 2, 4, 6, 8]
+```
+
+Our features would interact in a test case such as the one shown above. Similar to other groups that may be implementing something that involves lists, this group would need to understand the way we represent lists in memory so that they can create lists and modify the values of the elements in the list.
 
 ### Destructuring assignment
 

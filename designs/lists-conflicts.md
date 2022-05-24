@@ -1,6 +1,21 @@
 ## Lists conflicts
 
 ### Bignums
+The only conflict that is between our group and the Bignums group is that they have changed numbers to their own data structure of a bignum. This data structure is specifically that a number points to a memory address related to the number of 4 bytes blocks that the number occupies. Our lists should be capable of storing these.
+
+*Input*
+```python
+a : [int] = [1, 2, 3]
+i : int = 0
+print(a[i])
+```
+*Expected Output*
+```python
+>>> 1
+```
+
+Additionally, the way we index needs to also be changed as we do a binop between the index passed in and the value 1. We also need to use a i32 type to pass into the call to loading from memory. The Strings group and our group have requested a method to convert a Bignum to a i32 value. However, as we wrote indexing functionality in lower.ts, we also need binop to support i32 operations and not assume the operands are bigints.
+
 
 ### Built-in libraries/Modules/FFI
 
@@ -133,15 +148,91 @@ x
 The above code can be done with our current design for list and some modification for their remove-generics.ts. They do remove-generic before type-checking. That is to say our type-check for list would be just the case without generic var so no need for change in type-check and lower. 
 
 ### I/O + files
+Lists and I/O do not really interact much. I/O is on a functional layer that is abstract from lists. The only real interaction between I/O and lists would be if input from a file is being stored directly into a list, but it is more likely that only single characters, bytes, or strings are read, and they will be read one at a time into a list. Input from a list would have to be very specific, and the file would have to be formatted in a specific way. This is more than likely unnecessary. Another interaction would be outputting a list to a file, but as only single units are read, there should also only be single units written, so lists would more likely be used in a for loop.
+
+*Input*
+```python
+a: [int] = None
+a = [1, 2, 3]
+
+fo = open("test.txt", "w")
+for i in a:
+    fo.write(str(i) + "\n")
+
+fo.close()
+```
+
+The file would be expected to hold "1\n2\n3\n".
 
 ### Inheritance
+Inheritance does not interact with lists unless lists are capable of being used as a base class. Typically, this is the case in Python as lists are subclassable. However, in our current implementation of the compiler, lists are not subclassable, as they do not have full functionality of a class and are currently not consider classes in the AST.
+
+However, in the next week, when our group adds methods for lists, we may change lists to be a built-in class. This will mean inheritance should be possible.
+
+*Input*
+```python
+class MyList(list):
+    def __init__(self, *args):
+        list.__init__(self, *args)
+        self.append('End')
+
+my_list = MyList(["a", "b", "c"])
+print(my_list[3])
+```
+*Expected Output*
+```python
+>>> End
+```
+
+The following would mean that when an object of type MyList is created, it will have an element of value 'End' at the end of it. There should not necessarily need to be any changes on the side of the Inheritance group to make this work, as if list works exactly like a class with only additional features, inheriting from list would be the same as inheriting from a class.
+>>>>>>> Stashed changes
 
 ### Memory management
 
 Based on the memory management group's test cases, there will not really be any conflicts. There are test cases to check how many references were created. If we created a list `[0, 1, 2]`, only 1 reference is created, which is what is expected. One thing we might want to add later on, depending on how our group chooses to implement things like `append()` and `remove()`, we may need to allocate new memory. So we may want to work with the memory management group on that.
 
 ### Optimization
+The Optimization group has some correlation to our group as they are optimizing binary operations by folding. They may be able to fold comparisons of list literals (which would primarily only be the equality/inequality operator). However, for lists is a variable, the values of the list are not known until runtime, so folding is not possible.
+```python
+l1: [int] = [1, 2, 3]
+l2: [int] = [1, 2]
+print(l1 == l2)
+```
+After optmization:
+```python
+l1: [int] = [1, 2, 3]
+l2: [int] = [1, 2]
+print(False)
+```
+This would only require changes in the Optimization group's fold code. We would not really have to change anything in our group's code.
 
 ### Sets and/or tuples and/or dictionaries
+Our features overlap in the the indexing methods. We would need to make sure that indexing can differentiate between strings, lists, and dicts.
+
+*Input*
+```python
+a = [(1, 2), (3, 4), (5, 6)]
+print(a[0][1])
+```
+*Expected Output*
+```python
+>>> 2
+```
+
+The sets group has not implemented tuples or dictionaries yet. Thus, the Strings group and our group have settled on unified indexing implementation as well as out of bounds error handling. The sets group may follow our implementation in order to not cause merge errors. More is detailed below.
 
 ### Strings
+Our features overlap in the the indexing methods. We would need to make sure that indexing can differentiate between strings and lists.
+
+*Input*
+```python
+a = ["abc", "def", "ghi"]
+a[1] = "a"
+print(a[0][1])
+```
+*Expected Output*
+```python
+>>> b
+```
+
+We will need to make sure that parsing, type-checking, and lowering can differentiate between strings and lists. We would also need to make sure most of the other code in these files do not cause merge conflicts. Additionally, our groups have agreed upon a unified out of bounds method that calls a runtime error if an index is out of bounds.

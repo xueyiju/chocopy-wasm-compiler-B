@@ -134,9 +134,9 @@ Since these closures are translated to class definitions and initializations, th
 a:[int] = None
 b:[int] = None
 c:[int] = None
-a = [1,3]
-b = [3,1]
-c = [-4, -4]
+a = [1,3, 1]
+b = [3,1, 1]
+c = [-4, -4, 1]
 i:int = 0
 j:int = 0
 k:int = 0
@@ -146,13 +146,13 @@ for i, *j in [a, b, c]:
 	print(j)
 ```
 **Expected Output**
-0
- 
-0
- 
-[3, -4]
- 
-[1, -4]
+5
+5
+-7
+[3, 1]
+[1, 1]
+[-4, 1]
+
  
 We have substantial overlap with the changes made by destructuring group since it's essential to support destructuring while looping through any iterable object
  

@@ -115,9 +115,9 @@ To add more flexibility, we add the drag bar to make adjustment of the size of t
 
 The console right now is consist of textareas and the textarea will be mess if they have different size. So we want to implement a console without textarea and will show the active line.
 
-### 6. Configuration
+### 6. Themes
 
-Change the theme of editing field.
+To make our compiler more accepetable by users, we want to provide more themes so that the users can choose from.
 
 ### 7. Support other object like list, string
 

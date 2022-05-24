@@ -158,6 +158,10 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
           });
         return [...oinits, ...iinits, ...ninits];
       }
+      // if (s.obj.a[0].tag === "dict") {
+      //   ...
+      // }
+
       else { throw new Error("Compiler's cursed, go home."); }
     }
 

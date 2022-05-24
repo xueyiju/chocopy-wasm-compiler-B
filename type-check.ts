@@ -237,10 +237,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
         }
         return { ...stmt, a: [NONE, stmt.a], obj: tObj, index: tIndex, value: tVal };
       }
-      // if (tObj.a[0].tag === "tuple") {
-      //   ...
-      // }
-      throw new TypeCheckError(`Type \`${tObj.a[0].tag}\` does not support item assignment`); // Can only index-assign list, dicts, and tuples
+      throw new TypeCheckError(`Type \`${tObj.a[0].tag}\` does not support item assignment`); // Can only index-assign lists and dicts
   }
 }
 

@@ -1,6 +1,7 @@
 # Conflict Evaluation
 
 ## 1. Bignums
+
 For the bignums, they change every number fields in ast and ir to bigint. 
 
 The confict might exist when we want to demonstrate the int fields of an object because we are not sure weather the int is wasm int or the bigint. We need to use the function `reconstructBigint` to get the number of that fields.
@@ -34,10 +35,12 @@ In `repl.ts`, they appended the source code of buildin classes to the original s
 and then replace the `source` with `sourceCode` which includes buildin classes.
 
 Since their change will not affect the other part of source code, we can resolve the conflict
-by using their modification. 
+by using their modification.
 
 ## 5. Destructuring assignment
+
 Destructuring assignment team mainly changes files in the ast and type checker as well as parsing parts. Below is a typical exapmle of destructuring assignment.
+
 ```python
 def f(x:int)->int:
     return x
@@ -49,18 +52,25 @@ b:int = 0
 print(a)
 print(b)
 ```
+
 And the changes Destructuring Assignment team made in the Ast, Ir, Type Checker and Parser will not influence front-end functionalities. And the parse error and type error they added can be thrown out to the front-end and be displayed.
 ## 6. Error reporting
+
 Our group works with error reporting group in a series connection way, and as we use the interfaces provided by error_reporting.ts implemented by them to render error output, there are not conflicts between our implementation currently. Though we have updated our render error methods in the outputrender.ts, the method still accepts the argument and the functionality is as before. Below is a typical example:
+
 ```python
 def f(c):
-	print(3)
+    print(3)
 
 f(2)
 ```
+
 The output is as expected:"Error: PARSE ERROR: Missed type annotation for parameter c in line 1 at column 8 def f(c):". And the feature to display line number and column number may help us better design function in displaying lint in the front-end.
+
 ## 7. Fancy calling conventions
+
 Fancy calling conventions group mainly deals with arguments defined and passed into function or method calls. Typical example is as below:
+
 ```python
 def getNum(x : int = 6) -> int:
    return x
@@ -68,16 +78,22 @@ def getNum(x : int = 6) -> int:
 a, b = 5, getNum()
 print(b)
 ```
+
 And they changes files mainly in the process of parsing, type checking, or lowering, so front-end does not have much overlap with fancy calling.
 Some minor conflicts may occur when we print class object with default values and we can just make small modifications to print default values in a more fancy way.
+
 ## 8. for loops/iterators
+
 Our front-end implementation has minor overlap with for loops, and their changes to include check_range_error and  check_range_index also is quite compatible with our current implementation. As long as error report group have fixed conflicts with them, our implementaion will have no conflicts with them. Below is a typical example:
+
 ```python
 i:int = 0
 for i in range(1, 10, 0):
     print(i)
 ```
+
 The output will be "ValueError: arg3 can't be 0 for range", so as long as we get the right error output from the interfaces desigend the error report group, we will display them in the UI without conflicts, other testcases with for loops will also be passed.
+
 ## 9. Generics and polymorphism
 
 ## 10. I/O, files
@@ -89,9 +105,11 @@ Since supporting more extension will not affect other feature implementation, we
 conflict by using our modification.
 
 ## 11. Inheritance
+
 For the inheritance, they add vtable address for each object so the conflict might be when we are printing the fields of an object, we might want to skip the vtable address or add function name on the user interface.
 
 ## 12. Lists
+
 In the list design, the length of list will be stored in the first location at the list address. Therefore, when we printed out the list, firstly we will read the length of the list and then determine the length we will read on the heap. But it raise another question, what if list can append element? I am not sure about list future design.  
 
 ## 13. Memory management
@@ -101,6 +119,7 @@ In the list design, the length of list will be stored in the first location at t
 ## 15. Sets and/or tuples and/or dictionaries
 
 ## 16. Strings
+
 The string team implment the print function on their own which might lead to some minor conflict. Because out front end move the print function into a new file. To solve that conflict, we can extract out a function abou how to construct a string from wasm int like big num team.
 
-Our major conflicts might lie on the print function in webstart and make all new added object coordinate to each other. 
+Our major conflicts might lie on the print function in webstart and make all new added object coordinate to each other.

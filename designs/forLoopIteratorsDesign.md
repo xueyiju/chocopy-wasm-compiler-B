@@ -937,7 +937,7 @@ for i in a:
 ```
 **Expected Output**
 ```
-This will throw a TypeError
+This will throw a TypeError: Expected int; got bool
 ```
 **Test Case 11:**
 ```Python
@@ -949,7 +949,7 @@ for i, j in [[1, 2], [2, 4]]:
 ```
 **Expected Output**
 ```
-This will throw a TypeError
+This will throw a TypeError: Expected int; got bool
 ```
 
 

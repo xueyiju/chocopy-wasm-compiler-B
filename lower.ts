@@ -139,6 +139,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
         });
       return [...oinits, ...ninits];
     }
+    
     case "index-assign": {
       var [oinits, ostmts, oval] = flattenExprToVal(s.obj, env);
       const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
@@ -159,13 +160,6 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       }
       else { throw new Error("Compiler's cursed, go home."); }
     }
-      // return [[...oinits, ...ninits], [...ostmts, ...nstmts, {
-      //   tag: "field-assign",
-      //   a: s.a,
-      //   obj: oval,
-      //   field: s.field,
-      //   value: nval
-      // }]];
 
     case "if":
       var thenLbl = generateName("$then")
@@ -305,7 +299,6 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       //   ...
       // }
       throw new Error("Compiler's cursed, go home");
-
     case "construct":
       const classdata = env.classes.get(e.name);
       const fields = [...classdata.entries()];

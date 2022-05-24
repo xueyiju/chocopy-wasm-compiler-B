@@ -404,22 +404,20 @@ Here, the iterables will be print statements with the  argument to print as a fu
 * ### Generics and polymorphism
 ```python
 T: TypeVar = TypeVar('T')
-class __ListIterator__(Generic[T]):
-   lst: [T] = None
-   index:int = 0
-   def new(self: ListIterator, initVal: [T]) -> ListIterator:
-   	self.lst = T
-   	return self
-   def next(self: ListIterator) -> T:
-   	ret: T = None
-   	ret = lst[index]
-   	index = index + 1
-   	return ret
-	def hasnext(self: ListIterator) -> bool:
-    	if index >= len(lst):
-        	return False
-    	else:
-        	return True
+class ListIterator(Generic[T]):
+    list: [T] = None
+    index:int = 0
+    def new(self: ListIterator, initVal: [T]) -> ListIterator:
+        self.list = initVal
+        return self
+    def next(self: ListIterator) -> T:
+        ret: T = None
+        ret = self.list[self.index]
+        self.index = self.index + 1
+        return ret
+    def hasnext(self: ListIterator) -> bool:
+        return self.index<len(self.list)
+
 def iter_list(lst: T) -> __ListIterator__:
 	return __ListIterator__.new(lst)
 ```
@@ -517,9 +515,7 @@ No changes in `lower.ts` are required as the destructuring group will destructur
  
 * ### Memory management
  
-We don’t have any interaction with the memory management group. Memory Management team implemented a builtin function test_refcount, and there is no iterators/for-loops in that part, there is no intersection between the 2 features.
- 
- 
+We don’t have any interaction with the memory management group. Memory Management team implemented a builtin function test_refcount, and there is no iterators/for-loops in that part, there is no intersection between the 2 features. We are also not concerned with how they group store elements in the memory.
  
 * ### Optimization
 ```python
@@ -542,8 +538,6 @@ The current implementation of the optimization group doesn't take into considera
 **Changes Required**
  
 The optimization group would need new cases for the `for` statement in the `optimize_ast.ts`. This will enable support for various optimizations that they are implementing - such as Dead Code Elimination, CFA etc. 
- 
- 
  
  
 * ### Sets and/or tuples and/or dictionaries

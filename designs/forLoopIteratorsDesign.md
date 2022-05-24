@@ -753,18 +753,18 @@ Supporting iterables for builtin types would entail implementing a custom iterat
 ```python
 T: TypeVar = TypeVar('T')
 class ListIterator(Generic[T]):
-   list: [T] = None
-   index:int = 0
-   def new(self: ListIterator, initVal: [T]) -> ListIterator:
-   	self.list = initVal
-   	return self
-   def next(self: ListIterator) -> T:
-   	ret: T = None
-   	ret = self.list[self.index]
-   	self.index = self.index + 1
-   	return ret
-   def hasnext(self: ListIterator) -> bool:
-return self.index<len(self.list)
+    list: [T] = None
+    index:int = 0
+    def new(self: ListIterator, initVal: [T]) -> ListIterator:
+        self.list = initVal
+        return self
+    def next(self: ListIterator) -> T:
+        ret: T = None
+        ret = self.list[self.index]
+        self.index = self.index + 1
+        return ret
+    def hasnext(self: ListIterator) -> bool:
+        return self.index<len(self.list)
 ```
  
 We are contingent on the Generics groups for implementing the list wrapper class, to support the type lists of this format [T]. Further, even after this implementation succeeds we shall only be able to support iterables of lists of generic types supported by the generics group. For example: if T can only be string, bool or int, then we’ll support list iterables for cases when list elements are inbuilt-types such as strings, int or  bool.
@@ -784,7 +784,7 @@ class ListIteratorInt():
    	self.index = self.index + 1
    	return ret
    def hasnext(self: ListIteratorInt) -> bool:
-return self.index<len(self.list)
+    return self.index<len(self.list)
 ```
  
 ```python
@@ -800,7 +800,7 @@ class ListIteratorBool():
    	self.index = self.index + 1
    	return ret
    def hasnext(self: ListIteratorBool) -> bool:
-return self.index<len(self.list)
+    return self.index<len(self.list)
 ```
  
 Similarly, we will support SetIterableInt, SetIterableBool, StringIterable.

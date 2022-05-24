@@ -10,7 +10,7 @@ For example:
 print(1)
 ```
 
-Since in bigness team every number is stored in heap, our implementation needs two extra steps in our implementation: 
+Since in bignums team every number is stored in heap, our implementation needs two extra steps in our implementation: 
 
 	1. decode numbers on the heap to a bigint in JS.
 	1. encode the computed result and return it.
@@ -95,3 +95,43 @@ print(l.sum())
 ```
 
 Expected Output is 8. 
+
+## Memory Management
+
+There are no conflicts here right now. Our implmentation now only focus on basic functions like math, time and sleep, while the memory management focus on some techniques like reference counting.
+
+## Optimization
+
+There are no conflicts here. The optimization focus on some techniques like Constant Folding and Constant Propagation. It can simplify the python code but will have conflicts with us.
+
+## Sets and/or tuples and/or dictionaries
+
+There are no conflicts here. However, they have already supported some build-in functions like `len()`. This build-in function is relevant to their implementation of the set (they implement the set using hash table) and it seems that we don't need to support them. One thing we need to pay attention to is the print function. We need to intergrate the `print_set` into the print function, which they still haven't finished.
+
+```typescript
+switch (arg.a[0]){
+            case NUM:
+              argCode.push("(call $print_num)");
+              break;
+            case BOOL:
+              argCode.push("(call $print_bool)");
+              break;
+            case NONE:
+              argCode.push("(call $print_none)");
+              break;
+					  case SET:
+    					// print_set will be implemented by them
+    					argCode.push("(call $print_set)");
+              break;
+            default:
+              throw new RunTimeError("not implemented object print")
+```
+
+
+
+## Strings
+
+
+
+There are no conflicts here. Similarly, they have already implemented some build-in functions like `len()`. And they have 	`print_str ` function which we also need to integrate into the built-in function `print`.
+

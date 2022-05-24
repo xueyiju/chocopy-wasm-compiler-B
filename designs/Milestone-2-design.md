@@ -74,7 +74,7 @@ assert(b == "bcd")
 assert(c == "cd")
 ```
 
-7. Destructuring in List Comprehensions
+7. Destructuring in _for_ loops
 
 ```
 a:[int] = None
@@ -83,7 +83,7 @@ i:int = 0
 j:int = 0
 a = [2,3]
 b = [3,4]
-for i , j in [a, b] :
+for i,j in a, b :
     print(i+j)
 ```
 

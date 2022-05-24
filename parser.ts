@@ -19,29 +19,33 @@ function getSourceLocation(c : TreeCursor, s : string) : SourceLocation {
   return { line, column, srcCode }
 }
 
-export function traverseLiteral(c : TreeCursor, s : string) : Literal {
+export function traverseLiteral(c : TreeCursor, s : string) : Literal<SourceLocation> {
   var location = getSourceLocation(c, s);
   switch(c.type.name) {
     case "Number":
       return {
         tag: "num",
-        value: Number(s.substring(c.from, c.to))
+        value: Number(s.substring(c.from, c.to)),
+        a: location,
       }
     case "Boolean":
       return {
         tag: "bool",
-        value: s.substring(c.from, c.to) === "True"
+        value: s.substring(c.from, c.to) === "True",
+        a: location,
       }
     case "None":
       return {
-        tag: "none"
+        tag: "none",
+        a: location
       }
     case "CallExpression":
       const call_str = s.substring(c.from, c.to);
       const call_name = call_str.split('(')[0];
       if(call_name == "TypeVar") {
         return {
-          tag: "TypeVar"
+          tag: "TypeVar",
+          a: location,
         }
       }
     default:
@@ -123,6 +127,39 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         return expr;  
       } else {
         throw new ParseError("Unknown target while parsing assignment", location);
+      }
+
+    case "ArrayExpression":
+      c.firstChild(); //go into ArrayExpression, should be at [
+
+      var elements : Array<Expr<SourceLocation>> = [];
+      var firstIteration = true;
+      //parse elements in list
+      while(c.nextSibling()) { //next element in list, if there is one
+        if(s.substring(c.from, c.to) === "]") {
+          if(firstIteration) { break; } //empty list
+          else {
+            c.parent();
+            throw new Error("Parse error at " + s.substring(c.from, c.to));
+          }
+        }
+        elements.push(traverseExpr(c, s));
+        c.nextSibling(); // Focus on either , or ]
+        firstIteration = false;
+      }
+
+      if(s.substring(c.from, c.to) !== "]") { //list doesn't have a closing bracket
+        c.parent();
+        throw new Error("Parse error after " + s.substring(c.from, c.to));
+      }
+
+      console.log(elements)
+
+      c.parent(); //up from ArrayExpression
+      return { 
+        a: location,
+        tag: "listliteral", 
+        elements 
       }
 
     case "BinaryExpression":
@@ -223,7 +260,47 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
     case "MemberExpression":
       c.firstChild(); // Focus on object
       var objExpr = traverseExpr(c, s);
-      c.nextSibling(); // Focus on .
+      c.nextSibling(); // Focus on . or [
+      var dotOrBracket = s.substring(c.from, c.to);
+      if( dotOrBracket === "[") {
+        var start_index: Expr<any>;
+        var stop_index: Expr<any>;
+        var step: Expr<any> = {
+          tag: "literal",
+          value: { tag: "num", value: 1 }
+        };
+
+        var indexItems = "";
+        c.nextSibling();
+        while (s.substring(c.from, c.to) != "]") {
+          indexItems += s.substring(c.from, c.to);
+          c.nextSibling();
+        }
+        c.parent();
+        c.firstChild(); // str object name
+        c.nextSibling(); // "[""
+        c.nextSibling(); // start index
+
+        if(indexItems.length === 0) {
+          throw new Error("Error: there should have at least one value inside the brackets");
+        }
+
+        var sliced_indices = indexItems.split(":");
+        if(sliced_indices.length > 3){
+          throw new Error("Too much indices, maximum is three");
+        }
+
+        start_index = traverseExpr(c, s)
+
+        c.parent();
+        return {
+          a: location,
+          tag: "index",
+          obj: objExpr,
+          index: start_index
+        }
+      }
+
       c.nextSibling(); // Focus on property
       var propName = s.substring(c.from, c.to);
       c.parent();
@@ -294,6 +371,14 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
           name: target.name,
           value: value
         }  
+      } else if (target.tag === "index"){
+        return {
+          a: location,
+          tag: "index-assign",
+          obj: target.obj,
+          index: target.index,
+          value: value
+        }
       } else {
         throw new ParseError("Unknown target while parsing assignment", location);
       }
@@ -407,7 +492,22 @@ export function traverseType(c : TreeCursor, s : string) : Type {
     case "int": return NUM;
     case "bool": return BOOL;
     case "TypeVar": return TYPE_VAR;
-    default: {
+    default:
+      //list type
+      if(c.type.name === "ArrayExpression") {
+        c.firstChild(); // focus on [
+        c.nextSibling();
+        const type = traverseType(c, s);
+        c.nextSibling(); 
+        if(s.substring(c.from, c.to) !== "]") { //missing closing square bracket
+          c.parent();
+          throw new Error("Parse error at " + s.substring(c.from, c.to));
+        }
+        c.parent(); //up from ArrayExpression
+
+        return {tag: "list", type};
+    } else {
+      //object
       const genericRegex = /\[[A-Za-z]*\]/g;
       const genericArgs = name.match(genericRegex);
       if(genericArgs) {
@@ -419,7 +519,7 @@ export function traverseType(c : TreeCursor, s : string) : Type {
       } else {
         return CLASS(name);
       }
-    }
+    }      
   }
 }
 

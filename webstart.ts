@@ -19,6 +19,12 @@ import "./style.scss";
 
 
 
+function index_out_of_bounds(length: any, index: any): any {
+  if (index < 0 || index >= length)
+    throw new Error(`RUNTIME ERROR: Index ${index} out of bounds`);
+  return index;
+}
+
 function webStart() {
   var filecontent: string | ArrayBuffer;
   document.addEventListener("DOMContentLoaded", async function() {
@@ -33,6 +39,7 @@ function webStart() {
 
     var importObject = {
       imports: {
+        index_out_of_bounds: (length: any, index: any) => index_out_of_bounds(length, index),
         division_by_zero: (arg: number, line: number, col: number) => RUNTIME_ERROR.division_by_zero(arg, line, col),
         stack_push: (line: number) => RUNTIME_ERROR.stack_push(line),
         stack_clear: () => RUNTIME_ERROR.stack_clear(),

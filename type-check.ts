@@ -5,6 +5,7 @@ import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
 import exp from 'constants';
+import { listenerCount } from 'process';
 
 export type GlobalTypeEnv = {
   globals: Map<string, Type>,
@@ -53,10 +54,11 @@ export type TypeError = {
   message: string
 }
 
-export function equalType(t1: Type, t2: Type) {
+export function equalType(t1: Type, t2: Type): boolean {
   return (
     t1 === t2 ||
-    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name)
+    (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
+    (t1.tag === "list" && t2.tag === "list" && (equalType(t1.type, t2.type) || t1.type === NONE))
   );
 }
 
@@ -65,9 +67,9 @@ export function isNoneOrClass(t: Type) {
 }
 
 export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type): boolean {
-  return equalType(t1, t2) || t1.tag === "none" && t2.tag === "class" 
+  return equalType(t1, t2) || t1.tag === "none" && (t2.tag === "class" || t2.tag === "list");
 }
-
+// t1: assignment value type, t2: expected type
 export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolean {
   return isSubtype(env, t1, t2);
 }
@@ -119,11 +121,11 @@ export function tc(env : GlobalTypeEnv, program : Program<SourceLocation>) : [Pr
 }
 
 export function tcInit(env: GlobalTypeEnv, init : VarInit<SourceLocation>) : VarInit<[Type, SourceLocation]> {
-  const valTyp = tcLiteral(init.value);
-  if (isAssignable(env, valTyp, init.type)) {
-    return {...init, a: [NONE, init.a]};
+  const tcVal = tcLiteral(init.value);
+  if (isAssignable(env, tcVal.a[0], init.type)) {
+    return {...init, a: [NONE, init.a], value: tcVal};
   } else {
-    throw new TypeCheckError("Expected type `" + init.type + "`; got type `" + valTyp + "`", init.a);
+    throw new TypeCheckError("Expected type `" + init.type + "`; got type `" + tcVal.a[0] + "`", init.a);
   }
 }
 
@@ -210,7 +212,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       return {a: [NONE, stmt.a], tag: stmt.tag};
     case "field-assign":
       var tObj = tcExpr(env, locals, stmt.obj);
-      const tVal = tcExpr(env, locals, stmt.value);
+      var tVal = tcExpr(env, locals, stmt.value);
       if (tObj.a[0].tag !== "class") 
         throw new TypeCheckError("field assignments require an object", stmt.a);
       if (!env.classes.has(tObj.a[0].name)) 
@@ -221,13 +223,31 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       if (!isAssignable(env, tVal.a[0], fields.get(stmt.field)))
         throw new TypeCheckError(`could not assign value of type: ${tVal.a[0]}; field ${stmt.field} expected type: ${fields.get(stmt.field)}`, stmt.a);
       return {...stmt, a: [NONE, stmt.a], obj: tObj, value: tVal};
+    case "index-assign":
+      var tObj = tcExpr(env, locals, stmt.obj);
+      var tIndex = tcExpr(env, locals, stmt.index);
+      var tVal = tcExpr(env, locals, stmt.value);
+      if (tIndex.a[0].tag != "number") {
+        // if (tObj.a[0].tag === "dict") {
+        //   ...
+        // }
+        throw new TypeCheckError(`Index is of non-integer type \`${tIndex.a[0].tag}\``);
+      }
+      if (tObj.a[0].tag === "list") {
+        if (!isAssignable(env, tVal.a[0], tObj.a[0].type)) {
+          throw new TypeCheckError(`Could not assign value of type: ${tVal.a[0].tag}; List expected type: ${tObj.a[0].type.tag}`, stmt.a);
+        }
+        return { ...stmt, a: [NONE, stmt.a], obj: tObj, index: tIndex, value: tVal };
+      }
+      throw new TypeCheckError(`Type \`${tObj.a[0].tag}\` does not support item assignment`, stmt.a); // Can only index-assign lists and dicts
   }
 }
 
 export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<SourceLocation>) : Expr<[Type, SourceLocation]> {
   switch(expr.tag) {
     case "literal": 
-      return {...expr, a: [tcLiteral(expr.value), expr.a]};
+      const tcVal : Literal<[Type, SourceLocation]> = tcLiteral(expr.value)
+      return {...expr, a: [tcVal.a[0], expr.a], value: tcVal};
     case "binop":
       const tLeft = tcExpr(env, locals, expr.left);
       const tRight = tcExpr(env, locals, expr.right);
@@ -312,6 +332,54 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeCheckError("Undefined function: " + expr.name, expr.a);
       }
+
+    case "listliteral":
+      if(expr.elements.length == 0) {
+        const elements: Expr<[Type, SourceLocation]>[] = [];
+        return {...expr, elements, a: [{tag: "list", type: NONE}, expr.a]};
+      }
+
+      const elementsWithTypes: Array<Expr<[Type, SourceLocation]>> = [];
+
+      const checked0 = tcExpr(env, locals, expr.elements[0]);
+      const proposedType = checked0.a[0]; //type of the 1st element in list
+      elementsWithTypes.push(checked0);
+
+      //check that all other elements have the same type as the first element
+      //TODO: account for the case where the first element could be None and the rest are objects of some class
+      for(let i = 1; i < expr.elements.length; i++) {
+        const checkedI = tcExpr(env, locals, expr.elements[i]);
+        const elementType = checkedI.a[0];
+
+        //TODO: make error message better, use the name of the class if it's an object
+        //also update condition to account for subtypes
+        if(!isAssignable(env, elementType, proposedType)) {
+          throw new TypeError("List has incompatible types: " + elementType.tag + " and " + proposedType.tag);
+        }
+
+        elementsWithTypes.push(checkedI); //add expression w/ type annotation to new elements list
+      }
+
+      return {...expr, elements: elementsWithTypes, a: [{tag: "list", type: proposedType}, expr.a]};
+    case "index":
+      var tObj: Expr<[Type, SourceLocation]> = tcExpr(env, locals, expr.obj);
+      var tIndex: Expr<[Type, SourceLocation]> = tcExpr(env, locals, expr.index);
+      if (tIndex.a[0].tag !== "number") {
+        // if (tObj.a[0].tag === "dict") {
+        //   ...
+        // }
+        throw new TypeCheckError(`Index is of non-integer type \`${tIndex.a[0].tag}\``);
+      }
+      // if (equalType(tObj.a[0], CLASS("str"))) {
+      //   return { a: [{ tag: "class", name: "str" }, expr.a], tag: "index", obj: tObj, index: tIndex };
+      // }
+      if (tObj.a[0].tag === "list") {
+        return { ...expr, a: [tObj.a[0].type, expr.a], obj: tObj, index: tIndex }; 
+      }
+      // if (tObj.a[0].tag === "tuple") {
+      //   ...
+      // }
+      throw new TypeCheckError(`Cannot index into type \`${tObj.a[0].tag}\``); // Can only index into strings, list, dicts, and tuples
     case "call":
       if(env.classes.has(expr.name)) {
         // surprise surprise this is actually a constructor
@@ -385,10 +453,19 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
   }
 }
 
-export function tcLiteral(literal : Literal) {
-    switch(literal.tag) {
-        case "bool": return BOOL;
-        case "num": return NUM;
-        case "none": return NONE;
-    }
+export function tcLiteral(literal : Literal<SourceLocation>) : Literal<[Type, SourceLocation]> {
+  var typ : Type;
+  switch(literal.tag) {
+    case "bool": 
+      typ = BOOL;
+      break;
+    case "num": 
+      typ =  NUM;
+      break;
+    case "none": 
+      typ =  NONE;
+      break;
+    default: throw new Error(`unknown type: ${literal.tag}`)
+  }
+  return {...literal, a: [typ, literal.a]}
 }

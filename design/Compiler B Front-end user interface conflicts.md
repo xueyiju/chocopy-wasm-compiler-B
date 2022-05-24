@@ -54,6 +54,7 @@ print(b)
 ```
 
 And the changes Destructuring Assignment team made in the Ast, Ir, Type Checker and Parser will not influence front-end functionalities. And the parse error and type error they added can be thrown out to the front-end and be displayed.
+
 ## 6. Error reporting
 
 Our group works with error reporting group in a series connection way, and as we use the interfaces provided by error_reporting.ts implemented by them to render error output, there are not conflicts between our implementation currently. Though we have updated our render error methods in the outputrender.ts, the method still accepts the argument and the functionality is as before. Below is a typical example:
@@ -84,7 +85,7 @@ Some minor conflicts may occur when we print class object with default values an
 
 ## 8. for loops/iterators
 
-Our front-end implementation has minor overlap with for loops, and their changes to include check_range_error and  check_range_index also is quite compatible with our current implementation. As long as error report group have fixed conflicts with them, our implementaion will have no conflicts with them. Below is a typical example:
+Our front-end implementation has minor overlap with for loops, and their changes to include check_range_error and check_range_index also is quite compatible with our current implementation. As long as error report group have fixed conflicts with them, our implementaion will have no conflicts with them. Below is a typical example:
 
 ```python
 i:int = 0
@@ -95,6 +96,8 @@ for i in range(1, 10, 0):
 The output will be "ValueError: arg3 can't be 0 for range", so as long as we get the right error output from the interfaces desigend the error report group, we will display them in the UI without conflicts, other testcases with for loops will also be passed.
 
 ## 9. Generics and polymorphism
+
+The team added the genericArgs in class' AST and type, and added the support for generics in parser.ts. One possible conflict is that the author defined remove-generics.ts to collect and recreate all the specializations for each generic type. This new module introduced the removeGenerics function to repl.ts to insert one more step before tc in repl.tc. However, we did not made any change in repl.tc, which is only used for helpers.test.ts for now. Therefore, generics would not cause conflicts.
 
 ## 10. I/O, files
 
@@ -114,9 +117,15 @@ In the list design, the length of list will be stored in the first location at t
 
 ## 13. Memory management
 
+
+
 ## 14. Optimization
 
+
+
 ## 15. Sets and/or tuples and/or dictionaries
+
+
 
 ## 16. Strings
 

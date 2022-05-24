@@ -2,12 +2,11 @@ import { BasicREPL} from './repl';
 import { Type, Value } from './ast';
 import { defaultTypeEnv } from './type-check';
 import { NUM, BOOL, NONE } from './utils';
-// import CodeMirror from "codemirror";
+import * as RUNTIME_ERROR from './runtime_error'
 import { renderResult, renderError, renderPrint } from "./outputrender";
 import { log } from 'console';
 import { sources } from 'webpack';
 
-// console.log('this is normoal')
 import CodeMirror from "codemirror";
 import "codemirror/addon/edit/closebrackets";
 import "codemirror/mode/python/python";
@@ -19,11 +18,6 @@ import "codemirror/addon/fold/comment-fold";
 import "./style.scss";
 
 
-function assert_not_none(arg: any) : any {
-  if (arg === 0)
-    throw new Error("RUNTIME ERROR: cannot perform operation on none");
-  return arg;
-}
 
 function webStart() {
   var filecontent: string | ArrayBuffer;
@@ -39,7 +33,10 @@ function webStart() {
 
     var importObject = {
       imports: {
-        assert_not_none: (arg: any) => assert_not_none(arg),
+        division_by_zero: (arg: number, line: number, col: number) => RUNTIME_ERROR.division_by_zero(arg, line, col),
+        stack_push: (line: number) => RUNTIME_ERROR.stack_push(line),
+        stack_clear: () => RUNTIME_ERROR.stack_clear(),
+        assert_not_none: (arg: any, line: number, col: number) => RUNTIME_ERROR.assert_not_none(arg, line, col),
         print_num: (arg: number) => renderPrint(NUM, arg),
         print_bool: (arg: number) => renderPrint(BOOL, arg),
         print_none: (arg: number) => renderPrint(NONE, arg),

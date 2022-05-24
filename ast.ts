@@ -9,7 +9,7 @@ export type Type =
   | {tag: "either", left: Type, right: Type }
   | {tag: "type-var"}
 
-export type SourceLocation = { line: number }
+export type SourceLocation = { line: number, column: number, srcCode: string }
 
 export type Parameter<A> = { name: string, type: Type }
 

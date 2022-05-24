@@ -1,4 +1,5 @@
 import { readFileSync } from "fs";
+import * as RUNTIME_ERROR from '../runtime_error'
 
 enum Type { Num, Bool, None }
 
@@ -19,12 +20,6 @@ function print(typ: Type, arg: any): any {
   return arg;
 }
 
-function assert_not_none(arg: any) : any {
-  if (arg === 0)
-    throw new Error("RUNTIME ERROR: cannot perform operation on none");
-  return arg;
-}
-
 export async function addLibs() {
   const bytes = readFileSync("build/memory.wasm");
   const memory = new WebAssembly.Memory({initial:10, maximum:100});
@@ -41,7 +36,10 @@ export const importObject : any = {
     // the compiler easier, we define print so it logs to a string object.
     //  We can then examine output to see what would have been printed in the
     //  console.
-    assert_not_none: (arg: any) => assert_not_none(arg),
+    division_by_zero: (arg: number, line: number, col: number) => RUNTIME_ERROR.division_by_zero(arg, line, col),
+    assert_not_none: (arg: any, line: number, col: number) => RUNTIME_ERROR.assert_not_none(arg, line, col),
+    stack_push: (line: number) => RUNTIME_ERROR.stack_push(line),
+    stack_clear: () => RUNTIME_ERROR.stack_clear(),
     print: (arg: any) => print(Type.Num, arg),
     print_num: (arg: number) => print(Type.Num, arg),
     print_bool: (arg: number) => print(Type.Bool, arg),

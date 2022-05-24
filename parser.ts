@@ -7,8 +7,16 @@ import { ParseError} from "./error_reporting";
 
 // To get the line number from lezer tree to report errors
 function getSourceLocation(c : TreeCursor, s : string) : SourceLocation {
-  var line = s.substring(0, c.from).split("\n").length;
-  return { line }
+  var source_lines = s.split("\n");
+  var lines = s.substring(0, c.from).split("\n");
+  var line: number = lines.length;
+  var previousLines = lines.slice(0,line-1).join("\n").length;
+  var srcCode =  source_lines[line-1]  
+  var column = s.substring(previousLines+1, c.to).length;  
+  if (line === 1) {
+    column = column + 1;
+  }
+  return { line, column, srcCode }
 }
 
 export function traverseLiteral(c : TreeCursor, s : string) : Literal {
@@ -37,7 +45,7 @@ export function traverseLiteral(c : TreeCursor, s : string) : Literal {
         }
       }
     default:
-      throw new ParseError("Not literal", location.line)
+      throw new ParseError("Not literal", location)
   }
 }
 
@@ -74,6 +82,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         const commaSepArgs = genArgsStr.substring(1, genArgsStr.length - 1);
         const genTypes = commaSepArgs.split(',').map(s => typeFromString(s));
         return {
+          a: location,
           tag: "call",
           name: callStr.split('[')[0],
           arguments: args,
@@ -113,7 +122,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         }
         return expr;  
       } else {
-        throw new ParseError("Unknown target while parsing assignment", location.line);
+        throw new ParseError("Unknown target while parsing assignment", location);
       }
 
     case "BinaryExpression":
@@ -166,7 +175,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
           op = BinOp.Or;
           break;
         default:
-          throw new ParseError("Could not parse op at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line)
+          throw new ParseError("Could not parse operator at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location)
       }
       c.nextSibling(); // go to rhs
       const rhsExpr = traverseExpr(c, s);
@@ -182,6 +191,10 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
       c.firstChild(); // Focus on (
       c.nextSibling(); // Focus on inside
       var expr = traverseExpr(c, s);
+      c.nextSibling(); // Focus on )
+      if(s.substring(c.from, c.to) !== ")") {
+        throw new ParseError("Missing parenthesis", location);
+      }
       c.parent();
       return expr;
     case "UnaryExpression":
@@ -196,7 +209,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
           op = UniOp.Not;
           break;
         default:
-          throw new ParseError("Could not parse op at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line)
+          throw new ParseError("Could not parse op at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location)
       }
       c.nextSibling(); // go to expr
       var expr = traverseExpr(c, s);
@@ -227,7 +240,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         name: "self"
       };
     default:
-      throw new ParseError("Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location.line);
+      throw new ParseError("Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to), location);
   }
 }
 
@@ -282,7 +295,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
           value: value
         }  
       } else {
-        throw new ParseError("Unknown target while parsing assignment", location.line);
+        throw new ParseError("Unknown target while parsing assignment", location);
       }
     case "ExpressionStatement":
       c.firstChild();
@@ -322,6 +335,9 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       // console.log("Cond:", cond);
       c.nextSibling(); // Focus on : thn
       c.firstChild(); // Focus on :
+      if(s.substring(c.from, c.to) !== ":") {
+        throw new ParseError("Missing colon", location);
+      }
       var thn = [];
       var els = [];
       while(c.nextSibling()) {  // Focus on thn stmts
@@ -354,6 +370,9 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
 
       var body = [];
       c.firstChild(); // Focus on :
+      if(s.substring(c.from, c.to) !== ":") {
+        throw new ParseError("Missing colon", location);
+      }
       while(c.nextSibling()) {
         body.push(traverseStmt(c, s));
       }
@@ -368,7 +387,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
     case "PassStatement":
       return { a: location, tag: "pass" }
     default:
-      throw new ParseError("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to), location.line);
+      throw new ParseError("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to), location);
   }
 }
 
@@ -413,7 +432,7 @@ export function traverseParameters(c : TreeCursor, s : string) : Array<Parameter
     let name = s.substring(c.from, c.to);
     c.nextSibling(); // Focuses on "TypeDef", hopefully, or "," if mistake
     let nextTagName = c.type.name; // NOTE(joe): a bit of a hack so the next line doesn't if-split
-    if(nextTagName !== "TypeDef") { throw new ParseError("Missed type annotation for parameter " + name, location.line)};
+    if(nextTagName !== "TypeDef") { throw new ParseError("Missed type annotation for parameter " + name, location)};
     c.firstChild();  // Enter TypeDef
     c.nextSibling(); // Focuses on type itself
     let typ = traverseType(c, s);
@@ -434,7 +453,7 @@ export function traverseVarInit(c : TreeCursor, s : string) : VarInit<SourceLoca
 
   if(c.type.name !== "TypeDef") {
     c.parent();
-    throw new ParseError("invalid variable init", location.line);
+    throw new ParseError("invalid variable init", location);
   }
   c.firstChild(); // go to :
   c.nextSibling(); // go to type
@@ -532,7 +551,7 @@ export function traverseClass(c : TreeCursor, s : string) : Class<SourceLocation
     } else if (isFunDef(c, s)) {
       methods.push(traverseFunDef(c, s));
     } else {
-      throw new ParseError(`Could not parse the body of class: ${className}`, location.line);
+      throw new ParseError(`Could not parse the body of class: ${className}`, location);
     }
   } 
   c.parent();
@@ -628,7 +647,7 @@ export function traverse(c : TreeCursor, s : string) : Program<SourceLocation> {
       c.parent();
       return { a: location, funs, inits, classes, stmts };
     default:
-      throw new ParseError("Could not parse program at " + c.node.from + " " + c.node.to, location.line);
+      throw new ParseError("Could not parse program at " + c.node.from + " " + c.node.to, location);
   }
 }
 

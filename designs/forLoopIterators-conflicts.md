@@ -4,7 +4,7 @@
 There is no interaction between our implementation and Bignums. Since, we are first writing the inbuilt functions/classes in python and then converting those to wasm, we do not need to worry about whether a number is a bignum or not.
  
 Input:
-```
+```python
 class __range__(object):
     start: int = 0
     stop: int = 0

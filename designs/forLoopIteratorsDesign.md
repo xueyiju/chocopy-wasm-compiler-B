@@ -737,3 +737,105 @@ Output:
 ```
 TypeCheckError: continue cannot exist outside a loop
 ```
+
+# Week 8 and 9 features Roadmap #
+ 
+We shall be implementing the following for the next week:
+ 
+* Iterables for currently supported builtin types - **lists, sets, strings**.
+* the iter() function, which takes as input one of the builtin types: lists, sets, strings. The function returns an iterable object
+* the next() function, which takes as input an iterable object. Iterable objects are the built-in types (lists, sets, strings) on which iter() has been called or an object of a class that has next() and hasnext() functions
+ 
+**Changes Required**
+ 
+Supporting iterables for builtin types would entail implementing a custom iterator class for each of these inbuilt-types. Below is an example of how  we will implement a list iterator class using Generics.
+ 
+```python
+T: TypeVar = TypeVar('T')
+class ListIterator(Generic[T]):
+   list: [T] = None
+   index:int = 0
+   def new(self: ListIterator, initVal: [T]) -> ListIterator:
+   	self.list = initVal
+   	return self
+   def next(self: ListIterator) -> T:
+   	ret: T = None
+   	ret = self.list[self.index]
+   	self.index = self.index + 1
+   	return ret
+   def hasnext(self: ListIterator) -> bool:
+return self.index<len(self.list)
+```
+ 
+We are contingent on the Generics groups for implementing the list wrapper class, to support the type lists of this format [T]. Further, even after this implementation succeeds we shall only be able to support iterables of lists of generic types supported by the generics group. For example: if T can only be string, bool or int, then we’ll support list iterables for cases when list elements are inbuilt-types such as strings, int or  bool.
+ 
+Currently, we will implement two list iterable classes as follows to make lists of primitive types work.
+ 
+```python
+class ListIteratorInt():
+   list: [int] = None
+   index:int = 0
+   def new(self: ListIteratorInt, initVal: [int]) -> ListIteratorInt:
+   	self.list = initVal
+   	return self
+   def next(self: ListIteratorInt) -> int:
+   	ret: int = None
+   	ret = self.list[self.index]
+   	self.index = self.index + 1
+   	return ret
+   def hasnext(self: ListIteratorInt) -> bool:
+return self.index<len(self.list)
+```
+ 
+```python
+class ListIteratorBool():
+   list: [bool] = None
+   index:int = 0
+   def new(self: ListIteratorInt, initVal: [bool]) -> ListIteratorBool:
+   	self.list = initVal
+   	return self
+   def next(self: ListIteratorBool) -> bool:
+   	ret: bool = None
+   	ret = self.list[self.index]
+   	self.index = self.index + 1
+   	return ret
+   def hasnext(self: ListIteratorBool) -> bool:
+return self.index<len(self.list)
+```
+ 
+Similarly, we will support SetIterableInt, SetIterableBool, StringIterable.
+ 
+* Changes required for iter() to work:
+We will be required to construct the corresponding iterable object for every call of the iter function. `type-check.ts` would contain the requisite cases (whether it’s a list, set, string or custom iterator) for calling the concerned iterable class.
+ 
+The following are the changes required in `type-check.ts` to make this work, in the case “call”:
+ 
+```typescript
+default : {
+    if(expr.name === “iter”) {
+	  // Typecheck argument to be of builtin types or object of a class that has next() and hasnext()
+        // check the type of the argument
+        // if argument is list of ints/bools create and return a ListIterableInt/ListIterableBool object
+        // if argument is sets of ints/bools create and return a SetIterableInt/SetIterableBool object
+         // if argument is a string create and return a StringIterable object
+        // if argument is an object of a class that has next() and hasnext() return the same object
+	}   
+}
+```
+* Changes required to make next() work:
+The function next() will take as input an iterable (ListIterableInt, ListIterableBool, SetIterableInt, SetIterableBool, StringIterable or a custom object). Then, `type-check.ts` would contain the requisite cases for calling the concerned iterable class’s next() function.
+ 
+The following are the changes required in `type-check.ts` to make this work, in the case “call”:
+ 
+```typescript
+default : {
+    if(expr.name === “next”) {
+        // Typecheck argument to be of type ListIterableInt, ListIterableBool, SetIterableInt, SetIterableBool, StringIterable or object of a class that has next() and hasnext()
+        // add the following expr/stmt equivalent to python(call expr.arg.next())
+	}   
+}
+```
+
+
+
+

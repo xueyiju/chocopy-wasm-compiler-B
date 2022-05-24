@@ -4,6 +4,7 @@ import { GlobalEnv } from "./compiler";
 import { tc, defaultTypeEnv, GlobalTypeEnv } from "./type-check";
 import { Value, Type } from "./ast";
 import { parse } from "./parser";
+import { removeGenerics } from "./remove-generics";
 
 interface REPL {
   run(source : string) : Promise<any>;
@@ -54,7 +55,8 @@ export class BasicREPL {
   tc(source: string): Type {
     const config: Config = { importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions };
     const parsed = parse(source);
-    const [result, _] = tc(this.currentTypeEnv, parsed);
+    const simplified = removeGenerics(parsed);
+    const [result, _] = tc(this.currentTypeEnv, simplified);
     return result.a[0];
   }
 }

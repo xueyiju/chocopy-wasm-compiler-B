@@ -739,7 +739,7 @@ TypeCheckError: continue cannot exist outside a loop
 ```
 ## New Test Cases for Week 9
 **Test Case 1:**
-```
+```Python
 a:[int] = None
 i:int = 0
 a = [1,2,3]
@@ -752,7 +752,7 @@ for i in a:
 2
 3
 **Test Case 2:**
-```
+```Python
 a:[bool] = None
 i:bool = False
 a = [True,False,True]
@@ -764,7 +764,7 @@ True
 False
 True
 **Test Case 3:**
-```
+```Python
 set_1 : set[int] = None
 set_1 = {11,22}
 set_1.add(33)
@@ -776,7 +776,7 @@ for i in set1:
 22
 33
 **Test Case 4:**
-```
+```Python
 a:[int] = None
 i:int = 0
 a = [1,2,3]
@@ -791,7 +791,7 @@ print(next(list_itr)
 2
 3
 **Test Case 5:**
-```
+```Python
 a:[int] = None
 i:int = 0
 a = [1]
@@ -804,7 +804,7 @@ print(next(list_itr)
 "RUNTIME ERROR: StopIteration"
 
 **Test Case 6:**
-```
+```Python
 a:[bool] = None
 i:bool = 0
 a = [False, True]
@@ -817,7 +817,7 @@ False
 True
 
 **Test Case 7:**
-```
+```Python
 class EvenNumbers(object):
     num:int = 0
     def __init__(self: EvenNumbers):
@@ -841,7 +841,7 @@ print(next(custom_iter))
 2
 4
 **Test Case 8:**
-```
+```Python
 a:[int] = None
 b:[int] = None
 c:[int] = None
@@ -851,14 +851,15 @@ c = [-4, -4]
 i:int = 0
 j:int = 0
 k:int = 0
-for i, j, k in [a, b, c]:
-    print(i + j + k)
+for i, j in [a, b, c]:
+    print(i + j)
 ```
 **Expected Output**
-0
-0
+4
+4
+-8
 **Test Case 9:**
-```
+```Python
 a:str = "abc"
 b:str = "bcd"
 i:str = "a"
@@ -867,12 +868,13 @@ for i, j in [[a, b], [b, a]]:
     print(i)
     print(j)
 ```
+**Expected Output**
 abc
 bcd
 bcd
 abc
 **Test Case 10:**
-```
+```Python
 a:[int] = None
 i:bool = 0
 a = [1,2,3]
@@ -881,7 +883,7 @@ for i in a:
 ```
 This will throw a TypeError
 **Test Case 11:**
-```
+```Python
 i:int = 0
 j:bool = 0
 for i, j in [[1, 2], [2, 4]]:

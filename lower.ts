@@ -70,7 +70,7 @@ function lowerClass(cls: AST.Class<[Type, SourceLocation]>, env : GlobalEnv) : I
     }
 }
 
-function literalToVal(lit: AST.Literal) : IR.Value<[Type, SourceLocation]> {
+function literalToVal(lit: AST.Literal<[Type, SourceLocation]>) : IR.Value<[Type, SourceLocation]> {
     switch(lit.tag) {
         case "num":
             return { ...lit, value: BigInt(lit.value) }
@@ -146,7 +146,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
 
       const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
-      
+
       if (s.obj.a[0].tag === "list") {
         pushStmtsToLastBlock(blocks,
           ...ostmts, ...istmts, ...nstmts, {
@@ -292,6 +292,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       if (e.obj.a[0].tag === "list") { 
         const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
         return [[...oinits, ...iinits], [...ostmts, ...istmts], {
+          a: e.a,
           tag: "load",
           start: oval,
           offset: offsetValue
@@ -351,7 +352,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv
       })
       return [
         [ { name: newListName, type: e.a[0], value: { tag: "none" } }, ...inits ],
-        [ { tag: "assign", name: newListName, value: allocList }, ...stmts, storeLength, ...assignsList ],
+        [ { a: e.a, tag: "assign", name: newListName, value: allocList }, ...stmts, storeLength, ...assignsList ],
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newListName } }
       ];
     case "id":
@@ -393,13 +394,14 @@ function listIndexOffsets(iinits: IR.VarInit<[AST.Type, AST.SourceLocation]>[], 
     a: ival.a,
     name: listLength,
     value: {
+      a: ival.a,
       tag: "load",
       start: oval,
       offset: { tag: "wasmint", value: 0 }} 
   };
   iinits.push({ a: ival.a, name: listLength, type: {tag: "number"}, value: { tag: "none" } })
   istmts.push(setLength);
-  const checkIndex: IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `index_out_of_bounds`, arguments: [{tag: "id", name: listLength, a: ival.a}, ival]}}
+  const checkIndex: IR.Stmt<[Type, SourceLocation]> = { a: ival.a, tag: "expr", expr: { a: ival.a, tag: "call", name: `index_out_of_bounds`, arguments: [{tag: "id", name: listLength, a: ival.a}, ival]}}
   istmts.push(checkIndex);
 
   // Get rest of index offsets

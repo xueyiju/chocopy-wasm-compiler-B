@@ -4,7 +4,7 @@ import { Program, Expr, Stmt, UniOp, BinOp, Parameter, Type, FunDef, VarInit, Cl
 import { CLASS, TYPE_VAR } from "./utils";
 
 type GenericEnv = {
-    typeVars: Map<string, Literal>,
+    typeVars: Map<string, Literal<SourceLocation>>,
     typeVarSpecializations: Map<string, Set<Type>>
 }
 
@@ -79,8 +79,8 @@ export function removeGenerics(ast: Program<SourceLocation>): Program<SourceLoca
 }
 
 
-function findTypeVarInits(inits: Array<VarInit<SourceLocation>>): Map<string, Literal> {
-    let genericNames = new Map<string, Literal>();
+function findTypeVarInits(inits: Array<VarInit<SourceLocation>>): Map<string, Literal<SourceLocation>> {
+    let genericNames = new Map<string, Literal<SourceLocation>>();
     inits.forEach(i => {
         if (i.type == TYPE_VAR) {
             genericNames.set(i.name, i.value);

@@ -19,29 +19,33 @@ function getSourceLocation(c : TreeCursor, s : string) : SourceLocation {
   return { line, column, srcCode }
 }
 
-export function traverseLiteral(c : TreeCursor, s : string) : Literal {
+export function traverseLiteral(c : TreeCursor, s : string) : Literal<SourceLocation> {
   var location = getSourceLocation(c, s);
   switch(c.type.name) {
     case "Number":
       return {
         tag: "num",
-        value: Number(s.substring(c.from, c.to))
+        value: Number(s.substring(c.from, c.to)),
+        a: location,
       }
     case "Boolean":
       return {
         tag: "bool",
-        value: s.substring(c.from, c.to) === "True"
+        value: s.substring(c.from, c.to) === "True",
+        a: location,
       }
     case "None":
       return {
-        tag: "none"
+        tag: "none",
+        a: location
       }
     case "CallExpression":
       const call_str = s.substring(c.from, c.to);
       const call_name = call_str.split('(')[0];
       if(call_name == "TypeVar") {
         return {
-          tag: "TypeVar"
+          tag: "TypeVar",
+          a: location,
         }
       }
     default:

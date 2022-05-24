@@ -5,6 +5,7 @@ import { NUM, BOOL, NONE, CLASS } from './utils';
 import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
 import exp from 'constants';
+import { listenerCount } from 'process';
 
 export type GlobalTypeEnv = {
   globals: Map<string, Type>,
@@ -120,11 +121,11 @@ export function tc(env : GlobalTypeEnv, program : Program<SourceLocation>) : [Pr
 }
 
 export function tcInit(env: GlobalTypeEnv, init : VarInit<SourceLocation>) : VarInit<[Type, SourceLocation]> {
-  const valTyp = tcLiteral(init.value);
-  if (isAssignable(env, valTyp, init.type)) {
-    return {...init, a: [NONE, init.a]};
+  const tcVal = tcLiteral(init.value);
+  if (isAssignable(env, tcVal.a[0], init.type)) {
+    return {...init, a: [NONE, init.a], value: tcVal};
   } else {
-    throw new TypeCheckError("Expected type `" + init.type + "`; got type `" + valTyp + "`", init.a);
+    throw new TypeCheckError("Expected type `" + init.type + "`; got type `" + tcVal.a[0] + "`", init.a);
   }
 }
 
@@ -234,18 +235,19 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       }
       if (tObj.a[0].tag === "list") {
         if (!isAssignable(env, tVal.a[0], tObj.a[0].type)) {
-          throw new TypeCheckError(`Could not assign value of type: ${tVal.a[0].tag}; List expected type: ${tObj.a[0].type.tag}`);
+          throw new TypeCheckError(`Could not assign value of type: ${tVal.a[0].tag}; List expected type: ${tObj.a[0].type.tag}`, stmt.a);
         }
         return { ...stmt, a: [NONE, stmt.a], obj: tObj, index: tIndex, value: tVal };
       }
-      throw new TypeCheckError(`Type \`${tObj.a[0].tag}\` does not support item assignment`); // Can only index-assign lists and dicts
+      throw new TypeCheckError(`Type \`${tObj.a[0].tag}\` does not support item assignment`, stmt.a); // Can only index-assign lists and dicts
   }
 }
 
 export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<SourceLocation>) : Expr<[Type, SourceLocation]> {
   switch(expr.tag) {
     case "literal": 
-      return {...expr, a: [tcLiteral(expr.value), expr.a]};
+      const tcVal : Literal<[Type, SourceLocation]> = tcLiteral(expr.value)
+      return {...expr, a: [tcVal.a[0], expr.a], value: tcVal};
     case "binop":
       const tLeft = tcExpr(env, locals, expr.left);
       const tRight = tcExpr(env, locals, expr.right);
@@ -451,10 +453,19 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
   }
 }
 
-export function tcLiteral(literal : Literal) {
-    switch(literal.tag) {
-        case "bool": return BOOL;
-        case "num": return NUM;
-        case "none": return NONE;
-    }
+export function tcLiteral(literal : Literal<SourceLocation>) : Literal<[Type, SourceLocation]> {
+  var typ : Type;
+  switch(literal.tag) {
+    case "bool": 
+      typ = BOOL;
+      break;
+    case "num": 
+      typ =  NUM;
+      break;
+    case "none": 
+      typ =  NONE;
+      break;
+    default: throw new Error(`unknown type: ${literal.tag}`)
+  }
+  return {...literal, a: [typ, literal.a]}
 }

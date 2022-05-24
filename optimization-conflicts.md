@@ -192,7 +192,53 @@ emp2 = Employee().new(11+12)
 we would just focus in performing optimization on the methods `new`'s arguments.
 
 ## Lists
+The lists team add `type` with `{tag: "list", type: Type}` and added `{  a?: A, tag: "listliteral", elements: Array<Expr<A>> }` to `stmt`, which would not cause conflicts. For lists, we can also use our implementation on it.
+For example:
+```python
+s1:str = "ab"
+s2:str = "abc"
+print( s1 == s2)
+```
+After optmization:
+```python
+s1:str = "ab"
+s2:str = "abc"
+print(False)
+```
 ## Memory management
+Since the memory management team only made minor change at IR level (i.e. change `{a?: A, tag: "wasmint", value: number }` to `{ a?: A, tag: "wasmint", value: number, is_pointer?: boolean }`) and didn’t made any changes at ast level, we probably wouldn’t have any conflicts. So far, we are planning to do most of the optimizations at IR level. As a result, there may be no conflicts in the future. 
 ## Optimization
 ## Sets and/or tuples and/or dictionaries
+The sets team extended `Type` with `{tag: "set", valueType: Type }` and added `{  a?: A, tag: "bracket", values: Array<Expr<A>>}` to `Expr` rather than modifying `ast.ts`. So there will not conflict with our implementation. Constant folding can be used on set with our implementation. For example:
+
+```python
+A :int = 0
+s: set = set()
+s.add(a)
+s.add(a+1)
+
+```
+After optmization:
+```python
+A :int = 0
+s: set = set()
+s.add(0)
+s.add(1)
+
+```
+    
 ## Strings
+The strings team changed `ast.t`, add a new field `{ tag: "str", value: string}` in `literal`, and they pass string literals in the compiler with this field. This won’t conflict our code. However, it will cause compiliance error in our `optimize_ast.ts` since we haven’t taken strings into consideration yet. We need to add some features for constant folding to include the strings scenarios.
+Constant folding could be overlapping with strings operations after we deal with conflicts. For example:
+```python
+s1:str = "ab"
+s2:str = "abc"
+print( s1 == s2)
+```
+After optmization:
+``` python
+s1:str = "ab"
+s2:str = "abc"
+print(False)
+```
+

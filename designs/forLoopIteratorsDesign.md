@@ -738,6 +738,8 @@ Output:
 TypeCheckError: continue cannot exist outside a loop
 ```
 ## New Test Cases for Week 9
+
+### Test cases that will work after current week's merge ###
 **Test Case 1:**
 ```Python
 a:[int] = None
@@ -748,9 +750,11 @@ for i in a:
 ```
 
 **Expected Output**
+```
 1
 2
 3
+```
 **Test Case 2:**
 ```Python
 a:[bool] = None
@@ -760,9 +764,11 @@ for i in a:
     print(i)
 ```
 **Expected Output**
+```
 True
 False
 True
+```
 **Test Case 3:**
 ```Python
 set_1 : set[int] = None
@@ -772,9 +778,24 @@ for i in set1:
     print(i)
 ```
 **Expected Output**
+```
 11
 22
 33
+```
+
+**Test Case 3:**
+```
+set_1 : set[bool] = None
+set_1 = {True,False}
+for i in set_1:
+    print(i)
+```
+**Expected Output**
+```
+True
+False
+```
 **Test Case 4:**
 ```Python
 a:[int] = None
@@ -787,9 +808,11 @@ print(next(list_itr)
 print(next(list_itr)
 ```
 **Expected Output**
+```
 1
 2
 3
+```
 **Test Case 5:**
 ```Python
 a:[int] = None

@@ -41,8 +41,9 @@ export class BasicREPL {
     this.functions = "";
   }
   async run(source : string) : Promise<Value> {
+    var sourceCode = source;
     const config : Config = {importObject: this.importObject, env: this.currentEnv, typeEnv: this.currentTypeEnv, functions: this.functions};
-    const [result, newEnv, newTypeEnv, newFunctions, instance] = await run(source, config);
+    const [result, newEnv, newTypeEnv, newFunctions, instance] = await run(sourceCode, config);
     this.currentEnv = newEnv;
     this.currentTypeEnv = newTypeEnv;
     this.functions += newFunctions;

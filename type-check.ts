@@ -7,6 +7,29 @@ import { TypeCheckError } from './error_reporting'
 import exp from 'constants';
 import { listenerCount } from 'process';
 
+const compvars : Map<string, [string, number]> = new Map();
+function generateCompvar(base : string) : string {
+  const compbase = `compvar$${base}`;
+  if (compvars.has(compbase)) {
+    var cur = compvars.get(compbase)[1];
+    const newName = compbase + (cur + 1)
+    compvars.set(compbase, [newName, cur + 1]);
+    return newName;
+  } else {
+    const newName = compbase + 1
+    compvars.set(compbase, [newName, 1]);
+    return newName;
+  }
+}
+function retrieveCompvar(base : string) : string {
+  const compbase = `compvar$${base}`;
+  if (compvars.has(compbase)) {
+    return compvars.get(compbase)[0];
+  } else {
+    return undefined;
+  }
+}
+
 export type GlobalTypeEnv = {
   globals: Map<string, Type>,
   functions: Map<string, [Array<Type>, Type]>,
@@ -58,20 +81,70 @@ export function equalType(t1: Type, t2: Type): boolean {
   return (
     t1 === t2 ||
     (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
-    (t1.tag === "list" && t2.tag === "list" && (equalType(t1.type, t2.type) || t1.type === NONE))
+    (t1.tag === "list" && t2.tag === "list" && (equalType(t1.type, t2.type) || t1.type === NONE)) ||
+    (t1.tag === "generator" && t2.tag === "generator" && equalType(t1.type, t2.type))
   );
 }
 
-export function isNoneOrClass(t: Type) {
-  return t.tag === "none" || t.tag === "class";
+export function isNoneOrClass(t: Type) : boolean {
+  return t.tag === "none" || t.tag === "class" || t.tag === "generator";
 }
 
-export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type): boolean {
-  return equalType(t1, t2) || t1.tag === "none" && (t2.tag === "class" || t2.tag === "list");
+export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type) : boolean {
+  return (
+    equalType(t1, t2) ||
+    (t1.tag === "none" && t2.tag === "class") ||
+    (t1.tag === "none" && t2.tag === "list") ||
+    (t1.tag === "none" && t2.tag === "generator") ||
+    // can assign generator created with comprehension to generator class object
+    (t1.tag === "generator" && t2.tag === "class" && t2.name === "generator") ||
+    // for generator<A> and generator<B>, A needs to be subtype of B
+    (t1.tag === "generator" && t2.tag === "generator" && isSubtype(env, t1.type, t2.type))
+  );
 }
 // t1: assignment value type, t2: expected type
 export function isAssignable(env : GlobalTypeEnv, t1 : Type, t2 : Type) : boolean {
   return isSubtype(env, t1, t2);
+}
+
+export function isIterable(env: GlobalTypeEnv, t1: Type) : [Boolean, Type] {
+  // check if t is an iterable type
+  // if true, also return type of each item in the iterable
+  switch (t1.tag) {
+    case "either":
+      return isIterable(env, t1.left) || isIterable(env, t1.right);
+    case "class":
+      // check if class has next and hasnext method
+      // need to talk to for-loop group
+      var classMethods = env.classes.get(t1.name)[1];
+      if(!(classMethods.has("next") && classMethods.has("hasnext"))) {
+        return [false, undefined];
+      }
+      return [true, classMethods.get("next")[1]];
+    // assume more iterable types will be implemented by other groups
+    case "generator":
+    case "list":
+      return [true, t1.type];
+    // case "tuple":
+    // case "dictionary":
+    case "set":
+      return [true, t1.valueType];
+    // case "string": // string group makes string a literal rather than a type
+    default:
+      return [false, undefined];
+  }
+}
+
+export function isCompType(t: Type): Boolean {
+  switch (t.tag) {
+    case "generator":
+    // case "list":
+    // case "set":
+    // case "dictionary":
+      return true;
+    default:
+      return false;
+  }
 }
 
 export function join(env : GlobalTypeEnv, t1 : Type, t2 : Type) : Type {
@@ -292,6 +365,11 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           else { throw new TypeCheckError("Type mismatch for op" + expr.op, expr.a);}
       }
     case "id":
+      // check if id is used for comprehension
+      const compvarName = retrieveCompvar(expr.name);
+      if (env.globals.has(compvarName)) {
+        return {...expr, a: [env.globals.get(compvarName), expr.a], name: compvarName};
+      }
       if (locals.vars.has(expr.name)) {
         return {...expr, a: [locals.vars.get(expr.name), expr.a]};
       } else if (env.globals.has(expr.name)) {
@@ -449,6 +527,51 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else {
         throw new TypeCheckError("method calls require an object", expr.a);
       }
+    case "ternary":
+      const tExprIfTrue = tcExpr(env, locals, expr.exprIfTrue);
+      const tIfCond = tcExpr(env, locals, expr.ifcond);
+      const tExprIfFalse = tcExpr(env, locals, expr.exprIfFalse);
+      if (!equalType(tIfCond.a[0], BOOL)) {
+        throw new TypeCheckError("if condition must be a bool");
+      }
+      const exprIfTrueTyp = tExprIfTrue.a[0];
+      const exprIfFalseTyp = tExprIfFalse.a[0];
+      if (equalType(exprIfTrueTyp, exprIfFalseTyp)) {
+        return { ...expr, a: [exprIfTrueTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
+      }
+      const eitherTyp : Type = { tag: "either", left: exprIfTrueTyp, right: exprIfFalseTyp };
+      return { ...expr, a: [eitherTyp, expr.a], exprIfTrue: tExprIfTrue, ifcond: tIfCond, exprIfFalse: tExprIfFalse };
+    case "comprehension":
+      const tIterable = tcExpr(env, locals, expr.iterable);
+      const [iterable, itemTyp] = isIterable(env, tIterable.a[0])
+      if (!iterable) {
+        throw new TypeCheckError(`Type ${tIterable.a[0]} is not iterable`);
+      }
+      // shadow item name always globally
+      const newItemName = generateCompvar(expr.item);
+      env.globals.set(newItemName, itemTyp);
+      var tCompIfCond = undefined;
+      if (expr.ifcond) {
+        tCompIfCond = tcExpr(env, locals, expr.ifcond);
+        if (!equalType(tCompIfCond.a[0], BOOL)) {
+          throw new TypeCheckError("if condition must be a bool");
+        }
+      }
+      const tLhs = tcExpr(env, locals, expr.lhs);
+      // TODO: need to talk to the other groups
+      if (expr.type.tag == "generator" 
+        || expr.type.tag == "list"
+      ) {
+        expr.type = { ...(expr.type), type: itemTyp };
+      }
+      if (expr.type.tag == "set"
+        // || expr.type.tag == "dictionary"
+      ) {
+        expr.type = { ...(expr.type), valueType: itemTyp };
+      }
+      // delete comp var name from globals
+      env.globals.delete(newItemName);
+      return { ...expr, a: [expr.type, expr.a], lhs: tLhs, item: newItemName, iterable: tIterable, ifcond: tCompIfCond };
     default: throw new TypeCheckError(`unimplemented type checking for expr: ${expr}`, expr.a);
   }
 }

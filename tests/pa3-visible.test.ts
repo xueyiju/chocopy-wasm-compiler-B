@@ -1,7 +1,7 @@
 import { assertPrint, assertFail, assertTCFail, assertTC } from "./asserts.test";
 import { NUM, BOOL, NONE, CLASS } from "./helpers.test"
 
-describe("PA3 visible tests", () => {
+/*describe("PA3 visible tests", () => {
   // 1
   assertPrint("literal-int-ops", `print(100 + 20 + 3)`, [`123`]);
   // 2
@@ -184,4 +184,4 @@ class C(object):
   x : int = 0
 c : C = None
 c = None`, NONE);
-});
+});*/

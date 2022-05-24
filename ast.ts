@@ -5,8 +5,9 @@ export type Type =
   | {tag: "number"}
   | {tag: "bool"}
   | {tag: "none"}
-  | {tag: "class", name: string}
+  | {tag: "class", name: string, genericArgs?: Array<Type>}
   | {tag: "either", left: Type, right: Type }
+  | {tag: "type-var"}
 
 export type SourceLocation = { line: number }
 
@@ -14,7 +15,7 @@ export type Parameter<A> = { name: string, type: Type }
 
 export type Program<A> = { a?: A, funs: Array<FunDef<A>>, inits: Array<VarInit<A>>, classes: Array<Class<A>>, stmts: Array<Stmt<A>> }
 
-export type Class<A> = { a?: A, name: string, fields: Array<VarInit<A>>, methods: Array<FunDef<A>>}
+export type Class<A> = { a?: A, name: string, generics?: Array<string>, fields: Array<VarInit<A>>, methods: Array<FunDef<A>>}
 
 export type VarInit<A> = { a?: A, name: string, type: Type, value: Literal }
 
@@ -32,12 +33,12 @@ export type Stmt<A> =
 
 export type Expr<A> =
     {  a?: A, tag: "literal", value: Literal }
-  | {  a?: A, tag: "id", name: string }
+  | {  a?: A, tag: "id", name: string}
   | {  a?: A, tag: "binop", op: BinOp, left: Expr<A>, right: Expr<A>}
   | {  a?: A, tag: "uniop", op: UniOp, expr: Expr<A> }
   | {  a?: A, tag: "builtin1", name: string, arg: Expr<A> }
   | {  a?: A, tag: "builtin2", name: string, left: Expr<A>, right: Expr<A>}
-  | {  a?: A, tag: "call", name: string, arguments: Array<Expr<A>> } 
+  | {  a?: A, tag: "call", name: string, arguments: Array<Expr<A>>, genericArgs?: Array<Type>} 
   | {  a?: A, tag: "lookup", obj: Expr<A>, field: string }
   | {  a?: A, tag: "index", obj: Expr<A>, index: Expr<A> }
   | {  a?: A, tag: "method-call", obj: Expr<A>, method: string, arguments: Array<Expr<A>> }
@@ -47,6 +48,7 @@ export type Literal =
     { tag: "num", value: number }
   | { tag: "bool", value: boolean }
   | { tag: "none" }
+  | { tag: "TypeVar" }
 
 // TODO: should we split up arithmetic ops from bool ops?
 export enum BinOp { Plus, Minus, Mul, IDiv, Mod, Eq, Neq, Lte, Gte, Lt, Gt, Is, And, Or};

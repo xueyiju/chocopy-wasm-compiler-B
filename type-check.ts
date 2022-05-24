@@ -308,10 +308,10 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       var tForBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
       if(tIterable.a[0].tag !== "class" || !isIterableObject(env, tIterable.a[0]))
-        throw new TypeCheckError("Not an iterable: " + tIterable.a[0]);
+        throw new TypeCheckError("Not an iterable: " + tIterable.a[0], stmt.a);
       let tIterableRet = env.classes.get(tIterable.a[0].name)[1].get("next")[1];
       if(!equalType(tVars.a[0], tIterableRet))
-        throw new TypeCheckError("Expected type `"+ tIterableRet.tag +"`, got type `" + tVars.a[0].tag + "`");
+        throw new TypeCheckError("Expected type `"+ tIterableRet.tag +"`, got type `" + tVars.a[0].tag + "`", stmt.a);
       if(stmt.elseBody !== undefined) {
         const tElseBody = tcBlock(env, locals, stmt.elseBody);
         return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
@@ -319,11 +319,11 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
     case "break":
       if(locals.currLoop.length === 0)
-        throw new TypeCheckError("break cannot exist outside a loop");
+        throw new TypeCheckError("break cannot exist outside a loop", stmt.a);
       return {a: [NONE, stmt.a], tag: stmt.tag, loopCounter: locals.currLoop[locals.currLoop.length-1]};
     case "continue":
       if(locals.currLoop.length === 0)
-        throw new TypeCheckError("continue cannot exist outside a loop");
+        throw new TypeCheckError("continue cannot exist outside a loop", stmt.a);
       return {a: [NONE, stmt.a], tag: stmt.tag, loopCounter: locals.currLoop[locals.currLoop.length-1]};
     case "pass":
       return {a: [NONE, stmt.a], tag: stmt.tag};

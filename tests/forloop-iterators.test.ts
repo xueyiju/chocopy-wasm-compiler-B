@@ -187,7 +187,7 @@ assertPrint('range: complex break, continue 5' , rangeStr + `
 i: int = 0
 j:int  = 0
 k: int = 0 
-for i in range(10, -10, -1):
+for i in range(5, -5, -1):
     for j in range(1, 5, 1):
         for k in range(1, 5, 2):
             if(i + j + k == 0):
@@ -300,6 +300,7 @@ for i in BoolIterable():
 ` ,["True", "False","True", "False","True", "False"]);
 
     assertTCFail('range: type checking for loop variable ', rangeStr + `
+
 i : bool = False
 for i in range(0,10,1):
     print(i)
@@ -311,19 +312,19 @@ for i in range(0,10,1):
     print(i)
 `);   
 
-    assertTCFuncCallFail('range: type checking for one parameter', rangeStr + `
+    assertTCFail('range: type checking for one parameter', rangeStr + `
 i: int = 0
 for i in range(5):
     print(i)
 `);
     
-    assertTCFuncCallFail('range: type checking for two parameters', rangeStr + `
+    assertTCFail('range: type checking for two parameters', rangeStr + `
 i: int = 0
 for i in range(5,10):
     print(i)
 `);
 
-    assertTCFuncCallFail('range: type checking for range parameters', rangeStr + `
+    assertTCFail('range: type checking for range parameters', rangeStr + `
 i : int = 0
 for i in range(10, 20, 1, 1):
     print(i)

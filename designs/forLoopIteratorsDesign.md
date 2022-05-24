@@ -3,11 +3,11 @@ We implement for loops and iterators in the ChocoPy compiler B. We currently sup
 
 ## AST changes ##
  
-* The following changes will be required in `ast.ts` to `type Stmt<A>`:
+* The following changes will be required in `ast.ts` to `type Stmt<A>` : 
 ```        
-{ a?: Type, tag: "for", vars: Expr\<A\>, iterable: Expr\<A\>, body: Array\<Stmt\<A\>\>, elseBody?: Stmt\<A\>}
-{  a?: A, tag: "break", loopCounter?: number }
-{  a?: A, tag: "continue", loopCounter?: number }
+{ a? :  Type, tag :  "for", vars :  Expr\<A\>, iterable :  Expr\<A\>, body :  Array\<Stmt\<A\>\>, elseBody? :  Stmt\<A\>}
+{  a? :  A, tag :  "break", loopCounter? :  number }
+{  a? :  A, tag :  "continue", loopCounter? :  number }
  ```    
 `vars` can be a variable or a tuple expression. Once we merge the changes from the destructuring group, we will support tuple assignment for the loop variables.
 `iterable` can be any inbuilt/user-defined class object with a `next` and a `hasnext` function.
@@ -19,23 +19,23 @@ We add functionalities for `for`, `break` and `continue` statements.
 ## range class ##
 For the first milestone, we implement an inbuilt `range(0, 5, 1)` as a function which returns a `__range__` class object. **Currently, all three parameters need to be compulsorily added for range() to work.** This object is an iterable with an inbuilt `new`, `next` and `hasnext` function.  The range class is written in Python and will be compiled in `runner.ts` to produce a `.wasm` file.
 ```
-def range(start: int, stop: int, step: int) -> __range__:
+def range(start :  int, stop :  int, step :  int) -> __range__ : 
     return __range__().new(start, stop, step)
 ```
 Note that users can create a custom `range` iterator as well.
 
 ## Type-check changes ##
-We will add a "built-in" class in the global typechecking environment (`defaultGlobalClasses`) called `__range__` with the following specifications:
+We will add a "built-in" class in the global typechecking environment (`defaultGlobalClasses`) called `__range__` with the following specifications : 
 
-**Fields**: 
+**Fields** :  
 ```
-start: int
-stop: int
-step: int
-hasnext: bool
-currvalue: int
+start :  int
+stop :  int
+step :  int
+hasnext :  bool
+currvalue :  int
 ```
-**Methods**: 
+**Methods** :  
 ```
 __init__(self, param1, param2, param3)
 new(self, param) -> int
@@ -78,55 +78,55 @@ We plan to implement these helper function for the five inbuilt type (lists, set
 
 ## Test Cases ##
 
-We shall join the following code at the start of each input:
+We shall join the following code at the start of each input : 
 
 ```
-class __range__(object):
-    start: int = 0
-    stop: int = 0
-    step: int = 1
-    hasNext: bool = False
-    currval: int = 0
-    def __init__(self: __range__):
+class __range__(object) : 
+    start :  int = 0
+    stop :  int = 0
+    step :  int = 1
+    hasNext :  bool = False
+    currval :  int = 0
+    def __init__(self :  __range__) : 
         pass
-    def new(self: __range__, start: int, stop: int, step: int) -> __range__:
+    def new(self :  __range__, start :  int, stop :  int, step :  int) -> __range__ : 
         self.start = start
         self.stop = stop
         self.step = step
         self.currval = start
         return self
 
-    def next(self: __range__) -> int:
-        prev: int = 0
-        nextval: int = 0
-        if(self.hasnext()):
+    def next(self :  __range__) -> int : 
+        prev :  int = 0
+        nextval :  int = 0
+        if(self.hasnext()) : 
             prev = self.currval
             nextval = prev+self.step
             self.currval = nextval
             return prev
         
-    def hasnext(self: __range__) -> bool:
-        nextval: int = 0
+    def hasnext(self :  __range__) -> bool : 
+        nextval :  int = 0
         nextval = self.currval
-        if((self.step>0 and nextval<self.stop) or (self.step<0 and nextval>self.stop)):
+        if((self.step>0 and nextval<self.stop) or (self.step<0 and nextval>self.stop)) : 
             self.hasNext = True
-        else:
+        else : 
             self.hasNext = False
         return self.hasNext
 
-def range(start: int, stop: int, step: int) -> __range__:
+def range(start :  int, stop :  int, step :  int) -> __range__ : 
     return __range__().new(start, stop, step)
 ```
 
-* **Test Case 1**: for loop with range
+* **Test Case 1** :  for loop with range
  
-Input:
+Input : 
 ```
-i: int = 0
-for i in range(0,10,2):
+i :  int = 0
+for i in range(0,10,2) : 
     print(i)
 ```
-Output:
+Output : 
 ```
 0
 2
@@ -134,17 +134,17 @@ Output:
 6
 8
 ```
-* **Test Case 2**: for loop with range: called inside a fucntion with function parameters
+* **Test Case 2** :  for loop with range :  called inside a fucntion with function parameters
  
-Input:
+Input : 
 ```
-def f(x: int, y: int):
-    i: int = 0
-    for i in range(x*1,y*1,1*2*abs(1)):
+def f(x :  int, y :  int) : 
+    i :  int = 0
+    for i in range(x*1,y*1,1*2*abs(1)) : 
         print(i)
 f(0,10)
 ```
-Output:
+Output : 
 ```
 0
 2
@@ -153,14 +153,14 @@ Output:
 8
 ```
  
-* **Test Case 3**: for loop with range: negative step
-Input:
+* **Test Case 3** :  for loop with range :  negative step
+Input : 
 ```
-i: int = 0
-for i in range(0,-10,-2):
+i :  int = 0
+for i in range(0,-10,-2) : 
     print(i)
 ```
-Output:
+Output : 
 ```
 0
 -2
@@ -169,31 +169,31 @@ Output:
 -8
 ```
 
-* **Test Case 4**: for loop with break in the main for loop body
+* **Test Case 4** :  for loop with break in the main for loop body
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(10):
+for i in range(10) : 
     print(i)
     break
 ```
-Output:
+Output : 
 ```
 0
 ```
-* **Test Case 5**:  for loop with break inside a if body
+* **Test Case 5** :   for loop with break inside a if body
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(10):
-    If i\>5:
+for i in range(10) : 
+    If i\>5 : 
         break
-    else: 
+    else :  
         print(i)
 ```
-Output:
+Output : 
 ```
 0
 1
@@ -203,17 +203,17 @@ Output:
 5
 ```
  
-* **Test Case 6**:  for loop with continue inside the main for body
+* **Test Case 6** :   for loop with continue inside the main for body
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(5):
+for i in range(5) : 
     print(i*100)
     continue
     print(i)
 ```
-Output:
+Output : 
 ```
 0
 100
@@ -222,18 +222,18 @@ Output:
 400
 ```
  
-* **Test Case 7**:  for loop with continue inside a if body
+* **Test Case 7** :   for loop with continue inside a if body
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(10):
-    if i%2==0:
+for i in range(10) : 
+    if i%2==0 : 
         continue
-    else:
+    else : 
         print(i)
 ```
-Output:
+Output : 
 ```
 1
 3
@@ -242,64 +242,64 @@ Output:
 9
 ```
 
-* **Test Case 8**:  range: nested for loop with break
+* **Test Case 8** :   range :  nested for loop with break
  
-Input:
+Input : 
 ```
-i: int = 0
-j:int = 0
-for i in range(0,5,1):
+i :  int = 0
+j : int = 0
+for i in range(0,5,1) : 
     print(i)
-    for j in range(0,2,1):
+    for j in range(0,2,1) : 
         print(j) 
     break   
 ```
-Output:
+Output : 
 ```
 0
 0
 1
 ```
 
-* **Test Case 9**: range: complex break, continue 1
+* **Test Case 9** :  range :  complex break, continue 1
  
-Input:
+Input : 
 ```
-i: int = 0
-j:int = 0
-for i in range(0,5,1):
+i :  int = 0
+j : int = 0
+for i in range(0,5,1) : 
     j = 0
     print(i)
-    while(j<i):
+    while(j<i) : 
         print(j) 
         j=j+1
-        if j%2==0:
+        if j%2==0 : 
             continue
     break   
 ```
-Output:
+Output : 
 ```
 0
 ```
 
-* **Test Case 10**:  range: complex break, continue 2
+* **Test Case 10** :   range :  complex break, continue 2
  
-Input:
+Input : 
 ```
-i: int = 0
-j:int = 0
-for i in range(0,5,1):
+i :  int = 0
+j : int = 0
+for i in range(0,5,1) : 
     j = 0
     print(i)
-    while(j<i):
+    while(j<i) : 
         print(j) 
         j=j+1
-        if i%2==0:
+        if i%2==0 : 
             continue
-    if i%2==1:
+    if i%2==1 : 
         continue  
 ```
-Output:
+Output : 
 ```
 0
 1
@@ -318,33 +318,33 @@ Output:
 3
 ```
 
-* **Test Case 11**:   range: complex break, continue 3
+* **Test Case 11** :    range :  complex break, continue 3
  
-Input:
+Input : 
 ```
-i: int = 0
-j:int = 0
-k: int =0
-for i in range(0,5,1):
+i :  int = 0
+j : int = 0
+k :  int =0
+for i in range(0,5,1) : 
     j = 0
     print(i)
-    while(j<i):
+    while(j<i) : 
         print(j) 
         j=j+1
-        if i%2==0:
+        if i%2==0 : 
             continue
-        else:
+        else : 
         	pass
-        for k in range(100,0,-10):
-            if k%30==0:
+        for k in range(100,0,-10) : 
+            if k%30==0 : 
                 print(k)
                 continue
-            else:
+            else : 
             	pass
-    if i%2==1:
+    if i%2==1 : 
         continue 
 ```
-Output:
+Output : 
 ```
 0
 1
@@ -375,33 +375,33 @@ Output:
 3
 ```
 
-* **Test Case 12**:   range: complex break, continue 4
+* **Test Case 12** :    range :  complex break, continue 4
  
-Input:
+Input : 
 ```
-i: int = 0
-j:int = 0
-k: int =0
-for i in range(0,5,1):
+i :  int = 0
+j : int = 0
+k :  int =0
+for i in range(0,5,1) : 
     j = 0
     print(i)
-    while(j<i):
+    while(j<i) : 
         print(j) 
         j=j+1
-        if i%2==0:
+        if i%2==0 : 
             continue
-        else:
+        else : 
         	pass
-        for k in range(100,0,-10):
-            if k%30==0:
+        for k in range(100,0,-10) : 
+            if k%30==0 : 
                 print(k)
                 break
-            else:
+            else : 
             	pass
-    if i%2==1:
+    if i%2==1 : 
         continue  
 ```
-Output:
+Output : 
 ```
 0
 1
@@ -424,53 +424,53 @@ Output:
 3
 ```
 
-* **Test Case 13**:   range: complex break, continue 5
+* **Test Case 13** :    range :  complex break, continue 5
  
-Input:
+Input : 
 ```
-i: int = 0
-j:int  = 0
-k: int = 0 
-for i in range(10, -10, -1):
-    for j in range(1, 5, 1):
-        for k in range(1, 5, 2):
-            if(i + j + k == 0):
+i :  int = 0
+j : int  = 0
+k :  int = 0 
+for i in range(10, -10, -1) : 
+    for j in range(1, 5, 1) : 
+        for k in range(1, 5, 2) : 
+            if(i + j + k == 0) : 
                 print(i)
                 print(j)
                 print(k)
                 break
-            else:
+            else : 
                 continue
-        if(i + j + k == 0):
+        if(i + j + k == 0) : 
             break
-        else:
+        else : 
             continue
-    if(i + j + k == 0):
+    if(i + j + k == 0) : 
         break
-    else:
+    else : 
         continue
 ```
-Output:
+Output : 
 ```
 -2
 1
 1
 ```
  
-* **Test Case 14**: for else construct 1
+* **Test Case 14** :  for else construct 1
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(10, 0, -1):
-    if i < 5:
+for i in range(10, 0, -1) : 
+    if i < 5 : 
         break
-    else:
+    else : 
         print(i)
-else:
+else : 
     print(123456)
 ```
-Output:
+Output : 
 ```
 10
 9
@@ -480,20 +480,20 @@ Output:
 5
 ```
 
-* **Test Case 15**: for else construct 2
+* **Test Case 15** :  for else construct 2
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(10, 5, -1):
-    if i < 5:
+for i in range(10, 5, -1) : 
+    if i < 5 : 
         break
-    else:
+    else : 
         print(i)
-else:
+else : 
     print(123456)
 ```
-Output:
+Output : 
 ```
 10
 9
@@ -502,30 +502,30 @@ Output:
 6
 123456
 ```
-* **Test Case 16**: Custom Iterator 1
+* **Test Case 16** :  Custom Iterator 1
  
-Input:
+Input : 
 ```
-class EvenNumbers(object):
-    num:int = 0
-    def __init__(self: EvenNumbers):
+class EvenNumbers(object) : 
+    num : int = 0
+    def __init__(self :  EvenNumbers) : 
         pass
-    def next(self: EvenNumbers) -> int:
-        ret: int  = 0 
+    def next(self :  EvenNumbers) -> int : 
+        ret :  int  = 0 
         ret = self.num
         self.num = self.num + 2
         return ret
-    def hasnext(self: EvenNumbers) -> bool:
-        if self.num > 10:
+    def hasnext(self :  EvenNumbers) -> bool : 
+        if self.num > 10 : 
             return False
-        else:
+        else : 
             return True
 
-i: int = 0
-for i in EvenNumbers():
+i :  int = 0
+for i in EvenNumbers() : 
     print(i)
 ```
-Output:
+Output : 
 ```
 0
 2
@@ -534,31 +534,31 @@ Output:
 8
 10
 ```
-* **Test Case 17**:  Custom Iterator called range
+* **Test Case 17** :   Custom Iterator called range
  
-Input:
+Input : 
 ```
-class range(object):
-  num:int = 1
-  def __init__(self: range):
+class range(object) : 
+  num : int = 1
+  def __init__(self :  range) : 
       pass
-  def next(self: range) -> int:
-      ret: int  = 0 
+  def next(self :  range) -> int : 
+      ret :  int  = 0 
       ret = self.num
       self.num = self.num * 2
       return ret
-  def hasnext(self: range) -> bool:
-      if self.num > 16:
+  def hasnext(self :  range) -> bool : 
+      if self.num > 16 : 
           return False
-      else:
+      else : 
           return True
 
-i: int = 0
-for i in range():
+i :  int = 0
+for i in range() : 
   print(i)
 
 ```
-Output:
+Output : 
 ```
 1
 2
@@ -566,32 +566,32 @@ Output:
 8
 16
 ```
-* **Test Case 18**: Custom bool iterator
+* **Test Case 18** :  Custom bool iterator
  
-Input:
+Input : 
 ```
-class BoolIterable(object):
-    val:bool = True
-    num:int = 0
-    def __init__(self: BoolIterable):
+class BoolIterable(object) : 
+    val : bool = True
+    num : int = 0
+    def __init__(self :  BoolIterable) : 
         pass
-    def next(self: BoolIterable) -> bool:
-        ret: bool = True
+    def next(self :  BoolIterable) -> bool : 
+        ret :  bool = True
         ret = self.val
         self.num = self.num + 1
         self.val = not self.val
         return ret
-    def hasnext(self: BoolIterable) -> bool:
-        if self.num > 5:
+    def hasnext(self :  BoolIterable) -> bool : 
+        if self.num > 5 : 
             return False
-        else:
+        else : 
             return True
 
-i: bool = True
-for i in BoolIterable():
+i :  bool = True
+for i in BoolIterable() : 
     print(i)
 ```
-Output:
+Output : 
 ```
 True
 False
@@ -601,151 +601,151 @@ True
 False
 ```
 
-* **Test Case 19**: type checking for loop variable 1
+* **Test Case 19** :  type checking for loop variable 1
  
-Input:
+Input : 
 ```
 i : bool = False
-for i in range(10):
+for i in range(10) : 
     print(i)
 ```
-Output:
+Output : 
 ```
-TypeCheckError: bool object cannot be interpreted as integer
+TypeCheckError :  bool object cannot be interpreted as integer
 ```
 
-* **Test Case 20**: type checking for loop variable 2
+* **Test Case 20** :  type checking for loop variable 2
  
-Input:
+Input : 
 ```
-for i in range(10):
+for i in range(10) : 
     print(i)
 ```
-Output:
+Output : 
 ```
-TypeCheckError: Unbound id: i
+TypeCheckError :  Unbound id :  i
 ```
 
-* **Test Case 21**: range: type checking for one parameter
+* **Test Case 21** :  range :  type checking for one parameter
  
-Input:
+Input : 
 ```
-i: int = 0
-for i in range(5):
+i :  int = 0
+for i in range(5) : 
     print(i)
 ```
-Output:
+Output : 
 ```
-TypeError: range expected 3 arguments, got 1
+TypeError :  range expected 3 arguments, got 1
 ```
 
-* **Test Case 22**: range: type checking for two parameters
+* **Test Case 22** :  range :  type checking for two parameters
  
-Input:
+Input : 
 ```
-i: int = 0
-for i in range(5,10):
+i :  int = 0
+for i in range(5,10) : 
     print(i)
 ```
-Output:
+Output : 
 ```
-TypeError: range expected 3 arguments, got 2
+TypeError :  range expected 3 arguments, got 2
 ```
 
-* **Test Case 23**: range: type checking for range parameters
+* **Test Case 23** :  range :  type checking for range parameters
  
-Input:
+Input : 
 ```
 i : int = 0
-for i in range(10, 20, 1, 1):
+for i in range(10, 20, 1, 1) : 
     print(i)
 ```
-Output:
+Output : 
 ```
-TypeError: range expected 3 arguments, got 4
+TypeError :  range expected 3 arguments, got 4
 ```
 
-* **Test Case 24**: Type Checking: not an iterator 1
+* **Test Case 24** :  Type Checking :  not an iterator 1
  
-Input:
+Input : 
 ```
-class range(object):
-    num:int = 1
-    def __init__(self: range):
+class range(object) : 
+    num : int = 1
+    def __init__(self :  range) : 
         pass
-    def hasnext(self: range) -> bool:
-        if self.num > 16:
+    def hasnext(self :  range) -> bool : 
+        if self.num > 16 : 
             return False
-        else:
+        else : 
             return True
 
-i: int = 0
-for i in range():
+i :  int = 0
+for i in range() : 
     print(i)
 ```
-Output:
+Output : 
 ```
-TypeCheckError: Not an iterable
+TypeCheckError :  Not an iterable
 ```
 
-* **Test Case 25**: Type Checking: not an iterator 2
+* **Test Case 25** :  Type Checking :  not an iterator 2
  
-Input:
+Input : 
 ```
-class range(object):
-    num:int = 1
-    def __init__(self: range):
+class range(object) : 
+    num : int = 1
+    def __init__(self :  range) : 
         pass
-    def next(self: range) -> int:
-        ret: int  = 0 
+    def next(self :  range) -> int : 
+        ret :  int  = 0 
         ret = self.num
         self.num = self.num * 2
         return ret
-i: int = 0
-for i in range():
+i :  int = 0
+for i in range() : 
     print(i)  
 ```
-Output:
+Output : 
 ```
-TypeCheckError: Not an iterable
+TypeCheckError :  Not an iterable
 ```
 
-* **Test Case 26**: Type Checking: break outside loop
+* **Test Case 26** :  Type Checking :  break outside loop
  
-Input:
+Input : 
 ```
-i: int = 0
-for i in range():
+i :  int = 0
+for i in range() : 
     print(i) 
 break 
 ```
-Output:
+Output : 
 ```
-TypeCheckError: break cannot exist outside a loop
+TypeCheckError :  break cannot exist outside a loop
 ```
 
-* **Test Case 27**: Type Checking: continue outside loop
+* **Test Case 27** :  Type Checking :  continue outside loop
  
-Input:
+Input : 
 ```
-i: int = 0
-for i in range():
+i :  int = 0
+for i in range() : 
     print(i) 
 continue 
 ```
-Output:
+Output : 
 ```
-TypeCheckError: continue cannot exist outside a loop
+TypeCheckError :  continue cannot exist outside a loop
 ```
 ## New Test Cases for Week 9
 
 ### Test cases that will work after current week's merge ###
-**Test Case 1:**
+**Test Case 1 : **
 ```Python
-a:[int] = None
-i:int = 0
+a : [int] = None
+i : int = 0
 a = [1,2,3]
-for i in a:
+for i in a : 
     print(i)
 ```
 
@@ -755,12 +755,12 @@ for i in a:
 2
 3
 ```
-**Test Case 2:**
+**Test Case 2 : **
 ```Python
-a:[bool] = None
-i:bool = False
+a : [bool] = None
+i : bool = False
 a = [True,False,True]
-for i in a:
+for i in a : 
     print(i)
 ```
 **Expected Output**
@@ -769,12 +769,31 @@ True
 False
 True
 ```
-**Test Case 3:**
+
+**Test Case 3 : **
+```Python
+a : str = "cse231"
+i : str = 0
+for i in a : 
+    print(i)
+```
+
+**Expected Output**
+```
+c
+s
+e
+2
+3
+1
+```
+
+**Test Case 4 : **
 ```Python
 set_1 : set[int] = None
 set_1 = {11,22}
 set_1.add(33)
-for i in set1:
+for i in set1 : 
     print(i)
 ```
 **Expected Output**
@@ -784,28 +803,16 @@ for i in set1:
 33
 ```
 
-**Test Case 3:**
-```
-set_1 : set[bool] = None
-set_1 = {True,False}
-for i in set_1:
-    print(i)
-```
-**Expected Output**
-```
-True
-False
-```
-**Test Case 4:**
+**Test Case 5 : **
 ```Python
-a:[int] = None
-i:int = 0
+a : [int] = None
+i : int = 0
 a = [1,2,3]
-list_itr:ListIteratorInt = None
+list_itr : ListIteratorInt = None
 list_itr = iter(a)
-print(next(list_itr)
-print(next(list_itr)
-print(next(list_itr)
+print(next(list_itr))
+print(next(list_itr))
+print(next(list_itr))
 ```
 **Expected Output**
 ```
@@ -813,12 +820,12 @@ print(next(list_itr)
 2
 3
 ```
-**Test Case 4:**
+**Test Case 6 : **
 ```Python
-a:[bool] = None
-i:int = 0
+a : [bool] = None
+i : int = 0
 a = [True, False, True, False, True, False]
-list_itr:ListIteratorBool = None
+list_itr : ListIteratorBool = None
 list_itr = iter(a)
 print(next(list_itr))
 print(next(list_itr))
@@ -831,12 +838,28 @@ False
 True
 ```
 
-**Test Case 5:**
+**Test Case 7 : **
 ```Python
-a:[int] = None
-i:int = 0
+a : str = "cse231"
+str_itr : StringIterator = iter(a)
+print(next(str_itr))
+print(next(str_itr))
+print(next(str_itr))
+```
+
+**Expected Output**
+```
+c
+s
+e
+```
+
+**Test Case 8 : **
+```Python
+a : [int] = None
+i : int = 0
 a = [1]
-list_itr:ListIteratorInt = None
+list_itr : ListIteratorInt = None
 list_itr = iter(a)
 print(next(list_itr))
 print(next(list_itr))
@@ -844,42 +867,43 @@ print(next(list_itr))
 **Expected Output**
 ```
 1
-"RUNTIME ERROR: StopIteration"
+RUNTIME ERROR :  StopIteration
 ```
 
-**Test Case 6:**
+**Test Case 9 : **
 ```Python
-a:[bool] = None
-i:bool = 0
-a = [False, True]
-list_itr:ListIteratorBool = None
-list_itr = iter(a)
-print(next(list_itr))
-print(next(list_itr))
+a : set{int} = None
+i : int = 0
+a = {1, 2, 3, 4}
+set_itr : SetIteratorInt = None
+set_itr = iter(a)
+print(next(set_itr))
+print(next(set_itr))
 ```
 **Expected Output**
 ```
-False
-True
+1
+2
 ```
 
-**Test Case 7:**
+
+**Test Case 10 : **
 ```Python
-class EvenNumbers(object):
-    num:int = 0
-    def __init__(self: EvenNumbers):
+class EvenNumbers(object) : 
+    num : int = 0
+    def __init__(self :  EvenNumbers) : 
         pass
-    def next(self: EvenNumbers) -> int:
-        ret: int  = 0 
+    def next(self :  EvenNumbers) -> int : 
+        ret :  int  = 0 
         ret = self.num
         self.num = self.num + 2
         return ret
-    def hasnext(self: EvenNumbers) -> bool:
-        if self.num > 10:
+    def hasnext(self :  EvenNumbers) -> bool : 
+        if self.num > 10 : 
             return False
-        else:
+        else : 
             return True
-custom_iter: EvenNumbers = EvenNumbers()
+custom_iter :  EvenNumbers = EvenNumbers()
 print(next(custom_iter))
 print(next(custom_iter))
 print(next(custom_iter))
@@ -890,18 +914,47 @@ print(next(custom_iter))
 2
 4
 ```
-**Test Case 8:**
+
+**Test Case 11 : **
 ```Python
-a:[int] = None
-b:[int] = None
-c:[int] = None
+class EvenNumbers(object) : 
+    num : int = 0
+    def __init__(self :  EvenNumbers) : 
+        pass
+    def next(self :  EvenNumbers) -> int : 
+        ret :  int  = 0 
+        ret = self.num
+        self.num = self.num + 2
+        return ret
+    def hasnext(self :  EvenNumbers) -> bool : 
+        if self.num > 10 : 
+            return False
+        else : 
+            return True
+custom_iter :  EvenNumbers = iter(EvenNumbers())
+print(next(custom_iter))
+print(next(custom_iter))
+print(next(custom_iter))
+```
+**Expected Output**
+```
+0
+2
+4
+```
+
+**Test Case 12 : **
+```Python
+a : [int] = None
+b : [int] = None
+c : [int] = None
 a = [1,3]
 b = [3,1]
 c = [-4, -4]
-i:int = 0
-j:int = 0
-k:int = 0
-for i, j in [a, b, c]:
+i : int = 0
+j : int = 0
+k : int = 0
+for i, j in [a, b, c] : 
     print(i + j)
 ```
 **Expected Output**
@@ -910,13 +963,14 @@ for i, j in [a, b, c]:
 4
 -8
 ```
-**Test Case 9:**
+
+**Test Case 13 : **
 ```Python
-a:str = "abc"
-b:str = "bcd"
-i:str = "a"
-j:str = "b"
-for i, j in [[a, b], [b, a]]:
+a : str = "abc"
+b : str = "bcd"
+i : str = "a"
+j : str = "b"
+for i, j in [[a, b], [b, a]] : 
     print(i)
     print(j)
 ```
@@ -926,39 +980,99 @@ abc
 bcd
 bcd
 abc
-```
-**Test Case 10:**
-```Python
-a:[int] = None
-i:bool = 0
-a = [1,2,3]
-for i in a:
-    print(i)
-```
-**Expected Output**
-```
-This will throw a TypeError: Expected int; got bool
-```
-**Test Case 11:**
-```Python
-i:int = 0
-j:bool = 0
-for i, j in [[1, 2], [2, 4]]:
-    print(i)
-    print(j)
-```
-**Expected Output**
-```
-This will throw a TypeError: Expected int; got bool
 ```
 
+**Test Case 14 : **
+```Python
+a : [int] = None
+i : bool = 0
+a = [1,2,3]
+for i in a : 
+    print(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Expected int; got bool
+```
+**Test Case 15 : **
+```Python
+i : int = 0
+j : bool = 0
+for i, j in [[1, 2], [2, 4]] : 
+    print(i)
+    print(j)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Expected int; got bool
+```
+
+**Test Case 16 : **
+```Python
+i : int = 0
+iter(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 17 : **
+```Python
+i : int = 0
+iter(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 18 : **
+```Python
+i : int = 0
+next(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 19 : **
+```Python
+listNum : [int] = [0, 1, 2]
+next(listNum)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 20 : **
+```Python
+s : str = "cse231"
+next(s)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 21 : **
+```Python
+s : set[int] = {1 ,2, 3}
+next(s)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
 
 # Week 8 and 9 features Roadmap #
  
-We shall be implementing the following for the next week:
+We shall be implementing the following for the next week : 
  
 * Iterables for currently supported builtin types - **lists, sets, strings**.
-* the iter() function, which takes as input one of the builtin types: lists, sets, strings. The function returns an iterable object
+* the iter() function, which takes as input one of the builtin types :  lists, sets, strings. The function returns an iterable object
 * the next() function, which takes as input an iterable object. Iterable objects are the built-in types (lists, sets, strings) on which iter() has been called or an object of a class that has next() and hasnext() functions
  
 **Changes Required**
@@ -966,64 +1080,64 @@ We shall be implementing the following for the next week:
 Supporting iterables for builtin types would entail implementing a custom iterator class for each of these inbuilt-types. Below is an example of how  we will implement a list iterator class using Generics.
  
 ```python
-T: TypeVar = TypeVar('T')
-class ListIterator(Generic[T]):
-    list: [T] = None
-    index:int = 0
-    def new(self: ListIterator, initVal: [T]) -> ListIterator:
+T :  TypeVar = TypeVar('T')
+class ListIterator(Generic[T]) : 
+    list :  [T] = None
+    index : int = 0
+    def new(self :  ListIterator, initVal :  [T]) -> ListIterator : 
         self.list = initVal
         return self
-    def next(self: ListIterator) -> T:
-        ret: T = None
+    def next(self :  ListIterator) -> T : 
+        ret :  T = None
         ret = self.list[self.index]
         self.index = self.index + 1
         return ret
-    def hasnext(self: ListIterator) -> bool:
+    def hasnext(self :  ListIterator) -> bool : 
         return self.index<len(self.list)
 ```
  
-We are contingent on the Generics groups for implementing the list wrapper class, to support the type lists of this format [T]. Further, even after this implementation succeeds we shall only be able to support iterables of lists of generic types supported by the generics group. For example: if T can only be string, bool or int, then we’ll support list iterables for cases when list elements are inbuilt-types such as strings, int or  bool.
+We are contingent on the Generics groups for implementing the list wrapper class, to support the type lists of this format [T]. Further, even after this implementation succeeds we shall only be able to support iterables of lists of generic types supported by the generics group. For example :  if T can only be string, bool or int, then we’ll support list iterables for cases when list elements are inbuilt-types such as strings, int or  bool.
  
 Currently, we will implement two list iterable classes as follows to make lists of primitive types work.
  
 ```python
-class ListIteratorInt():
-   list: [int] = None
-   index:int = 0
-   def new(self: ListIteratorInt, initVal: [int]) -> ListIteratorInt:
+class ListIteratorInt() : 
+   list :  [int] = None
+   index : int = 0
+   def new(self :  ListIteratorInt, initVal :  [int]) -> ListIteratorInt : 
    	self.list = initVal
    	return self
-   def next(self: ListIteratorInt) -> int:
-   	ret: int = None
+   def next(self :  ListIteratorInt) -> int : 
+   	ret :  int = None
    	ret = self.list[self.index]
    	self.index = self.index + 1
    	return ret
-   def hasnext(self: ListIteratorInt) -> bool:
+   def hasnext(self :  ListIteratorInt) -> bool : 
     return self.index<len(self.list)
 ```
  
 ```python
-class ListIteratorBool():
-   list: [bool] = None
-   index:int = 0
-   def new(self: ListIteratorInt, initVal: [bool]) -> ListIteratorBool:
+class ListIteratorBool() : 
+   list :  [bool] = None
+   index : int = 0
+   def new(self :  ListIteratorInt, initVal :  [bool]) -> ListIteratorBool : 
    	self.list = initVal
    	return self
-   def next(self: ListIteratorBool) -> bool:
-   	ret: bool = None
+   def next(self :  ListIteratorBool) -> bool : 
+   	ret :  bool = None
    	ret = self.list[self.index]
    	self.index = self.index + 1
    	return ret
-   def hasnext(self: ListIteratorBool) -> bool:
+   def hasnext(self :  ListIteratorBool) -> bool : 
     return self.index<len(self.list)
 ```
  
 Similarly, we will support SetIterableInt, SetIterableBool, StringIterable.
  
-* Changes required for iter() to work:
+* Changes required for iter() to work : 
 We will be required to construct the corresponding iterable object for every call of the iter function. `type-check.ts` would contain the requisite cases (whether it’s a list, set, string or custom iterator) for calling the concerned iterable class.
  
-The following are the changes required in `type-check.ts` to make this work, in the case “call”:
+The following are the changes required in `type-check.ts` to make this work, in the case “call” : 
  
 ```typescript
 default : {
@@ -1037,10 +1151,10 @@ default : {
 	}   
 }
 ```
-* Changes required to make next() work:
+* Changes required to make next() work : 
 The function next() will take as input an iterable (ListIterableInt, ListIterableBool, SetIterableInt, SetIterableBool, StringIterable or a custom object). Then, `type-check.ts` would contain the requisite cases for calling the concerned iterable class’s next() function.
  
-The following are the changes required in `type-check.ts` to make this work, in the case “call”:
+The following are the changes required in `type-check.ts` to make this work, in the case “call” : 
  
 ```typescript
 default : {

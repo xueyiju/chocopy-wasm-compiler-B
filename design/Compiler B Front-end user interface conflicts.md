@@ -51,7 +51,14 @@ print(b)
 ```
 And the changes Destructuring Assignment team made in the Ast, Ir, Type Checker and Parser will not influence front-end functionalities. And the parse error and type error they added can be thrown out to the front-end and be displayed.
 ## 6. Error reporting
+Our group works with error reporting group in a series connection way, and as we use the interfaces provided by error_reporting.ts implemented by them to render error output, there are not conflicts between our implementation currently. Though we have updated our render error methods in the outputrender.ts, the method still accepts the argument and the functionality is as before. Below is a typical example:
+```python
+def f(c):
+	print(3)
 
+f(2)
+```
+The output is as expected:"Error: PARSE ERROR: Missed type annotation for parameter c in line 1 at column 8 def f(c):". And the feature to display line number and column number may help us better design function in displaying lint in the front-end.
 ## 7. Fancy calling conventions
 Fancy calling conventions group mainly deals with arguments defined and passed into function or method calls. Typical example is as below:
 ```python

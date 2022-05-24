@@ -272,28 +272,6 @@ function lowerDestructAssignment(blocks: {
   }
 }
 
-function flattenIrExprToVal(e : IR.Expr<[AST.Type, AST.SourceLocation]>, env : GlobalEnv) : [Array<IR.VarInit<[AST.Type, AST.SourceLocation]>>, Array<IR.Stmt<[AST.Type, AST.SourceLocation]>>, IR.Value<[AST.Type, AST.SourceLocation]>] {
-  if(e.tag === "value") {
-    return [[], [], e.value];
-  }
-  else {
-    var newName = generateName("valname");
-    var setNewName : IR.Stmt<[AST.Type, AST.SourceLocation]> = {
-      tag: "assign",
-      a: e.a,
-      name: newName,
-      value: e 
-    };
-    // TODO: we have to add a new var init for the new variable we're creating here.
-    // but what should the default value be?
-    return [
-      [{ a: e.a, name: newName, type: e.a[0], value: { tag: "none" } }],
-      [setNewName],  
-      {tag: "id", name: newName, a: e.a}
-    ];
-  }
-}
-
 function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, env : GlobalEnv) : [Array<IR.VarInit<[Type, SourceLocation]>>, Array<IR.Stmt<[Type, SourceLocation]>>, IR.Expr<[Type, SourceLocation]>] {
   switch(e.tag) {
     case "uniop":

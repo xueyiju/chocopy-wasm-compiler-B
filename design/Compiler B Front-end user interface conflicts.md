@@ -97,7 +97,7 @@ The output will be "ValueError: arg3 can't be 0 for range", so as long as we get
 
 ## 9. Generics and polymorphism
 
-The team added the genericArgs in class' AST and type, and added the support for generics in parser.ts. One possible conflict is that the author defined remove-generics.ts to collect and recreate all the specializations for each generic type. This new module introduced the removeGenerics function to repl.ts to insert one more step before tc in repl.tc. However, we did not made any change in repl.tc, which is only used for helpers.test.ts for now. Therefore, generics would not cause conflicts.
+The team added the `genericArgs` in class' AST and type, and added the support for generics in `parser.ts`. One possible conflict is that the author defined remove-generics.ts to collect and recreate all the specializations for each generic type. This new module introduced the `removeGenerics` function to `repl.t`s to insert one more step before `tc` in `repl.tc`. However, we did not made any change in `repl.tc`, which is only used for `helpers.test.ts` for now. Therefore, generics would not cause conflicts.
 
 ## 10. I/O, files
 
@@ -117,7 +117,7 @@ In the list design, the length of list will be stored in the first location at t
 
 ## 13. Memory management
 
-Memory management team changed the files a lot. We disscused with them and we came to an agreement that we don't need the specific address for each obejct to display the current heap, as all addresses in memory are scattered. Noted that they added global_type and local_type in currentEnv in repl.ts as they changed the layout of an allocation. However, a change in the header of an object in memory does not mean a change in its fields layout, that is, the method for our objectTrack function to obtain all fields of an object has not changed. Therefore, memory management is invisible to the front-end and there are no conflicts.
+Memory management team changed the files a lot. We disscused with them and we came to an agreement that we don't need the specific address for each obejct to display the current heap, as all addresses in memory are scattered. Noted that they added `global_type` and `local_type` in `currentEnv` of `repl.ts` as they changed the layout of an allocation. However, a change in the header of an object in memory does not mean a change in its fields layout, that is, the method for our `objectTrack` function to obtain all fields of an object has not changed. Therefore, memory management is invisible to the front-end and there are no conflicts.
 
 ```python
 class C(object):
@@ -127,11 +127,11 @@ c = C()
 c.x = 5
 ```
 
-In the example above, the field of c in memory is still x=5. There is no change between before adding and after adding the memory management feature.
+In the example above, the field of `c` in memory is still `x=5`. There is no change between before adding and after adding the memory management feature.
 
 ## 14. Optimization
 
-
+There is no obvious overlap between the optimization process and the front-end display. Noted that optimization requires additional data structures to be passed at compile process. Therefore, the newly added `astOpt` and `irOpt` parameters can be seen in `repl.ts`. In addition, to get the length of the optimized WASM code for testing, a new field `watCode` has been introduced and assigned in `repl.ts`. Since we did not modified that part of code in our existing implementation, there are no foreseeable conflicts.
 
 ## 15. Sets and/or tuples and/or dictionaries
 

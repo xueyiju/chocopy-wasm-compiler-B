@@ -5,84 +5,84 @@ import { BOOL, NONE, NUM } from './utils';
 type BuiltinFunc = {
   name: string
   body: Function
-  typeSign: [Type[], Type]
+  typeSig: [Type[], Type]
 }
 // here to register builtinFunctions
 export const BuiltinLib:BuiltinFunc[] = [
   {
     name: "factorial",
     body: factorial,
-    typeSign: [[NUM], NUM]
+    typeSig: [[NUM], NUM]
   },
   {
     name: "randint",
     body: randint,
-    typeSign: [[NUM,NUM], NUM]
+    typeSig: [[NUM,NUM], NUM]
   },
   {
     name: "gcd",
     body: gcd,
-    typeSign: [[NUM,NUM], NUM]
+    typeSig: [[NUM,NUM], NUM]
   },
   {
     name: "lcm",
     body: lcm,
-    typeSign: [[NUM,NUM], NUM]
+    typeSig: [[NUM,NUM], NUM]
   },
   {
     name: "comb",
     body: comb,
-    typeSign: [[NUM,NUM], NUM]
+    typeSig: [[NUM,NUM], NUM]
   },
   {
     name: "perm",
     body: perm,
-    typeSign: [[NUM,NUM], NUM]
+    typeSig: [[NUM,NUM], NUM]
   },
   {
     name: "randrange",
     body: randrange,
-    typeSign: [[NUM,NUM, NUM], NUM]
+    typeSig: [[NUM,NUM, NUM], NUM]
   },
   {
     name: "time",
     body: ()=>Date.now()%1000000000,
-    typeSign: [[], NUM]
+    typeSig: [[], NUM]
   },
   {
     name: "sleep",
     body: sleep,
-    typeSign: [[NUM], NONE]
+    typeSig: [[NUM], NONE]
   },
   {
     name: "int",
     body: (x:any)=>x,
-    typeSign: [[BOOL], NUM]
+    typeSig: [[BOOL], NUM]
   },
   {
     name: "bool",
     body: (x:number)=>x!=0,
-    typeSign: [[NUM], BOOL]
+    typeSig: [[NUM], BOOL]
   },
   {
     name: "abs",
     body: Math.abs,
-    typeSign: [[NUM], NUM]
+    typeSig: [[NUM], NUM]
   },
   {
     name: "min",
     body: Math.min,
-    typeSign: [[NUM, NUM], NUM]
+    typeSig: [[NUM, NUM], NUM]
   },
   {
     name: "max",
     body: Math.max,
-    typeSign: [[NUM, NUM], NUM]
+    typeSig: [[NUM, NUM], NUM]
   },
   {
     name: "pow",
     body: Math.pow,
-    typeSign: [[NUM, NUM], NUM]
+    typeSig: [[NUM, NUM], NUM]
   }
 ]
 

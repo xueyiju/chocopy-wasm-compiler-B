@@ -95,3 +95,30 @@ print(l.sum())
 ```
 
 Expected Output is 8. 
+
+# Summarize the remaining features
+
+We may wanna support built-in functions like map and reduce. And also we wanna be able to print an object.
+
+Test cases:
+
+```python
+set_1 : set[int] = None
+set_1 = {1,2}
+max(set_1) #output should be 2
+```
+
+```python
+def f(a:int, b:int)->int:
+	return a + b
+x:List[int] = None
+x = [1,2,3,4,5]
+reduce(f,a,3) #should output 18
+```
+
+```python
+x:List[int] = None
+x = [1,2,3,4,5]
+map(pow,a) #should output [1,4,9,16,25]
+```
+

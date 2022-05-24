@@ -10,7 +10,6 @@ export function optimizeAst(program: Program<[Type, SourceLocation]>) : Program<
     do {
         isChanged = false;
         counter++;
-        console.log(counter);
         // Optimize function definitions
         const optFuns = newProgram.funs.map(fun => optimizeFuncDef(fun));
         // Optimize class definitions
@@ -22,7 +21,7 @@ export function optimizeAst(program: Program<[Type, SourceLocation]>) : Program<
         newProgram = {...newProgram, funs: optFuns, stmts: optStmts, classes: optClasses}
     } while(isChanged);
 
-    console.log(`Optimization completed after ${counter} iterations.`)
+    // console.log(`Optimization completed after ${counter} iterations.`)
     
     return newProgram;
 }
@@ -91,7 +90,6 @@ function DCEForReturn(stmts: Array<Stmt<[Type, SourceLocation]>>): Array<Stmt<[T
         switch(stmt.tag) {
             case "return": {
                 newStmts.push(stmt);
-                console.log(stmts.length);
                 if (index < stmts.length-1) {
                     isChanged = true;
                 }
@@ -228,7 +226,7 @@ function foldBinop(lhs: Literal, rhs: Literal, op: BinOp): Literal{
             if(lhs.tag !== "num" || rhs.tag !== "num"){
                 return {tag: "none"};
             }  
-            return {tag: "num", value: lhs.value / rhs.value};
+            return {tag: "num", value: Math.floor(lhs.value / rhs.value)};
         case BinOp.Mod:
             if(lhs.tag !== "num" || rhs.tag !== "num"){
                 return {tag: "none"};

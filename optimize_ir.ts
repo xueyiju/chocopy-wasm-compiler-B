@@ -120,6 +120,7 @@ function foldBinop(lhs: IR.Value<[Type, SourceLocation]>, rhs: IR.Value<[Type, S
             if(lhs.tag !== "num" || rhs.tag !== "num"){
                 return {tag: "none", a: lhs.a};
             }  
+            // bigint do intDiv
             return {tag: "num", value: lhs.value / rhs.value, a: lhs.a};
         case BinOp.Mod:
             if(lhs.tag !== "num" || rhs.tag !== "num"){

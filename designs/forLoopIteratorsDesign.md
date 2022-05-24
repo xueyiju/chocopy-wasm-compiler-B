@@ -80,7 +80,7 @@ We plan to implement these helper function for the five inbuilt type (lists, set
 
 We shall join the following code at the start of each input : 
 
-```
+```Python
 class __range__(object) : 
     start :  int = 0
     stop :  int = 0
@@ -121,7 +121,7 @@ def range(start :  int, stop :  int, step :  int) -> __range__ :
 * **Test Case 1** :  for loop with range
  
 Input : 
-```
+```Python
 i :  int = 0
 for i in range(0,10,2) : 
     print(i)
@@ -137,7 +137,7 @@ Output :
 * **Test Case 2** :  for loop with range :  called inside a fucntion with function parameters
  
 Input : 
-```
+```Python
 def f(x :  int, y :  int) : 
     i :  int = 0
     for i in range(x*1,y*1,1*2*abs(1)) : 
@@ -155,7 +155,7 @@ Output :
  
 * **Test Case 3** :  for loop with range :  negative step
 Input : 
-```
+```Python
 i :  int = 0
 for i in range(0,-10,-2) : 
     print(i)
@@ -172,7 +172,7 @@ Output :
 * **Test Case 4** :  for loop with break in the main for loop body
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(10) : 
     print(i)
@@ -185,7 +185,7 @@ Output :
 * **Test Case 5** :   for loop with break inside a if body
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(10) : 
     If i\>5 : 
@@ -206,7 +206,7 @@ Output :
 * **Test Case 6** :   for loop with continue inside the main for body
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(5) : 
     print(i*100)
@@ -225,7 +225,7 @@ Output :
 * **Test Case 7** :   for loop with continue inside a if body
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(10) : 
     if i%2==0 : 
@@ -245,7 +245,7 @@ Output :
 * **Test Case 8** :   range :  nested for loop with break
  
 Input : 
-```
+```Python
 i :  int = 0
 j : int = 0
 for i in range(0,5,1) : 
@@ -264,7 +264,7 @@ Output :
 * **Test Case 9** :  range :  complex break, continue 1
  
 Input : 
-```
+```Python
 i :  int = 0
 j : int = 0
 for i in range(0,5,1) : 
@@ -285,7 +285,7 @@ Output :
 * **Test Case 10** :   range :  complex break, continue 2
  
 Input : 
-```
+```Python
 i :  int = 0
 j : int = 0
 for i in range(0,5,1) : 
@@ -321,7 +321,7 @@ Output :
 * **Test Case 11** :    range :  complex break, continue 3
  
 Input : 
-```
+```Python
 i :  int = 0
 j : int = 0
 k :  int =0
@@ -378,7 +378,7 @@ Output :
 * **Test Case 12** :    range :  complex break, continue 4
  
 Input : 
-```
+```Python
 i :  int = 0
 j : int = 0
 k :  int =0
@@ -427,7 +427,7 @@ Output :
 * **Test Case 13** :    range :  complex break, continue 5
  
 Input : 
-```
+```Python
 i :  int = 0
 j : int  = 0
 k :  int = 0 
@@ -460,7 +460,7 @@ Output :
 * **Test Case 14** :  for else construct 1
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(10, 0, -1) : 
     if i < 5 : 
@@ -483,7 +483,7 @@ Output :
 * **Test Case 15** :  for else construct 2
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(10, 5, -1) : 
     if i < 5 : 
@@ -505,7 +505,7 @@ Output :
 * **Test Case 16** :  Custom Iterator 1
  
 Input : 
-```
+```Python
 class EvenNumbers(object) : 
     num : int = 0
     def __init__(self :  EvenNumbers) : 
@@ -537,7 +537,7 @@ Output :
 * **Test Case 17** :   Custom Iterator called range
  
 Input : 
-```
+```Python
 class range(object) : 
   num : int = 1
   def __init__(self :  range) : 
@@ -569,7 +569,7 @@ Output :
 * **Test Case 18** :  Custom bool iterator
  
 Input : 
-```
+```Python
 class BoolIterable(object) : 
     val : bool = True
     num : int = 0
@@ -604,7 +604,7 @@ False
 * **Test Case 19** :  type checking for loop variable 1
  
 Input : 
-```
+```Python
 i : bool = False
 for i in range(10) : 
     print(i)
@@ -617,7 +617,7 @@ TypeCheckError :  bool object cannot be interpreted as integer
 * **Test Case 20** :  type checking for loop variable 2
  
 Input : 
-```
+```Python
 for i in range(10) : 
     print(i)
 ```
@@ -629,7 +629,7 @@ TypeCheckError :  Unbound id :  i
 * **Test Case 21** :  range :  type checking for one parameter
  
 Input : 
-```
+```Python
 i :  int = 0
 for i in range(5) : 
     print(i)
@@ -642,7 +642,7 @@ TypeError :  range expected 3 arguments, got 1
 * **Test Case 22** :  range :  type checking for two parameters
  
 Input : 
-```
+```Python
 i :  int = 0
 for i in range(5,10) : 
     print(i)
@@ -655,7 +655,7 @@ TypeError :  range expected 3 arguments, got 2
 * **Test Case 23** :  range :  type checking for range parameters
  
 Input : 
-```
+```Python
 i : int = 0
 for i in range(10, 20, 1, 1) : 
     print(i)
@@ -668,7 +668,7 @@ TypeError :  range expected 3 arguments, got 4
 * **Test Case 24** :  Type Checking :  not an iterator 1
  
 Input : 
-```
+```Python
 class range(object) : 
     num : int = 1
     def __init__(self :  range) : 
@@ -691,7 +691,7 @@ TypeCheckError :  Not an iterable
 * **Test Case 25** :  Type Checking :  not an iterator 2
  
 Input : 
-```
+```Python
 class range(object) : 
     num : int = 1
     def __init__(self :  range) : 
@@ -713,7 +713,7 @@ TypeCheckError :  Not an iterable
 * **Test Case 26** :  Type Checking :  break outside loop
  
 Input : 
-```
+```Python
 i :  int = 0
 for i in range() : 
     print(i) 
@@ -727,7 +727,7 @@ TypeCheckError :  break cannot exist outside a loop
 * **Test Case 27** :  Type Checking :  continue outside loop
  
 Input : 
-```
+```Python
 i :  int = 0
 for i in range() : 
     print(i) 
@@ -740,7 +740,7 @@ TypeCheckError :  continue cannot exist outside a loop
 ## New Test Cases for Week 9
 
 ### Test cases that will work after current week's merge ###
-**Test Case 1 : **
+**Test Case 1 : List of int's as an Iterator**
 ```Python
 a : [int] = None
 i : int = 0
@@ -755,7 +755,7 @@ for i in a :
 2
 3
 ```
-**Test Case 2 : **
+**Test Case 2 List of bool's as an Iterator :**
 ```Python
 a : [bool] = None
 i : bool = False
@@ -770,7 +770,7 @@ False
 True
 ```
 
-**Test Case 3 : **
+**Test Case 3 : String as an iterator**
 ```Python
 a : str = "cse231"
 i : str = 0
@@ -788,7 +788,7 @@ e
 1
 ```
 
-**Test Case 4 : **
+**Test Case 4 :Set of int's as an Iterator**
 ```Python
 set_1 : set[int] = None
 set_1 = {11,22}
@@ -803,7 +803,7 @@ for i in set1 :
 33
 ```
 
-**Test Case 5 : **
+**Test Case 5 :Iterable Object - `iter` and `next` in list of int's**
 ```Python
 a : [int] = None
 i : int = 0
@@ -820,7 +820,7 @@ print(next(list_itr))
 2
 3
 ```
-**Test Case 6 : **
+**Test Case 6: Iterable Object - `iter` and `next` in list of bool's**
 ```Python
 a : [bool] = None
 i : int = 0
@@ -838,7 +838,7 @@ False
 True
 ```
 
-**Test Case 7 : **
+**Test Case 7 :Iterable Object - `iter` and `next` in a string**
 ```Python
 a : str = "cse231"
 str_itr : StringIterator = iter(a)
@@ -854,23 +854,7 @@ s
 e
 ```
 
-**Test Case 8 : **
-```Python
-a : [int] = None
-i : int = 0
-a = [1]
-list_itr : ListIteratorInt = None
-list_itr = iter(a)
-print(next(list_itr))
-print(next(list_itr))
-```
-**Expected Output**
-```
-1
-RUNTIME ERROR :  StopIteration
-```
-
-**Test Case 9 : **
+**Test Case 8 :Iterable Object - `iter` and `next` in a set of int's**
 ```Python
 a : set{int} = None
 i : int = 0
@@ -886,8 +870,24 @@ print(next(set_itr))
 2
 ```
 
+**Test Case 9 : StopException error when iterator object is empty**
+```Python
+a : [int] = None
+i : int = 0
+a = [1]
+list_itr : ListIteratorInt = None
+list_itr = iter(a)
+print(next(list_itr))
+print(next(list_itr))
+```
+**Expected Output**
+```
+1
+RUNTIME ERROR :  StopIteration
+```
 
-**Test Case 10 : **
+
+**Test Case 10 :Iterable Object - `iter` and `next` in a custoemr iterator**
 ```Python
 class EvenNumbers(object) : 
     num : int = 0

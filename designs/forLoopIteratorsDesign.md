@@ -887,7 +887,7 @@ RUNTIME ERROR :  StopIteration
 ```
 
 
-**Test Case 10 :Iterable Object - `iter` and `next` in a custoemr iterator**
+**Test Case 10 :Iterable Object - `iter` and `next` in a custoemr iterator 1**
 ```Python
 class EvenNumbers(object) : 
     num : int = 0
@@ -915,7 +915,7 @@ print(next(custom_iter))
 4
 ```
 
-**Test Case 11 : **
+**Test Case 11 :Iterable Object - `iter` and `next` in a custoemr iterator 2**
 ```Python
 class EvenNumbers(object) : 
     num : int = 0

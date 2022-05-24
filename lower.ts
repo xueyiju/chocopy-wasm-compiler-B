@@ -71,7 +71,7 @@ function lowerClass(cls: AST.Class<[Type, SourceLocation]>, env : GlobalEnv) : I
     }
 }
 
-function literalToVal(lit: AST.Literal) : IR.Value<[Type, SourceLocation]> {
+function literalToVal(lit: AST.Literal<[Type, SourceLocation]>) : IR.Value<[Type, SourceLocation]> {
     switch(lit.tag) {
         case "num":
             return { ...lit, value: BigInt(lit.value) }
@@ -129,7 +129,7 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var [ninits, nstmts, nval] = flattenExprToVal(s.value, blocks, env);
       if(s.obj.a[0].tag !== "class") { throw new Error("Compiler's cursed, go home."); }
       const classdata = env.classes.get(s.obj.a[0].name);
-      const offset : IR.Value<[Type, SourceLocation]> = { tag: "wasmint", value: classdata.get(s.field)[0] };
+      const offset : IR.Value<[Type, SourceLocation]> = { a:s.a, tag: "wasmint", value: classdata.get(s.field)[0] };
       pushStmtsToLastBlock(blocks,
         ...ostmts, ...nstmts, {
           tag: "store",
@@ -140,21 +140,39 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
         });
       return [...oinits, ...ninits];
     }
-      // return [[...oinits, ...ninits], [...ostmts, ...nstmts, {
-      //   tag: "field-assign",
-      //   a: s.a,
-      //   obj: oval,
-      //   field: s.field,
-      //   value: nval
-      // }]];
+    
+    case "index-assign": {
+      var [oinits, ostmts, oval] = flattenExprToVal(s.obj, env);
+      const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
+      var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
+
+      const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
+
+      if (s.obj.a[0].tag === "list") {
+        pushStmtsToLastBlock(blocks,
+          ...ostmts, ...istmts, ...nstmts, {
+            tag: "store",
+            a: s.a,
+            start: oval,
+            offset: offsetValue,
+            value: nval
+          });
+        return [...oinits, ...iinits, ...ninits];
+      }
+      // if (s.obj.a[0].tag === "dict") {
+      //   ...
+      // }
+
+      else { throw new Error("Compiler's cursed, go home."); }
+    }
 
     case "if":
       var thenLbl = generateName("$then")
       var elseLbl = generateName("$else")
       var endLbl = generateName("$end")
-      var endjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "jmp", lbl: endLbl };
+      var endjmp : IR.Stmt<[Type, SourceLocation]> = { a:s.a, tag: "jmp", lbl: endLbl };
       var [cinits, cstmts, cexpr] = flattenExprToVal(s.cond, blocks, env);
-      var condjmp : IR.Stmt<[Type, SourceLocation]> = { tag: "ifjmp", cond: cexpr, thn: thenLbl, els: elseLbl };
+      var condjmp : IR.Stmt<[Type, SourceLocation]> = { a:s.a, tag: "ifjmp", cond: cexpr, thn: thenLbl, els: elseLbl };
       pushStmtsToLastBlock(blocks, ...cstmts, condjmp);
       blocks.push({  a: s.a, label: thenLbl, stmts: [] })
       var theninits = flattenStmts(s.thn, blocks, env);
@@ -182,14 +200,14 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var whilebodyLbl = generateName("$whilebody");
       var whileEndLbl = generateName("$whileend");
 
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl })
+      pushStmtsToLastBlock(blocks, { a: s.a, tag: "jmp", lbl: whileStartLbl })
       blocks.push({  a: s.a, label: whileStartLbl, stmts: [] })
       var [cinits, cstmts, cexpr] = flattenExprToVal(s.cond, blocks, env);
-      pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: whilebodyLbl, els: whileEndLbl });
+      pushStmtsToLastBlock(blocks, ...cstmts, { a: s.a, tag: "ifjmp", cond: cexpr, thn: whilebodyLbl, els: whileEndLbl });
 
       blocks.push({  a: s.a, label: whilebodyLbl, stmts: [] })
       var bodyinits = flattenStmts(s.body, blocks, env);
-      pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: whileStartLbl });
+      pushStmtsToLastBlock(blocks, { a:s.a, tag: "jmp", lbl: whileStartLbl });
 
       blocks.push({  a: s.a, label: whileEndLbl, stmts: [] })
 
@@ -246,8 +264,8 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
       const className = objTyp.name;
-      const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}}
-      const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", a: e.a, name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
+      const checkObj : IR.Stmt<[Type, SourceLocation]> = { a: e.a, tag: "expr", expr: { a: e.a, tag: "call", name: `assert_not_none`, arguments: [objval]}}
+      const callMethod : IR.Expr<[Type, SourceLocation]> = { a:e.a, tag: "call", name: `${className}$${e.method}`, arguments: [objval, ...argvals] }
       return [
         [...objinits, ...arginits],
         [...objstmts, checkObj, ...argstmts],
@@ -260,18 +278,43 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       const classdata = env.classes.get(e.obj.a[0].name);
       const [offset, _] = classdata.get(e.field);
       return [oinits, ostmts, {
+        a: e.a,
         tag: "load",
         start: oval,
         offset: { tag: "wasmint", value: offset }}];
     }
+    case "index":
+      const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
+      const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
+
+      // if(equalType(e.a[0], CLASS("str"))){
+      //   return [[...oinits, ...iinits], [...ostmts, ...istmts], {tag: "call", name: "str$access", arguments: [oval, ival]} ]
+      // }
+      if (e.obj.a[0].tag === "list") { 
+        const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
+        return [[...oinits, ...iinits], [...ostmts, ...istmts], {
+          a: e.a,
+          tag: "load",
+          start: oval,
+          offset: offsetValue
+        }];
+      }
+      // if(e.obj.a[0].tag === "dict")){
+      //   ...
+      // }
+      // if(e.obj.a[0].tag === "tuple")){
+      //   ...
+      // }
+      throw new Error("Compiler's cursed, go home");
     case "construct":
       const classdata = env.classes.get(e.name);
       const fields = [...classdata.entries()];
       const newName = generateName("newObj");
-      const alloc : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: fields.length } };
+      const alloc : IR.Expr<[Type, SourceLocation]> = { a:e.a, tag: "alloc", amount: { a:e.a, tag: "wasmint", value: fields.length } };
       const assigns : IR.Stmt<[Type, SourceLocation]>[] = fields.map(f => {
         const [_, [index, value]] = f;
         return {
+          a: e.a,
           tag: "store",
           start: { tag: "id", name: newName },
           offset: { tag: "wasmint", value: index },
@@ -280,16 +323,43 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       });
 
       return [
-        [ { name: newName, type: e.a[0], value: { tag: "none" } }],
-        [ { tag: "assign", name: newName, value: alloc }, ...assigns,
-          { tag: "expr", expr: { tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }] } }
+        [ { name: newName, type: e.a[0], value: { a: e.a, tag: "none" } }],
+        [ { a: e.a, tag: "assign", name: newName, value: alloc }, ...assigns,
+          { a: e.a, tag: "expr", expr: { a: e.a, tag: "call", name: `${e.name}$__init__`, arguments: [{ a: e.a, tag: "id", name: newName }] } }
         ],
         { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newName } }
       ];
+    case "listliteral":
+      const newListName = generateName("newList");
+      const allocList : IR.Expr<[Type, SourceLocation]> = { tag: "alloc", amount: { tag: "wasmint", value: e.elements.length + 1 } };
+      var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
+      var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
+      var storeLength : IR.Stmt<[Type, SourceLocation]> = {
+        tag: "store",
+        start: { tag: "id", name: newListName },
+        offset: { tag: "wasmint", value: 0 },
+        value: { a: [{tag: "number"}, e.a[1]], tag: "num", value: BigInt(e.elements.length) }
+      }
+      const assignsList : IR.Stmt<[Type, SourceLocation]>[] = e.elements.map((e, i) => {
+        const [init, stmt, val] = flattenExprToVal(e, env);
+        inits = [...inits, ...init];
+        stmts = [...stmts, ...stmt];
+        return {
+          tag: "store",
+          start: { tag: "id", name: newListName },
+          offset: { tag: "wasmint", value: i+1 },
+          value: val
+        }
+      })
+      return [
+        [ { name: newListName, type: e.a[0], value: { tag: "none" } }, ...inits ],
+        [ { a: e.a, tag: "assign", name: newListName, value: allocList }, ...stmts, storeLength, ...assignsList ],
+        { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newListName } }
+      ];
     case "id":
-      return [[], [], {tag: "value", a: e.a, value: { ...e }} ];
+      return [[], [], {a: e.a, tag: "value", value: { ...e }} ];
     case "literal":
-      return [[], [], {tag: "value", a: e.a, value: literalToVal(e.value) } ];
+      return [[], [], {a: e.a, tag: "value", value: literalToVal(e.value) } ];
     case "ternary":
     case "comprehension":
       return flattenExprToExprWithBlocks(e, blocks, env);
@@ -465,11 +535,42 @@ function flattenExprToVal(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<IR
     // TODO: we have to add a new var init for the new variable we're creating here.
     // but what should the default value be?
     return [
-      [...binits, { a: e.a, name: newName, type: e.a[0], value: { tag: "none" } }],
+      [...binits, { a: e.a, name: newName, type: e.a[0], value: { a: e.a, tag: "none" } }],
       [...bstmts, setNewName],  
       {tag: "id", name: newName, a: e.a}
     ];
   }
+}
+
+
+function listIndexOffsets(iinits: IR.VarInit<[AST.Type, AST.SourceLocation]>[], istmts: IR.Stmt<[AST.Type, AST.SourceLocation]>[], ival: IR.Value<[AST.Type, AST.SourceLocation]>, oval: IR.Value<[AST.Type, AST.SourceLocation]>) : IR.Value<[AST.Type, AST.SourceLocation]> {
+  // Check index is in bounds
+  var listLength = generateName("listlength");
+  var setLength : IR.Stmt<[Type, SourceLocation]> = {
+    tag: "assign",
+    a: ival.a,
+    name: listLength,
+    value: {
+      a: ival.a,
+      tag: "load",
+      start: oval,
+      offset: { tag: "wasmint", value: 0 }} 
+  };
+  iinits.push({ a: ival.a, name: listLength, type: {tag: "number"}, value: { tag: "none" } })
+  istmts.push(setLength);
+  const checkIndex: IR.Stmt<[Type, SourceLocation]> = { a: ival.a, tag: "expr", expr: { a: ival.a, tag: "call", name: `index_out_of_bounds`, arguments: [{tag: "id", name: listLength, a: ival.a}, ival]}}
+  istmts.push(checkIndex);
+
+  // Get rest of index offsets
+  const value1: IR.Value<[Type, SourceLocation]> = { a: ival.a, tag: "wasmint", value: 1 };
+  const indexAdd1Expr: IR.Expr<[Type, SourceLocation]> = {  a: ival.a, tag: "binop", op: AST.BinOp.Plus, left: ival, right: value1};
+  const offsetName = generateName("offsetname");
+  const offsetInit: IR.VarInit<[Type, SourceLocation]> = { a: ival.a, name: offsetName, type: {tag: "number"}, value: { tag: "none" } }
+  iinits.push(offsetInit);
+  const setOffset : IR.Stmt<[Type, SourceLocation]> = { tag: "assign", a: ival.a, name: offsetName, value: indexAdd1Expr };
+  istmts.push(setOffset);
+  const offsetValue: IR.Value<[Type, SourceLocation]> = {tag: "id", name: offsetName, a: ival.a}
+  return offsetValue;
 }
 
 function pushStmtsToLastBlock(blocks: Array<IR.BasicBlock<[Type, SourceLocation]>>, ...stmts: Array<IR.Stmt<[Type, SourceLocation]>>) {

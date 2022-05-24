@@ -71,7 +71,13 @@ print(b)
 And they changes files mainly in the process of parsing, type checking, or lowering, so front-end does not have much overlap with fancy calling.
 Some minor conflicts may occur when we print class object with default values and we can just make small modifications to print default values in a more fancy way.
 ## 8. for loops/iterators
-
+Our front-end implementation has minor overlap with for loops, and their changes to include check_range_error and  check_range_index also is quite compatible with our current implementation. As long as error report group have fixed conflicts with them, our implementaion will have no conflicts with them. Below is a typical example:
+```python
+i:int = 0
+for i in range(1, 10, 0):
+    print(i)
+```
+The output will be "ValueError: arg3 can't be 0 for range", so as long as we get the right error output from the interfaces desigend the error report group, we will display them in the UI without conflicts, other testcases with for loops will also be passed.
 ## 9. Generics and polymorphism
 
 ## 10. I/O, files

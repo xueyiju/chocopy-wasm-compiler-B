@@ -142,9 +142,9 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
     }
     
     case "index-assign": {
-      var [oinits, ostmts, oval] = flattenExprToVal(s.obj, env);
-      const [iinits, istmts, ival] = flattenExprToVal(s.index, env);
-      var [ninits, nstmts, nval] = flattenExprToVal(s.value, env);
+      var [oinits, ostmts, oval] = flattenExprToVal(s.obj, blocks, env);
+      const [iinits, istmts, ival] = flattenExprToVal(s.index, blocks, env);
+      var [ninits, nstmts, nval] = flattenExprToVal(s.value, blocks, env);
 
       const offsetValue: IR.Value<[Type, SourceLocation]> = listIndexOffsets(iinits, istmts, ival, oval);
 
@@ -284,8 +284,8 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
         offset: { tag: "wasmint", value: offset }}];
     }
     case "index":
-      const [oinits, ostmts, oval] = flattenExprToVal(e.obj, env);
-      const [iinits, istmts, ival] = flattenExprToVal(e.index, env);
+      const [oinits, ostmts, oval] = flattenExprToVal(e.obj, blocks, env);
+      const [iinits, istmts, ival] = flattenExprToVal(e.index, blocks, env);
 
       // if(equalType(e.a[0], CLASS("str"))){
       //   return [[...oinits, ...iinits], [...ostmts, ...istmts], {tag: "call", name: "str$access", arguments: [oval, ival]} ]
@@ -341,7 +341,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
         value: { a: [{tag: "number"}, e.a[1]], tag: "num", value: BigInt(e.elements.length) }
       }
       const assignsList : IR.Stmt<[Type, SourceLocation]>[] = e.elements.map((e, i) => {
-        const [init, stmt, val] = flattenExprToVal(e, env);
+        const [init, stmt, val] = flattenExprToVal(e, blocks, env);
         inits = [...inits, ...init];
         stmts = [...stmts, ...stmt];
         return {
@@ -411,10 +411,10 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
       const objClassName = objTyp.name;
-      const checkObj : IR.Stmt<[Type, SourceLocation]> = { tag: "expr", expr: { tag: "call", name: `assert_not_none`, arguments: [objval]}};
+      const checkObj : IR.Stmt<[Type, SourceLocation]> = { a: e.a, tag: "expr", expr: { a: e.a, tag: "call", name: `assert_not_none`, arguments: [objval]}};
       // method calls
-      const callHasnext : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${objClassName}$hasnext`, arguments: [objval] };
-      const callNext : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `${objClassName}$next`, arguments: [objval] }
+      const callHasnext : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "call", name: `${objClassName}$hasnext`, arguments: [objval] };
+      const callNext : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "call", name: `${objClassName}$next`, arguments: [objval] }
 
       const whileStartLbl = generateName("$whilestart");
       const whilebodyLbl = generateName("$whilebody");

@@ -406,7 +406,7 @@ function flattenExprToExprWithBlocks(e : AST.Expr<[Type, SourceLocation]>, block
         [cinits, cstmts, cval] = flattenExprToVal(e.ifcond, blocks, env);
       }
 
-      // store generated values on heap
+      // TODO: store generated values on heap
       if (e.a[0].tag === "generator") {
         const newName = generateName("newGen");
         // generator has two fields: size (number of elements generated), and addr (start address)

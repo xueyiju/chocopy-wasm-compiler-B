@@ -1,3 +1,207 @@
+# Week 9 Update (5/27/22)
+
+## New Test Cases for Lists
+
+### 1. Print a list
+
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3]
+print(a)
+```
+*Output:*
+[1, 2, 3]
+
+---
+
+### 2. Obtain length of a list
+
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3]
+print(len(a))
+```
+*Output:*
+3
+
+---
+
+### 3. Functional negative indexing of a list
+
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3]
+print(a[-1])
+```
+*Output:*
+```
+3
+```
+
+---
+
+### 4. Basic list slicing
+*Input:*
+```
+a: [int] = None
+b: [int] = None
+a = [2, 4, 6, 8]
+b = a[0:2]
+print(b)
+```
+*Output:*
+```
+[2, 4]
+```
+---
+
+### 5. List slicing with step
+*Input:*
+```
+a: [int] = None
+b: [int] = None
+a = [2, 4, 6, 8]
+b = a[0:3:2]
+print(b)
+```
+*Output:*
+```
+[2, 6]
+```
+---
+
+### 6. List slicing with negative step
+*Input:*
+```
+a: [int] = None
+b: [int] = None
+a = [2, 4, 6, 8]
+b = a[::-1]
+print(b)
+```
+*Output:*
+```
+[8, 6, 4, 2]
+```
+---
+
+### 7. Append an element to a list
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3]
+a.append(4)
+print(a)
+```
+*Output:*
+```
+[1, 2, 3, 4]
+```
+---
+
+### 8. Copy a list
+*Input:*
+```
+a: [int] = None
+b: [int] = None
+a = [1, 2, 3]
+b = a.copy()
+a.append(4)
+print(b)
+```
+*Output:*
+```
+[1, 2, 3]
+```
+---
+
+### 9. Insert an element into a list
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3]
+a.insert(1, 4)
+```
+*Output:*
+```
+[1, 4, 2, 3]
+```
+---
+
+### 10. Pop an element from a list
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3]
+a.pop(-1)
+print(a)
+```
+*Output:*
+```
+[1, 2]
+```
+---
+
+### 11. List variable concatenation
+*Input:*
+```
+a: [int] = None
+b: [int] = None
+c: [int] = None
+a = [1, 2, 3]
+b = [4, 5, 6]
+c = a + b
+print(c)
+```
+*Output:*
+```
+[1, 2, 3, 4, 5, 6]
+```
+---
+
+### 11. List literal concatenation
+*Input:*
+```
+a: [int] = None
+a = [1, 2, 3] + [4, 5, 6]
+print(a)
+```
+*Output:*
+```
+[1, 2, 3, 4, 5, 6]
+```
+
+## Milestone 2 Summary
+Our main objectives for this week are implementing built-ins to work with lists (specifically print() and len()), fully implementing list slicing, and implementing a few built-in functions that typically come with Python lists. This may require a major change to make list into a functional class. As we implement these functions, they may require a dynamic resizing of lists, so we will probably need to change the layout of data for lists in memory. 
+
+Lists will still go on the heap, and when a list is assigned to a variable, that variable will still store the address of the list on the heap. At this address will still be the number of elements in the list. However, instead of having the values of the list immediately after that, we will have store another address. This address will then point to another place in memory which contains the values of the list. At this address, each value in the list will be stored in consecutive 4-byte blocks of memory. To calculate the address of a specific element in the list, it would be `(the value at (address of the list + 4)) + (4 * index)`.
+
+Example:
+
+*Input:*
+```
+a: [int] = None
+a = [9, 8, 7]
+```
+*Heap:*
+```
+4     8     
+ ----- ----- 
+|  3  | 104 |
+ ----- ----- 
+ 
+104   108   112
+ ----- ----- -----
+|  9  |  8  |  7  |
+ ----- ----- -----
+
+ `a` stores the address 4.
+```
+
+
 # Week 8 Update (5/20/22)
 
 *Update 5/15/22: This program now produces an error message that says `Error: RUNTIME ERROR: cannot perform operation on none`. This error message is just a placeholder for now to get any (index >= length of list) to throw a runtime error. Bad memory modification is no longer allowed.*
@@ -5,6 +209,8 @@
 *Update 5/17/22: The error message now says `Index ${index} out of bounds`. We also fixed the negative index test to pass, but we are considering adding functional negative indexing in the future.*
 
 *Update 5/18/22: Move check-index from being implemented in ir to purely in lower.ts*
+
+*Update 5/23/22: Update all indexing to be unified with Strings group's implementation, as well as the out of bounds error function.*
 
 # Week 7 Update (5/13/22)
 

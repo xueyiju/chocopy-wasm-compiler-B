@@ -737,6 +737,159 @@ Output:
 ```
 TypeCheckError: continue cannot exist outside a loop
 ```
+## New Test Cases for Week 9
+**Test Case 1:**
+```
+a:[int] = None
+i:int = 0
+a = [1,2,3]
+for i in a:
+    print(i)
+```
+
+**Expected Output**
+1
+2
+3
+**Test Case 2:**
+```
+a:[bool] = None
+i:bool = False
+a = [True,False,True]
+for i in a:
+    print(i)
+```
+**Expected Output**
+True
+False
+True
+**Test Case 3:**
+```
+set_1 : set[int] = None
+set_1 = {11,22}
+set_1.add(33)
+for i in set1:
+    print(i)
+```
+**Expected Output**
+11
+22
+33
+**Test Case 4:**
+```
+a:[int] = None
+i:int = 0
+a = [1,2,3]
+list_itr:ListIteratorInt = None
+list_itr = iter(a)
+print(next(list_itr)
+print(next(list_itr)
+print(next(list_itr)
+```
+**Expected Output**
+1
+2
+3
+**Test Case 5:**
+```
+a:[int] = None
+i:int = 0
+a = [1]
+list_itr:ListIteratorInt = None
+list_itr = iter(a)
+print(next(list_itr)
+print(next(list_itr)
+**Expected Output**
+1
+"RUNTIME ERROR: StopIteration"
+
+**Test Case 6:**
+```
+a:[bool] = None
+i:bool = 0
+a = [False, True]
+list_itr:ListIteratorBool = None
+list_itr = iter(a)
+print(next(list_itr))
+print(next(list_itr))
+**Expected Output**
+False
+True
+
+**Test Case 7:**
+```
+class EvenNumbers(object):
+    num:int = 0
+    def __init__(self: EvenNumbers):
+        pass
+    def next(self: EvenNumbers) -> int:
+        ret: int  = 0 
+        ret = self.num
+        self.num = self.num + 2
+        return ret
+    def hasnext(self: EvenNumbers) -> bool:
+        if self.num > 10:
+            return False
+        else:
+            return True
+custom_iter: EvenNumbers = EvenNumbers()
+print(next(custom_iter))
+print(next(custom_iter))
+print(next(custom_iter))
+```
+0
+2
+4
+**Test Case 8:**
+```
+a:[int] = None
+b:[int] = None
+c:[int] = None
+a = [1,3]
+b = [3,1]
+c = [-4, -4]
+i:int = 0
+j:int = 0
+k:int = 0
+for i, j, k in [a, b, c]:
+    print(i + j + k)
+```
+**Expected Output**
+0
+0
+**Test Case 9:**
+```
+a:str = "abc"
+b:str = "bcd"
+i:str = "a"
+j:str = "b"
+for i, j in [[a, b], [b, a]]:
+    print(i)
+    print(j)
+```
+abc
+bcd
+bcd
+abc
+**Test Case 10:**
+```
+a:[int] = None
+i:bool = 0
+a = [1,2,3]
+for i in a:
+    print(i)
+```
+This will throw a TypeError
+**Test Case 11:**
+```
+i:int = 0
+j:bool = 0
+for i, j in [[1, 2], [2, 4]]:
+    print(i)
+    print(j)
+```
+This will throw a TypeError
+
 
 # Week 8 and 9 features Roadmap #
  

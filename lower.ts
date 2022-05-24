@@ -221,18 +221,18 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
       var forEndLbl = generateName("$whileend");
       var iterableObject = generateName("$iterableobject")
       
-      var [in_inits, in_stmts, in_expr] = flattenExprToExpr(s.iterable, env);
+      var [in_inits, in_stmts, in_expr] = flattenExprToExpr(s.iterable, blocks, env);
       pushStmtsToLastBlock(blocks, ...in_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: iterableObject, value: in_expr} );
       pushStmtsToLastBlock(blocks, { tag: "jmp", lbl: forStartLbl })
       blocks.push({  a: s.a, label: forStartLbl, stmts: [] })
 
       let condExpr:AST.Expr<[AST.Type, SourceLocation]>  = { a:[BOOL, s.a[1]],tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: iterableObject} , method: "hasnext", arguments: []}
-      var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, env);
+      var [cinits, cstmts, cexpr] = flattenExprToVal(condExpr, blocks, env);
       pushStmtsToLastBlock(blocks, ...cstmts, { tag: "ifjmp", cond: cexpr, thn: forbodyLbl, els: forElseLbl });
       blocks.push({  a: s.a, label: forbodyLbl, stmts: [] })
 
       const iterVal: AST.Expr<[AST.Type, SourceLocation]> = {a: s.a, tag: "method-call", obj: {a:s.iterable.a, tag: "id", name: iterableObject} , method: "next", arguments: []}
-      var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, env);
+      var [s_inits, s_stmts,s_expr] = flattenExprToExpr(iterVal, blocks, env);
       //@ts-ignore
       pushStmtsToLastBlock(blocks, ...s_stmts, {a:[NONE, s.a[1]],  tag: "assign", name: s.vars.name, value: s_expr } );
       

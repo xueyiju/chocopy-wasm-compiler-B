@@ -156,7 +156,7 @@ export function join(env : GlobalTypeEnv, t1 : Type, t2 : Type) : Type {
   return NONE
 }
 
-export function isIterable(env : GlobalTypeEnv, t1 : Type) : boolean {
+export function isIterableObject(env : GlobalTypeEnv, t1 : Type) : boolean {
   if(t1.tag !== "class")
     return false;
   var classMethods = env.classes.get(t1.name)[1];
@@ -307,7 +307,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       locals.currLoop.push(locals.loopCount);
       var tForBody = tcBlock(env, locals, stmt.body);
       locals.currLoop.pop();
-      if(tIterable.a[0].tag !== "class" || !isIterable(env, tIterable.a[0]))
+      if(tIterable.a[0].tag !== "class" || !isIterableObject(env, tIterable.a[0]))
         throw new TypeCheckError("Not an iterable: " + tIterable.a[0]);
       let tIterableRet = env.classes.get(tIterable.a[0].name)[1].get("next")[1];
       if(!equalType(tVars.a[0], tIterableRet))

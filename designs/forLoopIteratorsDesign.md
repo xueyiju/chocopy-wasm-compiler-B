@@ -740,7 +740,7 @@ TypeCheckError :  continue cannot exist outside a loop
 ## New Test Cases for Week 9
 
 ### Test cases that will work after current week's merge ###
-**Test Case 1 : **
+**Test Case 1 :**
 ```Python
 a : [int] = None
 i : int = 0
@@ -755,7 +755,7 @@ for i in a :
 2
 3
 ```
-**Test Case 2 : **
+**Test Case 2 :**
 ```Python
 a : [bool] = None
 i : bool = False
@@ -770,7 +770,7 @@ False
 True
 ```
 
-**Test Case 3 : **
+**Test Case 3 :**
 ```Python
 a : str = "cse231"
 i : str = 0
@@ -788,7 +788,7 @@ e
 1
 ```
 
-**Test Case 4 : **
+**Test Case 4 :**
 ```Python
 set_1 : set[int] = None
 set_1 = {11,22}
@@ -803,7 +803,7 @@ for i in set1 :
 33
 ```
 
-**Test Case 5 : **
+**Test Case 5 :**
 ```Python
 a : [int] = None
 i : int = 0
@@ -820,7 +820,7 @@ print(next(list_itr))
 2
 3
 ```
-**Test Case 6 : **
+**Test Case 6 :**
 ```Python
 a : [bool] = None
 i : int = 0
@@ -838,7 +838,7 @@ False
 True
 ```
 
-**Test Case 7 : **
+**Test Case 7 :**
 ```Python
 a : str = "cse231"
 str_itr : StringIterator = iter(a)
@@ -854,7 +854,7 @@ s
 e
 ```
 
-**Test Case 8 : **
+**Test Case 8 :**
 ```Python
 a : [int] = None
 i : int = 0
@@ -870,7 +870,7 @@ print(next(list_itr))
 RUNTIME ERROR :  StopIteration
 ```
 
-**Test Case 9 : **
+**Test Case 9 :**
 ```Python
 a : set{int} = None
 i : int = 0
@@ -887,7 +887,7 @@ print(next(set_itr))
 ```
 
 
-**Test Case 10 : **
+**Test Case 10 :**
 ```Python
 class EvenNumbers(object) : 
     num : int = 0
@@ -915,7 +915,7 @@ print(next(custom_iter))
 4
 ```
 
-**Test Case 11 : **
+**Test Case 11 :** 
 ```Python
 class EvenNumbers(object) : 
     num : int = 0
@@ -943,7 +943,101 @@ print(next(custom_iter))
 4
 ```
 
-**Test Case 12 : **
+**Test Case 12 :** destructuring assignment type error 1, single loop variable
+```Python
+a : [int] = None
+i : bool = 0
+a = [1,2,3]
+for i in a : 
+    print(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Expected int; got bool
+```
+**Test Case 13 :** destructuring assignment type error 2, multiple loop variable
+```Python
+i : int = 0
+j : bool = 0
+for i, j in [[1, 2], [2, 4]] : 
+    print(i)
+    print(j)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Expected int; got bool
+```
+
+**Test Case 14 :** iter needs iterable as argument 1, no next() function
+```Python
+class range(object) : 
+    num : int = 1
+    def __init__(self :  range) : 
+        pass
+    def hasnext(self :  range) -> bool : 
+        if self.num > 16 : 
+            return False
+        else : 
+            return True
+iter(range())
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 15 :** iter needs iterable as argument 2, not an object
+```Python
+i : int = 0
+iter(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 16 :** next needs iterable as argument 1, not an object
+```Python
+i : int = 0
+next(i)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 17 :** next needs iterable as argument 2, list is not an iterable
+```Python
+listNum : [int] = [0, 1, 2]
+next(listNum)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 18 :** next needs iterable as argument 3, str is not an iterable
+```Python
+s : str = "cse231"
+next(s)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+**Test Case 19 :** next needs iterable as argument 4, set is not an iterable
+```Python
+s : set[int] = {1 ,2, 3}
+next(s)
+```
+**Expected Output**
+```
+This will throw a TypeError :  Not an iterable
+```
+
+### Test cases that will work after the final merge ###
+**Test Case 20 :** iterables with lists of lists of ints (**after the Generics group support ListWrappers and T as type List**)
 ```Python
 a : [int] = None
 b : [int] = None
@@ -964,12 +1058,12 @@ for i, j in [a, b, c] :
 -8
 ```
 
-**Test Case 13 : **
+**Test Case 21 :** iterables with lists of lists of strings (**after the Generics group support ListWrappers and T as type List**)
 ```Python
 a : str = "abc"
 b : str = "bcd"
-i : str = "a"
-j : str = "b"
+i : str = ""
+j : str = ""
 for i, j in [[a, b], [b, a]] : 
     print(i)
     print(j)
@@ -980,91 +1074,6 @@ abc
 bcd
 bcd
 abc
-```
-
-**Test Case 14 : **
-```Python
-a : [int] = None
-i : bool = 0
-a = [1,2,3]
-for i in a : 
-    print(i)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Expected int; got bool
-```
-**Test Case 15 : **
-```Python
-i : int = 0
-j : bool = 0
-for i, j in [[1, 2], [2, 4]] : 
-    print(i)
-    print(j)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Expected int; got bool
-```
-
-**Test Case 16 : **
-```Python
-i : int = 0
-iter(i)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Not an iterable
-```
-
-**Test Case 17 : **
-```Python
-i : int = 0
-iter(i)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Not an iterable
-```
-
-**Test Case 18 : **
-```Python
-i : int = 0
-next(i)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Not an iterable
-```
-
-**Test Case 19 : **
-```Python
-listNum : [int] = [0, 1, 2]
-next(listNum)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Not an iterable
-```
-
-**Test Case 20 : **
-```Python
-s : str = "cse231"
-next(s)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Not an iterable
-```
-
-**Test Case 21 : **
-```Python
-s : set[int] = {1 ,2, 3}
-next(s)
-```
-**Expected Output**
-```
-This will throw a TypeError :  Not an iterable
 ```
 
 # Week 8 and 9 features Roadmap #

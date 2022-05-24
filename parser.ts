@@ -82,6 +82,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         const commaSepArgs = genArgsStr.substring(1, genArgsStr.length - 1);
         const genTypes = commaSepArgs.split(',').map(s => typeFromString(s));
         return {
+          a: location,
           tag: "call",
           name: callStr.split('[')[0],
           arguments: args,

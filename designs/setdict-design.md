@@ -1,5 +1,58 @@
 # Set/Tuple/Dictionary: Project Design
 
+## Week 8 Update
+There are two main goals we want to achieve in the remaining work:
+1. Finish all basic set functionalities.
+2. Integrate our work with other groups such as lists, strings and bignums.
+
+### About the set functionalities: 
+
+In Week 7, we implemented some of the basic functionalities of sets, including the initialization, len(set), set.add(), set.remove(), the "in" keyword, etc. We proposed some different test cases because we didn't implement a print_set() function. We are also trying to move all the set-related functions into a new file called sets.wat under the /stdlib directory, and build it into sets.wasm to load all the functions into the code. There's still a bug left in our code such that it failed local tests but behaved normally when running in the browser. So in this pull request, in order to pass the local tests without any error, we put the set-related wasm code in the memory.wat temporarily. So our first two tasks are to fix these two problems.
+
+Next, our goal is to implement all the remaining set functionalities. We wish to implement set.update() and set.clear(), as well as throwing runtime error when removing non-existing elements from sets. We will be able to pass all test cases we originally proposed once we finish implementing all these tasks.
+
+### About integrating our work with other groups:
+Currently our set can only store primitive types. We want to extend our implementation to be able to store strings and bignums in the sets. Possible scenarios are as follows:
+
+1. Storing strings in sets
+```python
+set_1 : set[str] = None
+set_1 = {“abc”, “def”}
+print(set_1)   # output {"abc", "def"}
+set_1.add(“xyz”)
+print(set_1)   # output {"abc", "def", "xyz"}
+```
+
+2. Storing bignums in sets
+```python
+set_1 : set[int] = None
+set_1 = {1,
+99999999999999999999999999999999999999999999998}
+set_1.add(99999999999999999999999999999999999999999999997)
+print(set_1)   # output {1, 99999999999999999999999999999999999999999999998, 99999999999999999999999999999999999999999999997}
+```
+
+Also, since the set() constructor and set.update() take in iterables as arguments, we want to extend our implementation to be able to pass in lists and strings to these functions. Possible scenarios are as follows:
+
+1. Constructing and updating sets using strings
+```python
+set_1 : set[str] = None
+set_1 = set(“abc”)
+print(set_1)   # output {"a", "b", "c"}
+set_1.update("xy")
+print(set_1)   # output {"a", "b", "c", "x", "y"}
+```
+
+2. Constructing and updating sets using lists
+```python
+set_1 : set[int] = None
+set_1 = set([1,1,2])
+print(set_1)    # output {1, 2}
+set_1.update([2,3])
+print(set_1)    # output {1, 2, 3}
+```
+
+
 ## Week 7 Update
 
 ### Passed Test Cases:

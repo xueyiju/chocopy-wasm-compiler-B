@@ -117,3 +117,144 @@ if such kind of swap would be supported in the following version, if so, we woul
 concentrate on supporting the example here. For our code, I think our implementation 
 does need to be changed. For them, the key part is to determine whether the rhs can contain
 the id.
+
+### Compiler B: String
+Our task overlap with the string group because string should be able to be stored in a set. In a set, two strings with exact same characters in the same postions should be considered same elements. Therefore, we might need a method to compare two strings when adding it to the set. 
+A case is:
+```python
+set_1 : set[string] = None
+set_1 = {"hello world"} #the set stores one string "hello world"
+set_1.add("hi") #the set stores two strings "hello world" and "hi"
+set_1.add("hello world") #the set still stores two strings "hello world" and "hi", it needs to compare the new "hello world" with the previous one and "hi" and get the results that the first comparation is same and the second is not. 
+```
+
+When storing the string in the set, we need the information of how long the string is in order to leave enough space for properly storing the string.
+The above are the main overlap of our task with string group. 
+
+### Compiler B: Optimization
+our task does not overlap with the task of optimization group. How does the optimization work is to find out which line of code can be executed, which which cannot be reached. Therefore, in order to realize their goal, whether the code involves a set operation is not important. 
+An example is:
+```python
+# 1
+if True:
+  set_1.add(1)
+else:
+  set_1.add(2)
+  
+# 2
+if True:
+  a = 1
+else:
+  a = 2
+```
+In the two examples, the optimization tool should eliminate the else line regardless of whether the operation is an set operation or an int operation. The optimization tool will only decide to eliminate according to the if statement condition.
+
+### Compiler B: List
+Set and List will overlap when we try to update the set with a list.
+For instance: 
+```python
+set_1 : set[int] = None
+set_1 = set()
+set_1.update([1,2,3,1])
+```
+In the case above, we needs to identify the list inside udpate method and iterate through the elements in the list, find the duplicated elements to eliminate and store the uniqe elements. 
+Even though there is overlap between our groups. There is not much sychornizations needed, as long as the list group can do the proper list type check to make sure the elements in a list are of the same type. The other process of updating with list should be done when compiling the set.udpate funciton.
+
+
+### Compiler B: I/O, files
+The work of I/O group does not overlap with our group's work. Because set does not involve in the I/O operation, the read file content will not be stored in set. And After reading the design description, we found that there is not similar expression with I/O group and our set group.
+From the design doc, all the operations invloved in I/O and File functions are:
+```python
+f : File = None
+f = open('test', 'wb')
+f.read()
+f.write(...)
+f.close()
+```
+None of the above lines of code includes set.
+
+### Compiler B: Inheritance
+Inheritance has no connection with set. Inheritance is the feature of class. However, set does not belong to class in Python. Therefore, inheritance group does not need to consider how set is implemented, neither set group doesn't have to interact with the inheritance feature. 
+Below is a basic inheritance operation:
+```python
+class A(object):
+    x : int = 1
+    def foo(self : A):
+        print(self.x)
+
+class B(A):
+    def foo2(self : B):
+        print(self.x * 2)
+```
+One has to define class to take use of inheritance. Hence, set is not one of the cases involved in inheritance. 
+
+### Compiler B: Memory management
+Our project has no conflict with memory management.
+
+### Compiler B: Fancy calling conventions
+
+From our understanding, there isn't any overlap between our implementation of Python `set` and their design of default/optional arguments. The set related functions we have implemented / will be implementing (`add(item)`, `remove(item)`, `update(Iterable<itemType>)`, `clear()`) are standard function in Python and don't allow default or optional arguments. Our way of initializing a set through the `set()` keyword also doesn't involve default/optional arguments.
+
+```python
+x: set[int] = None
+x = {1,2,3}
+def test(x : int, y : int = 3) -> int:
+    return x + y
+
+print(test(3, 6))
+```
+
+### Compiler B: For loop / Iterator
+
+In Python, `set` is an iterable data type, so it should be compatible with for loop. Any class object with `next` and `hasnext` function is deemed to be an iterable. According to their group's implementation plan in their design doc, our group needs to either implement built-in `next` and `hasnext` functions ourselves (most likely) or make it so that they can easily extend our design with these 2 functions. Since the items in a set are unordered, we should support such unorderedness by making sure that iterating a same set multiple times can generate differently ordered outputs. As of now, we put set items in a 10-bucket hashtable, with each bucket storing a linked list of items. We are considering switching to a more advanced and standardized hashing algorithm to secure the randomness of item ordering within a set. If we are to implement built-in `next` and `hasnext`, we would have to figure out a way other than iterating through all the buckets (linkedin lists) in order to retain unorderedness.
+
+```python
+x: set[int] = None
+x = {1,2,3}
+
+for item in x:
+  print(item)
+
+# The output can be any permutation of {1,2,3} and be different across multiple runs
+```
+
+The notion of an iterable type is crucial to our design of set initialization and update operation, both of which require the argument passed in to be an iterable. 
+```python
+x: set[int] = None
+x = set({1,2,3}) # the argument passed into the initialization function must be a type-aligned iterable (set, list, tuple)
+
+x.update({2,3,4}) # the argument passed into the update function must be a type-aligned iterable (set, list, tuple)
+x.update([2,4])
+x # {1,2,3,4}
+```
+
+### Compiler B: Frontend User Interface
+
+Though based on what their group has accomplished up to week 8, we don't observe any overlap with our work, there is indeed potential for collaboration between us and them in terms of set-related keyword highlighting and autocomplete. Their group's work mainly focus on the more general features of frontend user interface, having tighter bonds with user experience enhancement than with a specific data structure.
+
+```python
+# "set" keyword in type annotation can be highlighted as well as int (built-in type) and None (built-in type)
+x: set[int] = None
+# Again, "set" (as an initialization function name) can be hightlighted (preferably in the same color as "set" in the previous line)
+x = set({1,2,3})
+
+# It's good to have the names of the 4 operation functions on set be highlighted too.
+# While we may not need the autocomplete feature for the "set" keyword (b/c it's too short), we will surely find it helpful when we want to see a list of valid operation functions that can be called on a set during programming. 
+x.add(4)
+x.update({5,6})
+x.remove(2)
+x.clear()
+```
+
+### Compiler B: Generics and Polymorphism
+
+After carefully reading their group's design doc, we can say we love their design but don't think generics can be applied to our implementation of set. Python's official implementation of set requires any of its items to be immutable. The only item types our set supports or will support are `int` (including `bigNum`), `bool`, `str`, and `None`, and all items in a set have to be of the same type. For example, a set of `int`s are fine, and so is a set of `str`s, but a mixed set of `int`s and `str`s are not allowed in our implementation. While it's good to extend our set to be mix-typed, we don't think we'll be able to finish that given the time constraint. 
+
+```python
+# Idealy 
+T: TypeVar = TypeVar('T')
+
+# The way "Generic[T]" is used here may not be correct, but the idea is that we want to achieve through type annotation that x is a set that can accept items of mixed types.
+x: set[Generic[T]] = None
+x = {1, True, "yes", None}
+```

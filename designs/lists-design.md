@@ -11,8 +11,9 @@ a = [1, 2, 3]
 print(a)
 ```
 *Output:*
+```
 [1, 2, 3]
-
+```
 ---
 
 ### 2. Obtain length of a list
@@ -24,8 +25,9 @@ a = [1, 2, 3]
 print(len(a))
 ```
 *Output:*
+```
 3
-
+```
 ---
 
 ### 3. Functional negative indexing of a list
@@ -40,7 +42,6 @@ print(a[-1])
 ```
 3
 ```
-
 ---
 
 ### 4. Basic list slicing
@@ -198,7 +199,7 @@ a = [9, 8, 7]
 |  9  |  8  |  7  |
  ----- ----- -----
 
- `a` stores the address 4.
+`a` stores the address 4.
 ```
 
 

@@ -2,6 +2,7 @@ import { assertPrint, assertTCFail, assertTC, assertFail } from "./asserts.test"
 import { NUM, BOOL, NONE, CLASS } from "./helpers.test"
 
 describe("set-functionalities", () => {
+    
     assertPrint("initialize-set", `
     set_1 : set[int] = None
     set_1 = {1,2}

@@ -25,11 +25,15 @@ function assert_not_none(arg: any) : any {
   return arg;
 }
 
+
 export async function addLibs() {
-  const bytes = readFileSync("build/memory.wasm");
   const memory = new WebAssembly.Memory({initial:10, maximum:100});
+  const bytes = readFileSync("build/memory.wasm");
+  const setBytes = readFileSync("build/sets.wasm");
   const memoryModule = await WebAssembly.instantiate(bytes, { js: { mem: memory } })
-  importObject.libmemory = memoryModule.instance.exports,
+  importObject.libmemory = memoryModule.instance.exports;
+  const setModule = await WebAssembly.instantiate(setBytes, {...importObject, js: { mem: memory } })
+  importObject.libset = setModule.instance.exports;
   importObject.memory_values = memory;
   importObject.js = {memory};
   return importObject;

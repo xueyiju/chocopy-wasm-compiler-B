@@ -39,14 +39,76 @@ print(c)
 For a test case like the one above, it may be helpful to know the length of the list on the right-hand side of `=`. We have the length of the list stored as metadata in memory, so the comprehensions group could look at our design document to figure out how to get the length of a list. Our group would not need to make any changes.
 
 ### Error reporting
+*Input*
+```python
+a : [int] = None
+a = [1, 2, 3, 4]
+a[4]
+```
+*Expected Output*
+```python
+>>> RUNTIME ERROR: list index out of range
+```
+For now their implementation of runtime error has no out of bound error which may be caused by list and string. We have already had a check out-of-bound function in our webstart.ts so we need to change the plain throw new Error to their runtime error interface.
+They have a different properties for type SourceLocation to make the error reporting message have more precise column number of error line. We can follow their config to modify our implementation.
 
 ### Fancy calling conventions
+*Input*
+```python
+a : int = 0
+b : int = 0
+c : [int] = None
+a, b, *c = [1, 2, 3, 4]
+c
+```
+*Expected Output*
+```python
+>>> [3, 4]
+```
+Not sure if they're going to implement multiple assignment in one line but it looks fancy to me.
+Parser: The fancy group may need to handle the assignment of int and list variable and retrieve right values from the rhs list literal.
+Type Check: No need to change. Once it's parsed in the right format, the current type-checker algorithm can deal with it well. 
+Lower: The result can be achieved by our current implementation. But what we do now is to allocate the list literal first, and store it like[“ListLength”, elem1, elem2, elem3, …]. So if c would like to be a list, it has to be copied rather than assigning the reference of this list back since the very front value doesn’t represent any length information.
 
 ### for loops/iterators
+*Input*
+```python
+a : [int] = [1, 2, 3]
+i : int = 0
+for i in a:
+    print(i)
+```
+*Expected Output*
+```python
+>>> 1
+>>> 2
+>>> 3
+```
+Their current implementation requires an iterable object(like range) with certain functions hasNext and next to iterate through it. We made list a type for type check and use listLiteral and index lookUp/assign with it instead of having a written Python class for it(or just wasm code) and that means our list has no next() and hasNext() function which makes it not iterable. May need to add these functions to support list maybe in wasm function. 
 
 ### Front-end user interface
+I believe this team doesn’t have much to do with us. They focus more on the web page rather than how the code being compiled where most of the team work. One thing I noticed from their design is that they’re going to support the space that heap has used. Even though our design is highly related to memory, the memory management team takes more responsibility of the overall memory system. So they may need to communicate with each other.
 
 ### Generics and polymorphism
+*Input*
+```python
+T : TypeVar = TypeVar("T")
+def a(x : T, y : T) -> [T]:
+    ret : [T] = None
+    ret = [x, y]
+    return ret
+    
+i : int = 1
+j : int = 2
+x : [int] = None
+x = a(i, j)
+x
+```
+*Expected Output*
+```python
+>>> [1, 2]
+```
+The above code can be done with our current design for list and some modification for their remove-generics.ts. They do remove-generic before type-checking. That is to say our type-check for list would be just the case without generic var so no need for change in type-check and lower. 
 
 ### I/O + files
 

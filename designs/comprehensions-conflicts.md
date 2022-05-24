@@ -82,15 +82,20 @@ On our end, instead of using `assign` to assign each element from the iterable o
 
 ## Bignums
 ```python
-
+x : int = 5
+print([3 for _ in Range().new(0, x, 1)])
 ```
 ### *expected output*
 ```python
-
+[3, 3, 3, 3, 3]
 ```
 ### *changes required*
+**No change is required for them, but we will need to change some details.**
+
+Due to the way they changed the representation of numbers, we will need to update our ```Range``` and ```Generator``` classes with their ```reconstructBigint``` functions, so that each number is now a ```bigint``` type.
 
 ---
+
 ## Built-in libraries
 ```python
 print([factorial(x) for x in Range().new(0, 4, 1)])
@@ -147,26 +152,20 @@ Currently we have no changes required for the fancy calling group. Our group cou
 ---
 
 ## Front-end user interface
-```python
 
-```
-### *expected output*
-```python
-
-```
 ### *changes required*
+**No change is required.**
+
+Currently we have no changes required for the front-end group. Their work is mostly in ```webstart.ts``` to construct the webpage, which has no overlapping with ours for now.
 
 ---
 
 ## Generics and polymorphism
-```python
 
-```
-### *expected output*
-```python
-
-```
 ### *changes required*
+**No change is required.**
+
+Currently we have no changes required for the generics and polymorphism group, because if the monomorphis is implemented properly, it will be passed no different than a normal method call expression to the comprehension.
 
 ---
 
@@ -204,14 +203,11 @@ Currently we have no changes required for the I/O, files group, because our feat
 ---
 
 ## Optimization
-```python
 
-```
-### *expected output*
-```python
-
-```
 ### *changes required*
+**No change is required.**
+
+Currently we have no changes required for the optimizations group. We basically mapped all changes in ```ast.ts``` to the current ```ir.ts```, without modifying the ```ir.ts```. While the optimization group focused on ```ir.ts```, rather than supporting ```ast.ts```. Thus their work and our work won't conflict with each other for now.
 
 ---
 

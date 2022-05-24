@@ -135,7 +135,9 @@ There is no obvious overlap between the optimization process and the front-end d
 
 ## 15. Sets and/or tuples and/or dictionaries
 
+It looks like the set feature has been implemented, and since there is no modification to the front-end scripts, we don't have any conflicts.
 
+Since the values in set are scattered in memory and are stored in a linked list, we need to further disscus with the team the implementation details of set's add function to display the set value in heap.
 
 ## 16. Strings
 

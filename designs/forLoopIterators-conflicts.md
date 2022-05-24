@@ -123,7 +123,7 @@ Since these closures are translated to class definitions and initializations, th
  ***Expected Output**
  ```[0, 2, 4, 6]```
  
- We don't anticipate any overlap with the comprehension groups since they implement their own for loop with an if condition.  
+ We don't anticipate any overlap with the comprehension groups since they implement their own for loop with an if condition. (We renamed our function `isIterable` to `isIterableObject` to avoid the same function declaration).
  
  Regarding implementation of `range`, we should stick to one implementation of `range` class which will then be compiled to wasm. Since currently, they are simply appending the python implementation of range to every test, there won't be any conflicts.
  

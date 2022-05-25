@@ -6,6 +6,7 @@ import { emptyEnv } from './compiler';
 import { TypeCheckError } from './error_reporting'
 import exp from 'constants';
 import { listenerCount } from 'process';
+import { IgnorePlugin } from 'webpack';
 
 const compvars : Map<string, [string, number]> = new Map();
 function generateCompvar(base : string) : string {
@@ -40,7 +41,9 @@ export type LocalTypeEnv = {
   vars: Map<string, Type>,
   expectedRet: Type,
   actualRet: Type,
-  topLevel: Boolean
+  topLevel: Boolean,
+  loopCount: number,
+  currLoop: Array<number>
 }
 
 const defaultGlobalFunctions = new Map();
@@ -69,7 +72,9 @@ export function emptyLocalTypeEnv() : LocalTypeEnv {
     vars: new Map(),
     expectedRet: NONE,
     actualRet: NONE,
-    topLevel: true
+    topLevel: true,
+    loopCount: 0,
+    currLoop: []
   };
 }
 
@@ -149,6 +154,17 @@ export function isCompType(t: Type): Boolean {
 
 export function join(env : GlobalTypeEnv, t1 : Type, t2 : Type) : Type {
   return NONE
+}
+
+export function isIterableObject(env : GlobalTypeEnv, t1 : Type) : boolean {
+  if(t1.tag !== "class")
+    return false;
+  var classMethods = env.classes.get(t1.name)[1];
+  if(!(classMethods.has("next") && classMethods.has("hasnext")))
+    return false;
+  if(equalType(classMethods.get("next")[1], NONE) || !equalType(classMethods.get("hasnext")[1], BOOL))
+    return false;
+  return true;
 }
 
 export function augmentTEnv(env : GlobalTypeEnv, program : Program<SourceLocation>) : GlobalTypeEnv {
@@ -277,10 +293,38 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       return {a: tRet.a, tag: stmt.tag, value:tRet};
     case "while":
       var tCond = tcExpr(env, locals, stmt.cond);
+      locals.loopCount = locals.loopCount+1;
+      locals.currLoop.push(locals.loopCount);
       const tBody = tcBlock(env, locals, stmt.body);
+      locals.currLoop.pop();
       if (!equalType(tCond.a[0], BOOL)) 
         throw new TypeCheckError("Condition Expression Must be a bool", stmt.a);
       return {a: [NONE, stmt.a], tag:stmt.tag, cond: tCond, body: tBody};
+    case "for":
+      var tVars = tcExpr(env, locals, stmt.vars);
+      var tIterable = tcExpr(env, locals, stmt.iterable);
+      locals.loopCount = locals.loopCount+1;
+      locals.currLoop.push(locals.loopCount);
+      var tForBody = tcBlock(env, locals, stmt.body);
+      locals.currLoop.pop();
+      if(tIterable.a[0].tag !== "class" || !isIterableObject(env, tIterable.a[0]))
+        throw new TypeCheckError("Not an iterable: " + tIterable.a[0], stmt.a);
+      let tIterableRet = env.classes.get(tIterable.a[0].name)[1].get("next")[1];
+      if(!equalType(tVars.a[0], tIterableRet))
+        throw new TypeCheckError("Expected type `"+ tIterableRet.tag +"`, got type `" + tVars.a[0].tag + "`", stmt.a);
+      if(stmt.elseBody !== undefined) {
+        const tElseBody = tcBlock(env, locals, stmt.elseBody);
+        return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody, elseBody: tElseBody};
+      }
+      return {a: [NONE, stmt.a], tag: stmt.tag, vars: tVars, iterable: tIterable, body: tForBody};
+    case "break":
+      if(locals.currLoop.length === 0)
+        throw new TypeCheckError("break cannot exist outside a loop", stmt.a);
+      return {a: [NONE, stmt.a], tag: stmt.tag, loopCounter: locals.currLoop[locals.currLoop.length-1]};
+    case "continue":
+      if(locals.currLoop.length === 0)
+        throw new TypeCheckError("continue cannot exist outside a loop", stmt.a);
+      return {a: [NONE, stmt.a], tag: stmt.tag, loopCounter: locals.currLoop[locals.currLoop.length-1]};
     case "pass":
       return {a: [NONE, stmt.a], tag: stmt.tag};
     case "field-assign":

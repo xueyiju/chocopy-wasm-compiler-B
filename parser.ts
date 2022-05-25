@@ -548,8 +548,54 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
         cond,
         body
       }
+    case "ForStatement":
+      c.firstChild() // for
+      c.nextSibling() // vars
+      const for_var = traverseExpr(c, s)
+      c.nextSibling()
+      // for when we implement destructuring 
+
+      // while(s.substring(c.from, c.to) == ',') {
+      //   c.nextSibling()
+      //   for_var.push(traverseExpr(c, s))
+      //   c.nextSibling()
+      // }
+      c.nextSibling()
+      const iterable = traverseExpr(c, s)
+      c.nextSibling()
+      var body = []
+      c.firstChild()
+      while(c.nextSibling()) {
+        body.push(traverseStmt(c, s))
+      }
+      c.parent()
+      var elseBody = []
+      if(c.nextSibling()) {
+        while(s.substring(c.from, c.to) !== 'else')
+          c.nextSibling()
+        c.nextSibling()
+        c.firstChild()
+        while(c.nextSibling()) {
+          elseBody.push(traverseStmt(c, s))
+        }
+        c.parent()
+      }
+      c.parent()
+      return {
+        a: location,
+        tag: "for",
+        vars: for_var,
+        iterable: iterable,
+        body: body,
+        elseBody: elseBody
+      };
+
     case "PassStatement":
       return { a: location, tag: "pass" }
+    case "ContinueStatement":
+      return { a: location, tag: "continue" }
+    case "BreakStatement":
+      return { a: location, tag: "break" }
     default:
       throw new ParseError("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to), location);
   }

@@ -78,7 +78,7 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
   const parsed = parse(source);
   sourceCode = source;
   const specialized = removeGenerics(parsed);
-  const [tprogram, tenv] = tc(config.typeEnv, specialized);
+  var [tprogram, tenv] = tc(config.typeEnv, specialized);
   if(astOpt){
     tprogram = optimizeAst(tprogram);
   }

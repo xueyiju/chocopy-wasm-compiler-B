@@ -186,7 +186,7 @@ function optimizeStmt(stmt: Stmt<[Type, SourceLocation]>): Stmt<[Type, SourceLoc
     }
 }
 
-function foldBuiltin2(lsh: Literal, rhs: Literal, name: string): Literal {
+function foldBuiltin2(lsh: Literal<[Type, SourceLocation]>, rhs: Literal<[Type, SourceLocation]>, name: string): Literal<[Type, SourceLocation]> {
     switch (name) {
         case "max":
             if (lsh.tag === "num" && rhs.tag === "num")
@@ -205,7 +205,7 @@ function foldBuiltin2(lsh: Literal, rhs: Literal, name: string): Literal {
     }
 }
 
-function foldBinop(lhs: Literal, rhs: Literal, op: BinOp): Literal{
+function foldBinop(lhs: Literal<[Type, SourceLocation]>, rhs: Literal<[Type, SourceLocation]>, op: BinOp): Literal<[Type, SourceLocation]>{
     switch(op) {
         case BinOp.Plus:
             if(lhs.tag !== "num" || rhs.tag !== "num"){
@@ -233,12 +233,12 @@ function foldBinop(lhs: Literal, rhs: Literal, op: BinOp): Literal{
             }  
             return {tag: "num", value: lhs.value % rhs.value};
         case BinOp.Eq:
-            if(lhs.tag === "none" || rhs.tag === "none"){
+            if(lhs.tag === "none" || rhs.tag === "none" || lhs.tag === "TypeVar" || rhs.tag === "TypeVar"){
                 return {tag: "bool", value: true};
             }  
             return {tag: "bool", value: lhs.value === rhs.value};
         case BinOp.Neq:
-            if(lhs.tag === "none" || rhs.tag === "none"){
+            if(lhs.tag === "none" || rhs.tag === "none" || lhs.tag === "TypeVar" || rhs.tag === "TypeVar"){
                 return {tag: "bool", value: false};
             }  
             return {tag: "bool", value: lhs.value !== rhs.value};
@@ -277,7 +277,7 @@ function foldBinop(lhs: Literal, rhs: Literal, op: BinOp): Literal{
       }
 }
 
-function foldUniop(expr: Literal, op: UniOp): Literal{
+function foldUniop(expr: Literal<[Type, SourceLocation]>, op: UniOp): Literal<[Type, SourceLocation]>{
     switch (op){
         case UniOp.Neg:
             if(expr.tag != "num"){

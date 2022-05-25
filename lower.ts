@@ -75,11 +75,11 @@ function lowerClass(cls: AST.Class<[Type, SourceLocation]>, env : GlobalEnv) : I
 function literalToVal(lit: AST.Literal<[Type, SourceLocation]>) : IR.Value<[Type, SourceLocation]> {
     switch(lit.tag) {
         case "num":
-            return { ...lit, value: BigInt(lit.value), a:[NUM, {line:0}] }
+            return { ...lit, value: BigInt(lit.value), a:[NUM, lit.a[1]] }
         case "bool":
-            return {...lit, a:[BOOL, {line:0}]}
+            return {...lit, a:[BOOL, lit.a[1]]}
         case "none":
-            return {...lit, a:[NONE, {line:0}]}        
+            return {...lit, a:[NONE, lit.a[1]]}        
     }
 }
 

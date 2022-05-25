@@ -285,6 +285,30 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
           right: rval
         }];
     case "call":
+      if (e.name === "set") {
+        if (!e.arguments) {
+          // construct empty set
+          const newSetName = generateName("newSet");
+          // size will be 10 for now
+          const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
+          return [
+            [ { name: newSetName, type: e.a[0], value: { tag: "none" } } ],
+            [ { tag: "assign", name: newSetName, value: allocSet } ],
+            { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newSetName } }
+          ]; 
+        } else {
+          const callpairs = e.arguments.map(a => flattenExprToVal(a, blocks, env));
+          const callinits = callpairs.map(cp => cp[0]).flat();
+          const callstmts = callpairs.map(cp => cp[1]).flat();
+          const callvals = callpairs.map(cp => cp[2]).flat();
+          return [ callinits, callstmts,
+            {
+              ...e,
+              arguments: callvals
+            }
+          ];  
+        }
+      }
       const callpairs = e.arguments.map(a => flattenExprToVal(a, blocks, env));
       const callinits = callpairs.map(cp => cp[0]).flat();
       const callstmts = callpairs.map(cp => cp[1]).flat();
@@ -302,6 +326,14 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       const argstmts = argpairs.map(cp => cp[1]).flat();
       const argvals = argpairs.map(cp => cp[2]).flat();
       var objTyp = e.obj.a[0];
+      if(objTyp.tag === "set") {
+        const callMethod : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "call", name: `set$${e.method}`, arguments: [objval, ...argvals] }
+        return [
+          [...objinits, ...arginits],
+          [...objstmts, ...argstmts],
+          callMethod
+        ];
+      }
       if(objTyp.tag !== "class") { // I don't think this error can happen
         throw new Error("Report this as a bug to the compiler developer, this shouldn't happen " + objTyp.tag);
       }
@@ -402,6 +434,29 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       return [[], [], {a: e.a, tag: "value", value: { ...e }} ];
     case "literal":
       return [[], [], {a: e.a, tag: "value", value: literalToVal(e.value) } ];
+    case "set":
+      const newSetName = generateName("newSet");
+      // 10 buckets for now
+      const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: 10}};
+      //const allocSet : IR.Expr<[Type, SourceLocation]> = {tag: "alloc", amount: {tag: "wasmint", value: e.contents.length}};
+      var inits : Array<IR.VarInit<[Type, SourceLocation]>> = [];
+      var stmts : Array<IR.Stmt<[Type, SourceLocation]>> = [];
+      const assignsSet : IR.Stmt<[Type, SourceLocation]>[] = e.values.map((e, _) => {
+        const [init, stmt, value] = flattenExprToVal(e, blocks, env);
+        inits = [...inits, ...init];
+        stmts = [...stmts, ...stmt];
+        return {
+          a: e.a,
+          tag: "expr",
+          expr: { a: e.a, tag: "call", name: `set$add`, arguments: [{ tag: "id", name: newSetName}, value]}
+        }
+      })
+      return [
+        [ { a: e.a, name: newSetName, type: e.a[0], value: { tag: "none" } }, ...inits ],
+        //[ { tag: "assign", name: newSetName, value: allocSet }, ...stmts, storeLength, ...assignsSet ], 
+        [ { tag: "assign", name: newSetName, value: allocSet }, ...stmts, ...assignsSet ],
+        { a: e.a, tag: "value", value: { a: e.a, tag: "id", name: newSetName } }
+      ];
     case "ternary":
     case "comprehension":
       return flattenExprToExprWithBlocks(e, blocks, env);

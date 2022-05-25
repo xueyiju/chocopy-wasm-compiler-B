@@ -86,6 +86,7 @@ export function equalType(t1: Type, t2: Type): boolean {
   return (
     t1 === t2 ||
     (t1.tag === "class" && t2.tag === "class" && t1.name === t2.name) ||
+    (t1.tag === "set" && t2.tag == "set") || 
     (t1.tag === "list" && t2.tag === "list" && (equalType(t1.type, t2.type) || t1.type === NONE)) ||
     (t1.tag === "generator" && t2.tag === "generator" && equalType(t1.type, t2.type))
   );
@@ -100,6 +101,7 @@ export function isSubtype(env: GlobalTypeEnv, t1: Type, t2: Type) : boolean {
     equalType(t1, t2) ||
     (t1.tag === "none" && t2.tag === "class") ||
     (t1.tag === "none" && t2.tag === "list") ||
+    (t1.tag === "none" && t2.tag === "set") ||
     (t1.tag === "none" && t2.tag === "generator") ||
     // can assign generator created with comprehension to generator class object
     (t1.tag === "generator" && t2.tag === "class" && t2.name === "generator") ||
@@ -265,6 +267,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       } else {
         throw new TypeCheckError("Unbound id: " + stmt.name, stmt.a);
       }
+      console.log("nameTyp: ", nameTyp);
+      console.log("left: ", tValExpr.a[0] );
       if(!isAssignable(env, tValExpr.a[0], nameTyp)) 
         throw new TypeCheckError("`" + tValExpr.a[0].tag + "` cannot be assigned to `" + nameTyp.tag + "` type", stmt.a);
       return {a: [NONE, stmt.a], tag: stmt.tag, name: stmt.name, value: tValExpr};
@@ -362,6 +366,20 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
 
 export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<SourceLocation>) : Expr<[Type, SourceLocation]> {
   switch(expr.tag) {
+    case "set":
+      let tc_val = expr.values.map((e) => tcExpr(env, locals, e));
+      let tc_type = tc_val.map((e) => e.a[0]);
+      let set_type = new Set<Type>();
+      tc_type.forEach(t=>{
+        set_type.add(t)
+      });
+      if (set_type.size > 1){
+        throw new TypeCheckError("Bracket attribute error")
+      }
+      var t: Type ={tag: "set", valueType: tc_type[0]};
+      var a: SourceLocation = expr.a;
+      // return {...expr, a: [t, a]};
+      return {...expr, a: [t, a], values: tc_val};
     case "literal": 
       const tcVal : Literal<[Type, SourceLocation]> = tcLiteral(expr.value)
       return {...expr, a: [tcVal.a[0], expr.a], value: tcVal};
@@ -528,6 +546,16 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
            } else {
             throw new TypeCheckError("Function call type mismatch: " + expr.name, expr.a);
            }
+      } else if (expr.name === "set") {
+        if (expr.arguments.length > 1){
+          throw new Error("Set constructor can only contain element with length 1");
+        }
+        if (expr.arguments[0].tag !== "set"){
+          throw new Error("Set constructor can only accept bracket variable");
+        }
+        var initial_value = tcExpr(env, locals, expr.arguments[0]);
+        console.log("hello", {...expr, a: initial_value.a, arguments: [initial_value]})
+        return {...expr, a: initial_value.a, arguments: [initial_value]};
       } else {
         throw new TypeCheckError("Undefined function: " + expr.name, expr.a);
       }
@@ -568,6 +596,31 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         } else {
           throw new TypeCheckError("method call on an unknown class", expr.a);
         }
+      } else if (tObj.a[0].tag === 'set'){
+        const set_method = ["add", "remove", "get", "contains", "length"]
+        if (set_method.includes(expr.method)){
+          tArgs.forEach(t => {
+            if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
+              if (t.value.a[0] !== tObj.a[0].valueType){
+                throw new TypeCheckError("Mismatched Type when calling method")
+              }
+            }else{
+              throw new TypeCheckError("Unknown Type when calling method")
+            }
+          })
+        }else{
+          throw new TypeCheckError("Unknown Set Method Error");
+        }
+        if (expr.method === "contains"){
+          return {...expr, a: [BOOL, expr.a], obj: tObj, arguments: tArgs};
+        }else if(expr.method === "add"){
+          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        }else if(expr.method === "remove"){
+          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        } else if(expr.method === "length"){
+          return {...expr, a: [NUM, expr.a], obj: tObj, arguments: tArgs};
+        }
+        return {...expr, a:tObj.a, obj: tObj, arguments: tArgs}
       } else {
         throw new TypeCheckError("method calls require an object", expr.a);
       }

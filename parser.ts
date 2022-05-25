@@ -719,7 +719,7 @@ function traverseAssignTarget(c: TreeCursor, s: string):AssignTarget<SourceLocat
   var location = getSourceLocation(c, s);
   const lhs = traverseExpr(c,s);
   // 2. LHS is valid expression type : "id" | "lookup" 
-  if (lhs.tag!=="id" && lhs.tag!=="lookup") {
+  if (lhs.tag!=="id" && lhs.tag!=="lookup" && lhs.tag !== "index") {
     throw new ParseError("Cannot have "+ lhs.tag + " expression at LHS while parsing assignment statements.", location)
   }
   return lhs;

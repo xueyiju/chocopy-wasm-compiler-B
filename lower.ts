@@ -116,8 +116,8 @@ function flattenStmt(s : AST.Stmt<[Type, SourceLocation]>, blocks: Array<IR.Basi
               pushStmtsToLastBlock(blocks, ...valstmts);
               const iterClassName = r.a[0].name;
               if(va.tag==="id"){
-                var dummyNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `${iterClassName}$next`, arguments: [va] , a:[{ tag: "none" }, null]}
-                var dummyHasNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `${iterClassName}$hasNext`, arguments: [va] , a:[{ tag: "none" }, null]}
+                var dummyNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `${iterClassName}$next`, arguments: [va] , a:[{ tag: "none" }, s.a[1]]}
+                var dummyHasNext: AST.Expr<[Type, SourceLocation]> = { tag: "call", name: `${iterClassName}$hasNext`, arguments: [va] , a:[{ tag: "none" }, s.a[1]]}
               
                 //will probably fail for cases like 'a,b,c = range(1,3),5
                 while(lhs_index < s.destr.length){

@@ -327,7 +327,7 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       const argvals = argpairs.map(cp => cp[2]).flat();
       var objTyp = e.obj.a[0];
       if(objTyp.tag === "set") {
-        const callMethod : IR.Expr<[Type, SourceLocation]> = { tag: "call", name: `set$${e.method}`, arguments: [objval, ...argvals] }
+        const callMethod : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "call", name: `set$${e.method}`, arguments: [objval, ...argvals] }
         return [
           [...objinits, ...arginits],
           [...objstmts, ...argstmts],
@@ -446,8 +446,9 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
         inits = [...inits, ...init];
         stmts = [...stmts, ...stmt];
         return {
+          a: e.a,
           tag: "expr",
-          expr: { tag: "call", name: `set$add`, arguments: [{ tag: "id", name: newSetName}, value]}
+          expr: { a: e.a, tag: "call", name: `set$add`, arguments: [{ tag: "id", name: newSetName}, value]}
         }
       })
       return [

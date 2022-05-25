@@ -601,7 +601,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         if (set_method.includes(expr.method)){
           tArgs.forEach(t => {
             if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
-              if (tcLiteral(t.value) !== tObj.a[0].valueType){
+              if (t.value.a[0] !== tObj.a[0].valueType){
                 throw new TypeCheckError("Mismatched Type when calling method")
               }
             }else{

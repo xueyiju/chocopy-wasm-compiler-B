@@ -300,7 +300,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
               tcAssignTargets(env, locals, tDestr, tRhs.values, hasStarred)
               return {a: [NONE, stmt.a], tag: stmt.tag, destr: tDestr, rhs:tRhs}
             }
-          else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.")
+          else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.", stmt.a)
         default:
           throw new Error("not supported expr type for destructuring")
       }
@@ -385,7 +385,7 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
         // if (tObj.a[0].tag === "dict") {
         //   ...
         // }
-        throw new TypeCheckError(`Index is of non-integer type \`${tIndex.a[0].tag}\``);
+        throw new TypeCheckError(`Index is of non-integer type \`${tIndex.a[0].tag}\``, stmt.a);
       }
       if (tObj.a[0].tag === "list") {
         if (!isAssignable(env, tVal.a[0], tObj.a[0].type)) {
@@ -431,14 +431,14 @@ function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: Destr
         //checking type of lhs with type of return of range
         //Length mismatch from iterables will be RUNTIME ERRORS
         if(!isAssignable(env, tDestr[lhs_index].lhs.a[0], expectedRhsType)) {
-          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+          throw new TypeCheckError("Type Mismatch while destructuring assignment", tDestr[lhs_index].lhs.a[1])
         } else {
           lhs_index++
           rhs_index++
         }
       } 
       else if (!isAssignable(env, tDestr[lhs_index].lhs.a[0], tRhs[rhs_index].a[0])) {
-          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+          throw new TypeCheckError("Type Mismatch while destructuring assignment", tDestr[lhs_index].lhs.a[1])
         } 
       else {
         lhs_index++
@@ -460,7 +460,7 @@ function tcAssignTargets(env: GlobalTypeEnv, locals: LocalTypeEnv, tDestr: Destr
       let rev_rhs_index = tRhs.length - 1;
       while (rev_lhs_index > lhs_index) {
         if (!isAssignable(env, tDestr[rev_lhs_index].lhs.a[0], tRhs[rev_rhs_index].a[0])) {
-          throw new TypeCheckError("Type Mismatch while destructuring assignment")
+          throw new TypeCheckError("Type Mismatch while destructuring assignment", tDestr[rev_lhs_index].a[1])
         } else {
           rev_rhs_index--
           rev_lhs_index--

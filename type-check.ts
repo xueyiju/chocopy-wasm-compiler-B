@@ -388,7 +388,7 @@ function tcDestructureTargets(destr: DestructureLHS<SourceLocation>[], env: Glob
   return destr.map(r => tcDestructure(env, locals, r));
 }
 
-function tcDestructureValues(tDestr: DestructureLHS<[Type, SourceLocation]>[], rhs:Expr<SourceLocation>, env: GlobalTypeEnv, locals: LocalTypeEnv, stmtType: SourceLocation) : Expr<[Type, SourceLocation]>{
+function tcDestructureValues(tDestr: DestructureLHS<[Type, SourceLocation]>[], rhs:Expr<SourceLocation>, env: GlobalTypeEnv, locals: LocalTypeEnv, stmtLoc: SourceLocation) : Expr<[Type, SourceLocation]>{
   var tRhs: Expr<[Type, SourceLocation]> =  tcExpr(env, locals, rhs);
 
   var hasStarred = false;
@@ -415,7 +415,7 @@ function tcDestructureValues(tDestr: DestructureLHS<[Type, SourceLocation]>[], r
           tcAssignTargets(env, locals, tDestr, tRhs.values, hasStarred)
           return tRhs
         }
-      else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.", stmtType)
+      else throw new TypeCheckError("length mismatch left and right hand side of assignment expression.", stmtLoc)
     default:
       throw new Error("not supported expr type for destructuring")
   }

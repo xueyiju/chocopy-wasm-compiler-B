@@ -138,6 +138,8 @@ ${BuiltinLib.map(x=>`    (func $${x.name} (import "imports" "${x.name}") ${"(par
     (func $set$length (import "libset" "set$length") (param $baseAddr i32) (result i32))
     (func $set$remove (import "libset" "set$remove") (param $baseAddr i32) (param $key i32) (result i32))
     (func $set$print (import "libset" "set$print") (param $baseAddr i32) (result i32))
+    (func $set$update (import "libset" "set$update") (param $newAddr i32) (param $baseAddr i32) (result i32))
+    (func $set$clear (import "libset" "set$clear") (param $baseAddr i32) (result i32))
     ${globalImports}
     ${globalDecls}
     ${config.functions}

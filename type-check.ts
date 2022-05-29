@@ -489,7 +489,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         set_type.add(t)
       });
       if (set_type.size > 1){
-        throw new TypeCheckError("Bracket attribute error")
+        throw new TypeCheckError("Bracket attribute error", expr.a)
       }
       var t: Type ={tag: "set", valueType: tc_type[0]};
       var a: SourceLocation = expr.a;
@@ -641,10 +641,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
            }
       } else if (expr.name === "set") {
         if (expr.arguments.length > 1){
-          throw new Error("Set constructor can only contain element with length 1");
+          throw new TypeCheckError("Set constructor can only contain element with length 1", expr.a);
         }
         if (expr.arguments[0].tag !== "set"){
-          throw new Error("Set constructor can only accept bracket variable");
+          throw new TypeCheckError("Set constructor can only accept bracket variable", expr.a);
         }
         var initial_value = tcExpr(env, locals, expr.arguments[0]);
         console.log("hello", {...expr, a: initial_value.a, arguments: [initial_value]})
@@ -695,25 +695,29 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           if (expr.method === "update") {
             if (tArgs[0].a[0].tag === 'set') {
               if (tArgs[0].a[0].valueType !== tObj.a[0].valueType) {
-                throw new TypeCheckError("Mismatched Type when calling method")
+                throw new TypeCheckError("Mismatched Type when calling method", expr.a)
               }
+            } else if (tArgs[0].a[0].tag === 'list') {
+              if (tArgs[0].a[0].type !== tObj.a[0].valueType) {
+                throw new TypeCheckError("Mismatched Type when calling method", expr.a)
+              } 
             } else {
               // TODO add support for list and string
-              throw new TypeCheckError("Unknown Type when calling method")
+              throw new TypeCheckError("Unknown Type when calling method", expr.a)
             }
           } else {
             tArgs.forEach(t => {
               if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
                 if (t.value.a[0] !== tObj.a[0].valueType){
-                  throw new TypeCheckError("Mismatched Type when calling method")
+                  throw new TypeCheckError("Mismatched Type when calling method", expr.a)
                 }
               }else{
-                throw new TypeCheckError("Unknown Type when calling method")
+                throw new TypeCheckError("Unknown Type when calling method", expr.a)
               }
             })
           }
         }else{
-          throw new TypeCheckError("Unknown Set Method Error");
+          throw new TypeCheckError("Unknown Set Method Error", expr.a);
         }
         if (expr.method === "contains"){
           return {...expr, a: [BOOL, expr.a], obj: tObj, arguments: tArgs};

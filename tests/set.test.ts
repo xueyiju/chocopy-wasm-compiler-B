@@ -60,4 +60,11 @@ describe("set-functionalities", () => {
     set_1 = set({1, 2})
     set_1.update({3, 4})
     print(set_1)`, ["1", "2", "3", "4"])  
+
+    assertPrint("set-update", `
+    set_1: set[int] = None
+    set_1 = set({1, 2})
+    set_1.update([3, 4])
+    print(set_1)`, ["1", "2", "3", "4"]) 
+    
 });

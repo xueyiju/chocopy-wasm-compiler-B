@@ -104,6 +104,12 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         }
       } else if (callExpr.tag === "id") {
         const callName = callExpr.name;
+        if(callName === "perm" || callName === "randint" || callName === "gcd" || callName === "lcm" || callName === "comb" || callName === "randrange") {
+          var line: Expr<SourceLocation> = {a: location, tag: "literal", value: {a: location, tag: "num", value: location.line}}
+          var col: Expr<SourceLocation> = {a: location, tag: "literal", value: {a: location, tag: "num", value: location.column}}
+          args.push(line)
+          args.push(col) 
+        }
         var expr : Expr<SourceLocation>;
         expr = { a: location, tag: "call", name: callName, arguments: args};
         return expr;  

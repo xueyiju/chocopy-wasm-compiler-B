@@ -128,7 +128,6 @@
         (i32.const 0)
         (return)
     )
-
     (export "set$add" (func $set$add))
 
     (func (export "set$contains") (param $baseAddr i32) (param $key i32) (result i32)
@@ -338,7 +337,6 @@
         (return)
     )
 
-
     (func (export "set$print") (param $baseAddr i32) (result i32)
         (local $length i32)
         (local $nodePtr i32)
@@ -417,20 +415,23 @@
         )
         (local.get $length)
         (return)
-    ) 
+    )
 
     (func (export "set$clear") (param $baseAddr i32) (result i32)
         (local $i i32)
         (loop $my_loop
+            ;; *(baseAddr + 4*i) = 0
             (local.get $baseAddr)
             (local.get $i)
             (i32.mul (i32.const 4))
             (i32.const 0)
             (call $store)
+            ;; i++
             (local.get $i)
             (i32.const 1)
             (i32.add)
             (local.set $i)
+            ;; if i < 10: next iteration
             (local.get $i)
             (i32.const 10)
             (i32.lt_s)
@@ -512,4 +513,140 @@
         (return)
     )
 
+    ;; Return the first item of the bucket of the smallest index that's non-empty
+    (func (export "set$firstItem") (param $baseAddr i32) (result i32)
+        (local $i i32)
+        (local $valueAddrHolder i32)
+        (local.set $i (i32.const 0))
+
+        (loop
+            (local.get $baseAddr)
+            (local.get $i)
+            (call $load)
+            (local.tee $valueAddrHolder)
+            (i32.const 0)
+            (i32.ne)
+            (if
+                (then
+                    (i32.load (local.get $valueAddrHolder))
+                    (return)
+                )
+                (else
+                    ;; i++
+                    (local.set $i (i32.add (local.get $i) (i32.const 1)) )
+                    (local.get $i)
+                    (i32.const 10)
+                    (i32.lt_s)
+                    (br_if 0)
+                )
+            )
+        )
+        ;; if set is empty: return -1 (temporary solution)
+        (i32.const -1)
+        (return)
+    )
+
+    ;; Check if currKey is the "last" item in the set
+    (func (export "set$hasnext") (param $baseAddr i32) (param $currKey i32) (result i32)
+        (local $i i32)
+        (local $valueAddrHolder i32)
+        (local $lastItem i32)
+        ;; i = 9
+        (local.set $i (i32.const 9))
+
+        (loop $reverseLoop
+            (local.get $baseAddr)
+            (local.get $i)
+            (call $load)
+            (local.tee $valueAddrHolder)
+            (i32.const 0)
+            (i32.ne)
+            ;; if bucket i is NOT empty
+            (if
+                (then
+                    (loop
+                        (i32.load (local.get $valueAddrHolder))
+                        (local.set $lastItem)
+                        (i32.load (i32.add (local.get $valueAddrHolder) (i32.const 4)) )
+                        (local.tee $valueAddrHolder)
+                        (i32.const 0)
+                        (i32.ne)
+                        (br_if 0)
+                    )
+                    (local.get $lastItem)
+                    (local.get $currKey)
+                    (i32.ne)
+                    (return)
+                )
+                (else
+                    ;; i--
+                    (local.set $i (i32.sub (local.get $i) (i32.const 1)))
+                    (local.get $i)
+                    (i32.const 0)
+                    (i32.ge_s)
+                    ;; if i >=0: next iteration
+                    (br_if $reverseLoop)
+                )
+            )
+        )
+        ;; if reached here: all buckets in set is empty =>hasnext return False
+        (i32.const 0)
+        (return)
+    )
+
+    ;; Return the next item in the set given the current item
+    (func (export "set$next") (param $baseAddr i32) (param $currKey i32) (result i32)
+        (local $i i32)
+        (local $valueAddrHolder i32)
+
+        (local.get $baseAddr)
+        (local.get $currKey)
+        (i32.const 10)
+        (i32.rem_u)
+        (local.tee $i) ;; locate which bucket currKey is in
+        (call $load)
+        (local.set $valueAddrHolder)
+
+        (loop
+            (i32.load (local.get $valueAddrHolder))
+            (local.get $currKey)
+            (i32.eq)
+            ;; if this item == currKey
+            (if
+                (then
+                    ;; Check if currKey is the last item in the bucket
+                    (i32.add (local.get $valueAddrHolder) (i32.const 4) )
+                    (i32.load)
+                    (local.tee $valueAddrHolder)
+                    (i32.eqz)
+                    ;; if currKey.next = null => return 1st item of bucket i+1 (assuming it won't go out of bound)
+                    (if
+                        (then
+                            ;; (i+1)th bucket's 1st item
+                            (local.get $baseAddr)
+                            (i32.add (local.get $i) (i32.const 1) )
+                            (call $load)
+                            (i32.load)
+                            (return)
+                        )
+                        ;; if currKey.next is valid
+                        (else
+                            (i32.load (local.get $valueAddrHolder) )
+                            (return)
+                        )
+                    )
+                )
+                (else
+                    ;; Advance $valueAddrHolder
+                    (i32.add (local.get $valueAddrHolder) (i32.const 4))
+                    (i32.load)
+                    (local.set $valueAddrHolder)
+                    (br 0)
+                )
+            )
+        )
+        ;; Return -1 just for make sets.wat to compile => shouldn't be reached
+        (i32.const -1)
+        (return)
+    )
 )

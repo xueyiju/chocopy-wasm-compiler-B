@@ -641,10 +641,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
            }
       } else if (expr.name === "set") {
         if (expr.arguments.length > 1){
-          throw new TypeCheckError("Set constructor can only contain element with length 1", expr.a);
+          throw new TypeCheckError("Set constructor can only accept one argument", expr.a);
         }
         if (expr.arguments[0].tag !== "set"){
-          throw new TypeCheckError("Set constructor can only accept bracket variable", expr.a);
+          throw new TypeCheckError("Set constructor's argument must be an iterable", expr.a);
         }
         var initial_value = tcExpr(env, locals, expr.arguments[0]);
         console.log("hello", {...expr, a: initial_value.a, arguments: [initial_value]})
@@ -690,9 +690,10 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           throw new TypeCheckError("method call on an unknown class", expr.a);
         }
       } else if (tObj.a[0].tag === 'set'){
-        const set_method = ["add", "remove", "get", "contains", "length", "update", "clear"]
+        const set_method = ["add", "remove", "get", "contains", "length", "update", "clear", "firstItem", "hasnext", "next"]
         if (set_method.includes(expr.method)){
           if (expr.method === "update") {
+            // update
             if (tArgs[0].a[0].tag === 'set') {
               if (tArgs[0].a[0].valueType !== tObj.a[0].valueType) {
                 throw new TypeCheckError("Mismatched Type when calling method", expr.a)
@@ -702,12 +703,13 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
                 throw new TypeCheckError("Mismatched Type when calling method", expr.a)
               } 
             } else {
-              // TODO add support for list and string
+              // TODO add support for string
               throw new TypeCheckError("Unknown Type when calling method", expr.a)
             }
           } else {
             tArgs.forEach(t => {
-              if (t.tag === "literal"&&tObj.a[0].tag === 'set'){
+              if (t.tag === "literal" && tObj.a[0].tag === 'set'){
+                // current item's type !== set type annotation
                 if (t.value.a[0] !== tObj.a[0].valueType){
                   throw new TypeCheckError("Mismatched Type when calling method", expr.a)
                 }
@@ -719,20 +721,48 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         }else{
           throw new TypeCheckError("Unknown Set Method Error", expr.a);
         }
-        if (expr.method === "contains"){
-          return {...expr, a: [BOOL, expr.a], obj: tObj, arguments: tArgs};
-        }else if(expr.method === "add"){
-          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
-        }else if(expr.method === "remove"){
-          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
-        } else if(expr.method === "length"){
-          return {...expr, a: [NUM, expr.a], obj: tObj, arguments: tArgs};
-        } else if(expr.method === "update"){
-          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
-        } else if(expr.method === "clear"){
-          return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+
+        switch (expr.method) {
+          case "contains":
+          case "hasnext":
+            return {...expr, a: [BOOL, expr.a], obj: tObj, arguments: tArgs};
+
+          case "add":
+          case "remove":
+          case "update":
+          case "clear":
+            return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+
+          case "length":
+            return {...expr, a: [NUM, expr.a], obj: tObj, arguments: tArgs};
+
+          case "firstItem":
+          case "next":
+            return {...expr, a: [tObj.a[0].valueType, expr.a], obj: tObj, arguments: tArgs};
         }
+
+        // if (expr.method === "contains"){
+        //   return {...expr, a: [BOOL, expr.a], obj: tObj, arguments: tArgs};
+        // }else if(expr.method === "add"){
+        //   return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        // }else if(expr.method === "remove"){
+        //   return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        // } else if(expr.method === "length"){
+        //   return {...expr, a: [NUM, expr.a], obj: tObj, arguments: tArgs};
+        // } else if(expr.method === "update"){
+        //   return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        // } else if(expr.method === "clear"){
+        //   return {...expr, a: [NONE, expr.a], obj: tObj, arguments: tArgs};
+        // } 
+        // else if(expr.method === "firstItem") {
+
+        // } else if(expr.method === "hasnext") {
+        //   // bool
+        // } else if(expr.method === "next") {
+
+        // }
         return {...expr, a:tObj.a, obj: tObj, arguments: tArgs}
+
       } else {
         throw new TypeCheckError("method calls require an object", expr.a);
       }

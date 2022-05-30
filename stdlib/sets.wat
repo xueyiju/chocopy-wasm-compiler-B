@@ -280,45 +280,45 @@
     (func (export "set$remove") (param $baseAddr i32) (param $key i32) (result i32)
         (local $prevPtr i32)
         (local $currPtr i32)
+
         (local.get $baseAddr)
         (local.get $key)
         (i32.const 10)
         (i32.rem_u)
         (i32.mul (i32.const 4))
         (i32.add)
-        (local.set $prevPtr)
-        (local.get $prevPtr)
+        (local.tee $prevPtr)
         (i32.load)
         (i32.const 0)
-        (i32.eq)
+        (i32.ne)
+        ;; if the matched bucket is NOT empty
         (if
             (then
-            )
-            (else
-                (local.get $prevPtr)
-                (i32.load)
+                ;; currPtr = *prevPtr
+                (i32.load (local.get $prevPtr) )
                 (local.set $currPtr)
-                (block
+
+                (block $bucket
                     (loop
                         (local.get $currPtr)
                         (i32.load)
                         (local.get $key)
                         (i32.eq)
+                        ;; if *currPtr == key
                         (if
                             (then
-                                (local.get $prevPtr)
-                                (local.get $currPtr)
-                                (i32.const 4)
-                                (i32.add)
-                                (i32.load)
+                                (local.get $prevPtr) ;; addr
+                                (i32.add (local.get $currPtr) (i32.const 4) )
+                                (i32.load) ;; addr value to store in prevPtr
                                 (i32.store)
-                                (local.get $currPtr)
-                                (i32.const 4)
-                                (i32.add)
-                                (local.set $prevPtr)
-                                (local.get $currPtr)
-                                (i32.const 4)
-                                (i32.add)
+                                ;; find match ==> do removal + update next ptr => exit loop
+                                (br $bucket)
+                            )
+                            (else
+                                ;; prevPtr = currPtr + 4
+                                (i32.add (local.get $currPtr) (i32.const 4) )
+                                (local.tee $prevPtr)
+                                ;; currPtr = *(new prevPtr)
                                 (i32.load)
                                 (local.set $currPtr)
                             )
@@ -328,12 +328,12 @@
                             (i32.const 0)
                             (i32.ne)
                         )
-                        (br 1)
                     )
                 )
             )
         )
-        (i32.const 0)
+        ;; if the item to be removed is NOT found => return -1
+        (i32.const -1)
         (return)
     )
 
@@ -531,15 +531,13 @@
                     (i32.load (local.get $valueAddrHolder))
                     (return)
                 )
-                (else
-                    ;; i++
-                    (local.set $i (i32.add (local.get $i) (i32.const 1)) )
-                    (local.get $i)
-                    (i32.const 10)
-                    (i32.lt_s)
-                    (br_if 0)
-                )
             )
+            ;; i++ ==> CANNOT be put in (else ...)
+            (local.set $i (i32.add (local.get $i) (i32.const 1)) )
+            (local.get $i)
+            (i32.const 10)
+            (i32.lt_s)
+            (br_if 0)
         )
         ;; if set is empty: return -1 (temporary solution)
         (i32.const -1)
@@ -622,12 +620,33 @@
                     ;; if currKey.next = null => return 1st item of bucket i+1 (assuming it won't go out of bound)
                     (if
                         (then
-                            ;; (i+1)th bucket's 1st item
-                            (local.get $baseAddr)
-                            (i32.add (local.get $i) (i32.const 1) )
-                            (call $load)
-                            (i32.load)
-                            (return)
+                            ;; next non-empty bucket's 1st item
+                            (loop
+                                (local.get $i)
+                                (i32.const 9)
+                                (i32.ge_s)
+                                ;; if this is the last item in the (last) 9th bucket => return -1
+                                (if
+                                    (then
+                                        (i32.const -1)
+                                        (return)
+                                    )
+                                )
+                                (local.get $baseAddr)
+                                (i32.add (local.get $i) (i32.const 1) )
+                                (local.tee $i) ;; i = i + 1
+                                (call $load)
+                                (local.tee $valueAddrHolder)
+                                (i32.const 0)
+                                (i32.ne)
+                                (if
+                                    (then
+                                        (i32.load (local.get $valueAddrHolder) )
+                                        (return)
+                                    )
+                                )
+                                (br 0) ;; continue bucket-loop
+                            )
                         )
                         ;; if currKey.next is valid
                         (else
@@ -636,14 +655,15 @@
                         )
                     )
                 )
-                (else
-                    ;; Advance $valueAddrHolder
-                    (i32.add (local.get $valueAddrHolder) (i32.const 4))
-                    (i32.load)
-                    (local.set $valueAddrHolder)
-                    (br 0)
-                )
             )
+            ;; Advance $valueAddrHolder
+            (i32.add (local.get $valueAddrHolder) (i32.const 4))
+            (i32.load)
+            (local.tee $valueAddrHolder)
+            (i32.const 0)
+            (i32.ne)
+            ;; if currItem.next != null ==> continue loop
+            (br_if 0)
         )
         ;; Return -1 just for make sets.wat to compile => shouldn't be reached
         (i32.const -1)

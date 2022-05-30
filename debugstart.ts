@@ -7,8 +7,8 @@ async function debug() {
   var source = `
   a: [int] = None
   set_x: set[int] = None
-  set_x = set({1,2,3})
-  set_x.update({2,3,4})
+  set_x = set([1,2,3])
+  set_x.update([2,3,4])
   print(set_x)
   `
 

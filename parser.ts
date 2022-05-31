@@ -282,7 +282,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         var stop_index: Expr<any>;
         var step: Expr<any> = {
           tag: "literal",
-          value: { tag: "num", value: 1 }
+          value: { a: location,tag: "num", value: 1 }
         };
 
         var indexItems = "";
@@ -453,7 +453,7 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<SourceLocation> 
       if (c.nextSibling()) // Focus expression
         value = traverseExpr(c, s);
       else
-        value = { a: location, tag: "literal", value: { tag: "none" } };
+        value = { a: location, tag: "literal", value: { a: location, tag: "none" } };
       c.parent();
       return { a: location, tag: "return", value };
     case "AssignStatement":

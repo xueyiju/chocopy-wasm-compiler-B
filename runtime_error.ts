@@ -47,7 +47,7 @@ export function stackTrace() : string {
   var srcArray = splitString();
   var res = "Traceback (most recent call last): \n";
   runtimeStack.forEach(element => {
-    res = res + "in line " + element.toString() + ": " + srcArray[element-1].trim() + " \n";
+    res = res + "\tin line " + element.toString() + ": " + srcArray[element-1].trim() + " \n";
   });
   return res;
 }

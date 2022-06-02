@@ -234,7 +234,7 @@ export function tcDef(env : GlobalTypeEnv, fun : FunDef<SourceLocation>) : FunDe
 
   const tBody = tcBlock(env, locals, fun.body);
   if (!isAssignable(env, locals.actualRet, locals.expectedRet))
-    throw new TypeCheckError(`expected return type of block: ${JSON.stringify(locals.expectedRet)} does not match actual return type: ${JSON.stringify(locals.actualRet)}`, fun.a);
+    throw new TypeCheckError(`expected return type of block: ${JSON.stringify(locals.expectedRet.tag)} does not match actual return type: ${JSON.stringify(locals.actualRet.tag)}`, fun.a);
   return {...fun, a:[NONE, fun.a], body: tBody, inits: tcinits};
 }
 

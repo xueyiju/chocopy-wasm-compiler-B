@@ -19,12 +19,9 @@ export class TypeCheckError extends CompileTimeError {
    } 
  }
 
- export class ParseError extends CompileTimeError {
-    __proto__: CompileTimeError 
+ export class ParseError extends CompileTimeError { 
     constructor(message: string, location: SourceLocation) {
-     const trueProto = new.target.prototype;
-     super("PARSE ERROR: " + message + " in line " + location.line.toString()+" at column " + location.column.toString() + "\n\t" + location.srcCode.trim() + "\n\t" + ' '.repeat(location.column-1) + "^^^");
-     this.__proto__ = trueProto;
+      super("PARSE ERROR: " + message + " in line " + location.line.toString()+" at column " + location.column.toString() + "\n\t" + location.srcCode.trim() + "\n\t" + ' '.repeat(location.column-1) + "^^^");
    } 
  }
 
